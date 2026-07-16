@@ -1,0 +1,147 @@
+.page {
+  max-width: 1320px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 80px 42px 100px;
+  color: #171915;
+}
+
+.header {
+  max-width: 860px;
+}
+
+.eyebrow {
+  color: #2f5a41;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 14px 0 34px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(4rem, 8vw, 7rem);
+  font-weight: 400;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+}
+
+.search {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  max-width: 760px;
+  border-bottom: 1px solid #171915;
+}
+
+.search input {
+  min-height: 58px;
+  border: 0;
+  padding: 0 14px;
+  background: transparent;
+  color: #171915;
+  font: inherit;
+  outline: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+  margin-top: 72px;
+}
+
+.card {
+  display: block;
+  background: #fffdf8;
+}
+
+.image {
+  aspect-ratio: 4 / 3;
+  background:
+    linear-gradient(145deg, rgba(47, 90, 65, 0.2), rgba(23, 25, 21, 0.35)),
+    url("https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80")
+      center / cover;
+}
+
+.body {
+  padding: 20px 4px 0;
+}
+
+.body p {
+  margin: 0 0 9px;
+  color: #2f5a41;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.body h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.body span,
+.body strong {
+  display: block;
+  margin-top: 9px;
+  color: #6e7169;
+  font-size: 0.78rem;
+}
+
+.body strong {
+  color: #171915;
+}
+
+.empty {
+  margin-top: 80px;
+  padding: 60px;
+  background: #fffdf8;
+}
+
+.empty h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.8rem;
+  font-weight: 400;
+}
+
+.empty p {
+  color: #6e7169;
+}
+
+.empty a {
+  display: inline-flex;
+  margin-top: 16px;
+  padding: 13px 18px;
+  background: #171915;
+  color: white;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .page {
+    padding: 56px 16px 70px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    margin-top: 50px;
+  }
+
+  .empty {
+    padding: 36px 24px;
+  }
+}

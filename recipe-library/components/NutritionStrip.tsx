@@ -1,0 +1,1 @@
+import type { Recipe } from "@/lib/types"; export function NutritionStrip({recipe}:{recipe:Recipe}){const items=[["Calories",`${recipe.calories} kcal`],["Protein",recipe.protein],["Carbs",recipe.carbs],["Fat",recipe.fat],["Fiber",recipe.fiber]];return <div className="nutrition-strip">{items.map(([l,v])=><div key={l}><span>{l}</span><strong>{v}</strong></div>)}</div>}
