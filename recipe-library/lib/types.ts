@@ -1,2 +1,0 @@
-export type RecipeStatus = "To Try" | "This Weekend" | "Tested" | "Favorite" | "Discarded";
-export type Recipe = { id:string; title:string; author:string; publication:string; status:RecipeStatus; servings:number; time:string; mainIngredients:string[]; dishTypes:string[]; methods:string[]; calories:string; protein:string; carbs:string; fat:string; fiber:string; ingredients:string[]; steps:string[]; note?:string; };
