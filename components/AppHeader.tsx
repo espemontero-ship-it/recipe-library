@@ -1,20 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Search, X } from "lucide-react";
+import { LogIn, LogOut, Menu, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 
 const links = [
   { href: "/", label: "Home" },
   { href: "/browse", label: "Browse" },
-  { href: "/collections", label: "Collections" },
-  { href: "/paste", label: "Paste recipe" },
 ];
 
 export function AppHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { loading, isAdmin, signOut } = useAuth();
 
   return (
     <header className="app-header">
@@ -55,6 +55,24 @@ export function AppHeader() {
           >
             <Search aria-hidden="true" size={18} />
           </Link>
+
+          {!loading &&
+            (isAdmin ? (
+              <button
+                aria-label="Sign out of administrator mode"
+                className="app-header__auth"
+                onClick={() => void signOut()}
+                type="button"
+              >
+                <LogOut aria-hidden="true" size={16} />
+                <span>Sign out</span>
+              </button>
+            ) : (
+              <Link className="app-header__auth" href="/login">
+                <LogIn aria-hidden="true" size={16} />
+                <span>Admin</span>
+              </Link>
+            ))}
 
           <button
             aria-expanded={open}

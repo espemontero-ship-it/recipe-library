@@ -18,7 +18,8 @@ export type NumericRange = {
 
 export type RecipeSource = {
   author: string | null;
-  publication: string | null;
+  type: string | null;
+  publication: string | null; // Legacy import field; source.type is canonical.
   originalUrl: string | null;
 };
 
@@ -77,11 +78,16 @@ export type RecipeNutrition = {
 };
 
 export type RecipeClassification = {
-  mainIngredients: string[];
-  dishTypes: string[];
+  ingredientsIndex: string[];
+  dish: string[];
+  formats: string[];
+  mealTypes: string[];
   cookingMethods: string[];
   cuisines: string[];
   collections: string[];
+  // Legacy aliases retained while the paste importer is migrated.
+  mainIngredients: string[];
+  dishTypes: string[];
 };
 
 export type RecipePersonal = {
@@ -216,6 +222,7 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
     summary: null,
     source: {
       author: input.author?.trim() || null,
+      type: input.publication?.trim() || null,
       publication: input.publication?.trim() || null,
       originalUrl: input.originalUrl?.trim() || null,
     },
@@ -272,6 +279,10 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
       note: null,
     },
     classification: {
+      ingredientsIndex: unique(input.mainIngredients ?? []),
+      dish: [],
+      formats: unique(input.dishTypes ?? []),
+      mealTypes: [],
       mainIngredients: unique(input.mainIngredients ?? []),
       dishTypes: unique(input.dishTypes ?? []),
       cookingMethods: unique(input.methods ?? []),
@@ -329,7 +340,7 @@ export function validateRecipe(recipe: Recipe): RecipeValidation {
   }
 
   if (!recipe.source.author) warnings.push("Author not provided.");
-  if (!recipe.source.publication) warnings.push("Publication not provided.");
+  if (!recipe.source.type) warnings.push("Source type not provided.");
   if (!recipe.yield.servingsDisplay) warnings.push("Servings not provided.");
   if (!recipe.yield.timeDisplay) warnings.push("Time not provided.");
   if (recipe.nutrition.calories.min === null) {

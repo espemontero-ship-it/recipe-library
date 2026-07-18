@@ -605,3 +605,94 @@
     grid-template-columns: 1fr;
   }
 }
+
+.addButton {
+  gap: 8px;
+}
+
+.facets {
+  padding-top: 4px;
+}
+
+.activeFilters {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 720px) {
+  .toolbarActions {
+    flex-wrap: wrap;
+  }
+
+  .sortControl {
+    min-width: 0;
+  }
+}
+
+.filterPanel {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #dcd6ca;
+  background: #fffdf8;
+}
+
+.filterPanel .facets {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e6e0d5;
+}
+
+.personalFilters {
+  display: grid;
+  gap: 10px;
+}
+
+.personalFilters > span {
+  color: #6e7169;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.personalFilters > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.personalFilters button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #dcd6ca;
+  padding: 0 13px;
+  background: transparent;
+  color: #171915;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.personalFilters .personalFilterActive {
+  border-color: #2f5a41;
+  background: #e6eee7;
+  color: #2f5a41;
+}
+
+.personalIcons {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  color: #2f5a41;
+}
+
+.body > .rating {
+  margin-top: 14px;
+}
+
+.personalFilters button:focus-visible {
+  outline: 3px solid #a4c7ae;
+  outline-offset: 3px;
+}

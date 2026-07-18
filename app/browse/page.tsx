@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import {
+  CalendarDays,
+  CheckCircle2,
   Grid2X2,
   Heart,
   List,
@@ -11,7 +13,11 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getStoredRecipes, saveRecipe } from "@/lib/browserRecipeStorage";
+import {
+  mergePersonalState,
+  subscribeToPersonalState,
+} from "@/lib/personalRecipeState";
+import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   formatRange,
   getRecipeIngredients,
@@ -19,203 +25,299 @@ import {
 } from "@/lib/recipeModel";
 import styles from "./browse.module.css";
 
-type SortOption = "recent" | "alphabetical" | "rating";
-type ViewMode = "grid" | "list";
-type TestedFilter = "all" | "tested" | "not_tested";
-
 type FacetKey =
-  | "mainIngredient"
-  | "dishType"
+  | "ingredients"
+  | "dish"
+  | "format"
+  | "mealType"
   | "method"
-  | "cuisine"
-  | "collection"
-  | "source"
-  | "author";
+  | "cuisine";
 
-type FacetState = Record<FacetKey, string>;
+type PersonalFilter = "favorite" | "tested" | "thisWeekend";
+type SortValue = "title-asc" | "title-desc" | "newest";
+type ViewValue = "grid" | "list";
 
-const EMPTY_FACETS: FacetState = {
-  mainIngredient: "",
-  dishType: "",
-  method: "",
-  cuisine: "",
-  collection: "",
-  source: "",
-  author: "",
+const FACETS: {
+  key: FacetKey;
+  label: string;
+  placeholder: string;
+}[] = [
+  { key: "ingredients", label: "Ingredients", placeholder: "Add ingredient" },
+  { key: "dish", label: "Dish", placeholder: "Add dish" },
+  { key: "format", label: "Format", placeholder: "Add format" },
+  { key: "mealType", label: "Meal", placeholder: "Add meal type" },
+  { key: "method", label: "Method", placeholder: "Add method" },
+  { key: "cuisine", label: "Cuisine", placeholder: "Add cuisine" },
+];
+
+const PERSONAL_FILTERS: { key: PersonalFilter; label: string }[] = [
+  { key: "favorite", label: "Favorites" },
+  { key: "tested", label: "Tested" },
+  { key: "thisWeekend", label: "This weekend" },
+];
+
+const EMPTY_FILTERS: Record<FacetKey, string[]> = {
+  ingredients: [],
+  dish: [],
+  format: [],
+  mealType: [],
+  method: [],
+  cuisine: [],
 };
 
-function uniqueSorted(values: Array<string | null>) {
-  return Array.from(
-    new Set(values.filter((value): value is string => Boolean(value?.trim()))),
-  ).sort((a, b) => a.localeCompare(b));
+function normalize(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
-function sourceLine(recipe: Recipe) {
-  return [recipe.source.author, recipe.source.publication]
-    .filter(Boolean)
-    .join(" · ");
+function humanize(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function getSearchText(recipe: Recipe) {
-  return [
-    recipe.title,
-    recipe.source.author,
-    recipe.source.publication,
-    ...recipe.classification.mainIngredients,
-    ...recipe.classification.dishTypes,
-    ...recipe.classification.cookingMethods,
-    ...recipe.classification.cuisines,
-    ...recipe.classification.collections,
-    ...getRecipeIngredients(recipe).map((item) => item.originalLine),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
-
-function displayMacro(
-  value: Recipe["nutrition"]["calories"],
-  suffix: string,
-) {
-  return value.min === null ? "—" : formatRange(value, suffix);
-}
-
-function Rating({ value }: { value: number | null }) {
-  const rating = value ?? 0;
-  return (
-    <span className={styles.rating} aria-label={`${rating} out of 5 stars`}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <Star
-          aria-hidden="true"
-          fill={index < rating ? "currentColor" : "none"}
-          key={index}
-          size={14}
-        />
-      ))}
-    </span>
+function uniqueSorted(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
   );
+}
+
+function valuesForFacet(recipe: Recipe, key: FacetKey) {
+  switch (key) {
+    case "ingredients":
+      return recipe.classification.ingredientsIndex;
+    case "dish":
+      return recipe.classification.dish;
+    case "format":
+      return recipe.classification.formats;
+    case "mealType":
+      return recipe.classification.mealTypes;
+    case "method":
+      return recipe.classification.cookingMethods;
+    case "cuisine":
+      return recipe.classification.cuisines;
+  }
 }
 
 export default function BrowsePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [personalVersion, setPersonalVersion] = useState(0);
   const [query, setQuery] = useState("");
-  const [facets, setFacets] = useState<FacetState>(EMPTY_FACETS);
-  const [tested, setTested] = useState<TestedFilter>("all");
-  const [minimumRating, setMinimumRating] = useState(0);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [thisWeekendOnly, setThisWeekendOnly] = useState(false);
-  const [sort, setSort] = useState<SortOption>("recent");
-  const [view, setView] = useState<ViewMode>("grid");
+  const [filters, setFilters] =
+    useState<Record<FacetKey, string[]>>(EMPTY_FILTERS);
+  const [personalFilters, setPersonalFilters] = useState<PersonalFilter[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sort, setSort] = useState<SortValue>("title-asc");
+  const [view, setView] = useState<ViewValue>("grid");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const refresh = () => setRecipes(getStoredRecipes());
-    refresh();
-    window.addEventListener("recipe-library:updated", refresh);
-    return () => window.removeEventListener("recipe-library:updated", refresh);
+    const initialQuery = new URLSearchParams(window.location.search).get("q");
+    if (initialQuery) setQuery(initialQuery);
   }, []);
 
-  const options = useMemo(
-    () => ({
-      mainIngredient: uniqueSorted(
-        recipes.flatMap((recipe) => recipe.classification.mainIngredients),
+  useEffect(
+    () =>
+      subscribeToPersonalState(() => {
+        getSupabaseRecipes()
+          .then((items) => setRecipes(items))
+          .catch(() => undefined);
+        setPersonalVersion((version) => version + 1);
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    getSupabaseRecipes()
+      .then((items) => {
+        if (active) setRecipes(items);
+      })
+      .catch((reason: unknown) => {
+        if (active) {
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Could not load recipes.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const personalisedRecipes = useMemo(
+    () => recipes.map(mergePersonalState),
+    [recipes, personalVersion],
+  );
+
+  const facetOptions = useMemo(() => {
+    return {
+      ingredients: uniqueSorted(
+        personalisedRecipes.flatMap(
+          (recipe) => recipe.classification.ingredientsIndex,
+        ),
       ),
-      dishType: uniqueSorted(
-        recipes.flatMap((recipe) => recipe.classification.dishTypes),
+      dish: uniqueSorted(
+        personalisedRecipes.flatMap((recipe) => recipe.classification.dish),
+      ),
+      format: uniqueSorted(
+        personalisedRecipes.flatMap(
+          (recipe) => recipe.classification.formats,
+        ),
+      ),
+      mealType: uniqueSorted(
+        personalisedRecipes.flatMap(
+          (recipe) => recipe.classification.mealTypes,
+        ),
       ),
       method: uniqueSorted(
-        recipes.flatMap((recipe) => recipe.classification.cookingMethods),
+        personalisedRecipes.flatMap(
+          (recipe) => recipe.classification.cookingMethods,
+        ),
       ),
       cuisine: uniqueSorted(
-        recipes.flatMap((recipe) => recipe.classification.cuisines),
+        personalisedRecipes.flatMap(
+          (recipe) => recipe.classification.cuisines,
+        ),
       ),
-      collection: uniqueSorted(
-        recipes.flatMap((recipe) => recipe.classification.collections),
+    };
+  }, [personalisedRecipes]);
+
+  const activeFilterCount = useMemo(
+    () =>
+      Object.values(filters).reduce(
+        (total, selectedValues) => total + selectedValues.length,
+        personalFilters.length,
       ),
-      source: uniqueSorted(
-        recipes.map((recipe) => recipe.source.publication),
-      ),
-      author: uniqueSorted(recipes.map((recipe) => recipe.source.author)),
-    }),
-    [recipes],
+    [filters, personalFilters],
   );
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const queryTerms = normalize(query).split(/\s+/).filter(Boolean);
 
-    return recipes
-      .filter((recipe) => {
-        if (normalized && !getSearchText(recipe).includes(normalized)) return false;
-        if (
-          facets.mainIngredient &&
-          !recipe.classification.mainIngredients.includes(facets.mainIngredient)
-        ) return false;
-        if (
-          facets.dishType &&
-          !recipe.classification.dishTypes.includes(facets.dishType)
-        ) return false;
-        if (
-          facets.method &&
-          !recipe.classification.cookingMethods.includes(facets.method)
-        ) return false;
-        if (
-          facets.cuisine &&
-          !recipe.classification.cuisines.includes(facets.cuisine)
-        ) return false;
-        if (
-          facets.collection &&
-          !recipe.classification.collections.includes(facets.collection)
-        ) return false;
-        if (facets.source && recipe.source.publication !== facets.source) return false;
-        if (facets.author && recipe.source.author !== facets.author) return false;
-        if (tested === "tested" && !recipe.personal.tested) return false;
-        if (tested === "not_tested" && recipe.personal.tested) return false;
-        if ((recipe.personal.rating ?? 0) < minimumRating) return false;
-        if (favoritesOnly && !recipe.personal.favorite) return false;
-        if (thisWeekendOnly && !recipe.personal.thisWeekend) return false;
-        return true;
-      })
-      .sort((a, b) => {
-        if (sort === "alphabetical") return a.title.localeCompare(b.title);
-        if (sort === "rating") {
-          return (b.personal.rating ?? 0) - (a.personal.rating ?? 0);
+    const matches = personalisedRecipes.filter((recipe) => {
+      if (queryTerms.length) {
+        const haystack = normalize(
+          [
+            recipe.title,
+            recipe.source.author,
+            recipe.source.type,
+            recipe.summary,
+            recipe.personal.privateNotes,
+            ...recipe.classification.ingredientsIndex,
+            ...recipe.classification.dish,
+            ...recipe.classification.formats,
+            ...recipe.classification.mealTypes,
+            ...recipe.classification.cuisines,
+            ...recipe.classification.cookingMethods,
+            ...getRecipeIngredients(recipe).map((item) => item.originalLine),
+          ]
+            .filter(Boolean)
+            .join(" "),
+        );
+
+        if (!queryTerms.every((term) => haystack.includes(term))) {
+          return false;
         }
-        return b.createdAt.localeCompare(a.createdAt);
-      });
-  }, [facets, favoritesOnly, minimumRating, query, recipes, sort, tested, thisWeekendOnly]);
+      }
 
-  const hasFilters = Boolean(
-    query ||
-      Object.values(facets).some(Boolean) ||
-      tested !== "all" ||
-      minimumRating ||
-      favoritesOnly ||
-      thisWeekendOnly,
-  );
+      if (
+        filters.ingredients.length &&
+        !filters.ingredients.every((ingredient) =>
+          recipe.classification.ingredientsIndex.includes(ingredient),
+        )
+      ) {
+        return false;
+      }
 
-  function setFacet(key: FacetKey, value: string) {
-    setFacets((current) => ({ ...current, [key]: value }));
-  }
+      for (const key of [
+        "dish",
+        "format",
+        "mealType",
+        "method",
+        "cuisine",
+      ] as FacetKey[]) {
+        const selected = filters[key];
+        if (
+          selected.length &&
+          !selected.some((value) => valuesForFacet(recipe, key).includes(value))
+        ) {
+          return false;
+        }
+      }
 
-  function clearFilters() {
-    setQuery("");
-    setFacets(EMPTY_FACETS);
-    setTested("all");
-    setMinimumRating(0);
-    setFavoritesOnly(false);
-    setThisWeekendOnly(false);
-  }
+      if (
+        personalFilters.length &&
+        !personalFilters.every((key) => recipe.personal[key])
+      ) {
+        return false;
+      }
 
-  function toggleFavorite(event: React.MouseEvent, recipe: Recipe) {
-    event.preventDefault();
-    event.stopPropagation();
-    saveRecipe({
-      ...recipe,
-      personal: {
-        ...recipe.personal,
-        favorite: !recipe.personal.favorite,
-      },
+      return true;
     });
+
+    return [...matches].sort((a, b) => {
+      if (sort === "title-desc") {
+        return b.title.localeCompare(a.title, undefined, {
+          sensitivity: "base",
+        });
+      }
+
+      if (sort === "newest") {
+        return (
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+      }
+
+      return a.title.localeCompare(b.title, undefined, {
+        sensitivity: "base",
+      });
+    });
+  }, [filters, personalFilters, personalisedRecipes, query, sort]);
+
+  function addFilter(key: FacetKey, value: string) {
+    if (!value) return;
+    setFilters((current) => ({
+      ...current,
+      [key]: current[key].includes(value)
+        ? current[key]
+        : [...current[key], value],
+    }));
   }
+
+  function removeFilter(key: FacetKey, value: string) {
+    setFilters((current) => ({
+      ...current,
+      [key]: current[key].filter((selected) => selected !== value),
+    }));
+  }
+
+  function togglePersonalFilter(key: PersonalFilter) {
+    setPersonalFilters((current) =>
+      current.includes(key)
+        ? current.filter((value) => value !== key)
+        : [...current, key],
+    );
+  }
+
+  function clearAll() {
+    setFilters(EMPTY_FILTERS);
+    setPersonalFilters([]);
+    setQuery("");
+  }
+
+  const hasSearchOrFilters = Boolean(query.trim()) || activeFilterCount > 0;
 
   return (
     <main className={styles.page}>
@@ -225,168 +327,282 @@ export default function BrowsePage() {
             <p className={styles.eyebrow}>Your library</p>
             <h1>Browse recipes</h1>
           </div>
-          <Link className={styles.addButton} href="/paste">Add recipe</Link>
+
         </div>
 
         <div className={styles.searchRow}>
-          <label className={styles.search}>
+          <div className={styles.search}>
             <Search aria-hidden="true" size={20} />
             <input
               aria-label="Search recipes"
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search title, ingredient, author..."
+              placeholder="Search title, ingredient, author or private note..."
               type="search"
               value={query}
             />
-            {query ? (
-              <button aria-label="Clear search" onClick={() => setQuery("")} type="button">
+            {query && (
+              <button
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+                type="button"
+              >
                 <X aria-hidden="true" size={18} />
               </button>
-            ) : null}
-          </label>
+            )}
+          </div>
 
           <button
-            aria-pressed={favoritesOnly}
-            className={`${styles.filterButton} ${favoritesOnly ? styles.filterButtonActive : ""}`}
-            onClick={() => setFavoritesOnly((current) => !current)}
+            aria-expanded={filtersOpen}
+            className={`${styles.filterButton} ${
+              filtersOpen || activeFilterCount
+                ? styles.filterButtonActive
+                : ""
+            }`}
+            onClick={() => setFiltersOpen((open) => !open)}
             type="button"
           >
-            <Heart aria-hidden="true" fill={favoritesOnly ? "currentColor" : "none"} size={18} />
-            Favorites
-          </button>
-
-          <button
-            aria-pressed={thisWeekendOnly}
-            className={`${styles.filterButton} ${thisWeekendOnly ? styles.filterButtonActive : ""}`}
-            onClick={() => setThisWeekendOnly((current) => !current)}
-            type="button"
-          >
-            This Weekend
+            <SlidersHorizontal aria-hidden="true" size={17} />
+            Filters{activeFilterCount ? ` (${activeFilterCount})` : ""}
           </button>
         </div>
 
-        <section className={styles.facets} aria-label="Recipe filters">
-          <label>
-            <span>Main ingredient</span>
-            <select value={facets.mainIngredient} onChange={(event) => setFacet("mainIngredient", event.target.value)}>
-              <option value="">All</option>
-              {options.mainIngredient.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Dish type</span>
-            <select value={facets.dishType} onChange={(event) => setFacet("dishType", event.target.value)}>
-              <option value="">All</option>
-              {options.dishType.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Cooking method</span>
-            <select value={facets.method} onChange={(event) => setFacet("method", event.target.value)}>
-              <option value="">All</option>
-              {options.method.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Cuisine</span>
-            <select value={facets.cuisine} onChange={(event) => setFacet("cuisine", event.target.value)}>
-              <option value="">All</option>
-              {options.cuisine.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Collection</span>
-            <select value={facets.collection} onChange={(event) => setFacet("collection", event.target.value)}>
-              <option value="">All</option>
-              {options.collection.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Source</span>
-            <select value={facets.source} onChange={(event) => setFacet("source", event.target.value)}>
-              <option value="">All</option>
-              {options.source.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Author</span>
-            <select value={facets.author} onChange={(event) => setFacet("author", event.target.value)}>
-              <option value="">All</option>
-              {options.author.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Tested</span>
-            <select value={tested} onChange={(event) => setTested(event.target.value as TestedFilter)}>
-              <option value="all">All</option>
-              <option value="tested">Tested</option>
-              <option value="not_tested">Not tested</option>
-            </select>
-          </label>
-          <label>
-            <span>Rating</span>
-            <select value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))}>
-              <option value={0}>All</option>
-              <option value={1}>1+ stars</option>
-              <option value={2}>2+ stars</option>
-              <option value={3}>3+ stars</option>
-              <option value={4}>4+ stars</option>
-              <option value={5}>5 stars</option>
-            </select>
-          </label>
-        </section>
+        {filtersOpen && (
+          <section aria-label="Recipe filters" className={styles.filterPanel}>
+            <div className={styles.personalFilters}>
+              <span>Personal</span>
+              <div>
+                {PERSONAL_FILTERS.map((filter) => {
+                  const active = personalFilters.includes(filter.key);
+                  const Icon =
+                    filter.key === "favorite"
+                      ? Heart
+                      : filter.key === "tested"
+                        ? CheckCircle2
+                        : CalendarDays;
 
-        {hasFilters ? (
-          <button className={styles.clearFilters} onClick={clearFilters} type="button">
-            Clear all filters
-          </button>
-        ) : null}
+                  return (
+                    <button
+                      aria-pressed={active}
+                      className={active ? styles.personalFilterActive : ""}
+                      key={filter.key}
+                      onClick={() => togglePersonalFilter(filter.key)}
+                      type="button"
+                    >
+                      <Icon
+                        aria-hidden="true"
+                        fill={
+                          active && filter.key === "favorite"
+                            ? "currentColor"
+                            : "none"
+                        }
+                        size={16}
+                      />
+                      {filter.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className={styles.facets}>
+              {FACETS.map((facet) => (
+                <label key={facet.key}>
+                  <span>{facet.label}</span>
+                  <select
+                    aria-label={`Filter by ${facet.label.toLowerCase()}`}
+                    onChange={(event) => {
+                      addFilter(facet.key, event.target.value);
+                      event.currentTarget.value = "";
+                    }}
+                    value=""
+                  >
+                    <option value="">{facet.placeholder}</option>
+                    {facetOptions[facet.key]
+                      .filter((value) => !filters[facet.key].includes(value))
+                      .map((value) => (
+                        <option key={value} value={value}>
+                          {humanize(value)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeFilterCount > 0 && (
+          <div className={styles.activeFilters}>
+            <span>Active filters</span>
+            {PERSONAL_FILTERS.filter((filter) =>
+              personalFilters.includes(filter.key),
+            ).map((filter) => (
+              <button
+                key={filter.key}
+                onClick={() => togglePersonalFilter(filter.key)}
+                type="button"
+              >
+                {filter.label}
+                <X aria-hidden="true" size={13} />
+              </button>
+            ))}
+            {FACETS.flatMap((facet) =>
+              filters[facet.key].map((value) => (
+                <button
+                  key={`${facet.key}-${value}`}
+                  onClick={() => removeFilter(facet.key, value)}
+                  type="button"
+                >
+                  {humanize(value)}
+                  <X aria-hidden="true" size={13} />
+                </button>
+              )),
+            )}
+            <button
+              className={styles.clearAll}
+              onClick={clearAll}
+              type="button"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </header>
 
-      <section className={styles.toolbar}>
-        <p><strong>{filtered.length}</strong> {filtered.length === 1 ? "recipe" : "recipes"}{recipes.length !== filtered.length ? ` of ${recipes.length}` : ""}</p>
-        <div className={styles.toolbarActions}>
-          <label className={styles.sortControl}>
-            <SlidersHorizontal aria-hidden="true" size={16} />
-            <select aria-label="Sort recipes" onChange={(event) => setSort(event.target.value as SortOption)} value={sort}>
-              <option value="recent">Recently added</option>
-              <option value="alphabetical">Alphabetical</option>
-              <option value="rating">Highest rated</option>
-            </select>
-          </label>
-          <div className={styles.viewToggle} aria-label="View options">
-            <button aria-label="Grid view" aria-pressed={view === "grid"} className={view === "grid" ? styles.viewActive : undefined} onClick={() => setView("grid")} type="button"><Grid2X2 aria-hidden="true" size={18} /></button>
-            <button aria-label="List view" aria-pressed={view === "list"} className={view === "list" ? styles.viewActive : undefined} onClick={() => setView("list")} type="button"><List aria-hidden="true" size={20} /></button>
-          </div>
-        </div>
-      </section>
+      {!loading && !error && (
+        <section className={styles.toolbar}>
+          <p aria-live="polite">
+            <strong>{filtered.length}</strong> of {personalisedRecipes.length} recipes
+          </p>
 
-      {filtered.length ? (
-        <section className={view === "grid" ? styles.grid : styles.list} aria-live="polite">
+          <div className={styles.toolbarActions}>
+            <label className={styles.sortControl}>
+              <span>Sort</span>
+              <select
+                aria-label="Sort recipes"
+                onChange={(event) =>
+                  setSort(event.target.value as SortValue)
+                }
+                value={sort}
+              >
+                <option value="title-asc">Title A–Z</option>
+                <option value="title-desc">Title Z–A</option>
+                <option value="newest">Recently updated</option>
+              </select>
+            </label>
+
+            <div aria-label="Recipe view" className={styles.viewToggle}>
+              <button
+                aria-label="Grid view"
+                aria-pressed={view === "grid"}
+                className={view === "grid" ? styles.viewActive : ""}
+                onClick={() => setView("grid")}
+                type="button"
+              >
+                <Grid2X2 aria-hidden="true" size={17} />
+              </button>
+              <button
+                aria-label="List view"
+                aria-pressed={view === "list"}
+                className={view === "list" ? styles.viewActive : ""}
+                onClick={() => setView("list")}
+                type="button"
+              >
+                <List aria-hidden="true" size={18} />
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {loading ? (
+        <section className={styles.empty}>
+          <h2>Loading recipes…</h2>
+        </section>
+      ) : error ? (
+        <section className={styles.empty}>
+          <h2>Could not load recipes.</h2>
+          <p>{error}</p>
+        </section>
+      ) : filtered.length ? (
+        <section className={view === "grid" ? styles.grid : styles.list}>
           {filtered.map((recipe) => {
-            const hasImage = Boolean(recipe.media.heroImage);
+            const tags = [
+              ...recipe.classification.dish,
+              ...recipe.classification.formats,
+              ...recipe.classification.mealTypes,
+            ].slice(0, 3);
+
             return (
-              <Link className={`${styles.card} ${!hasImage ? styles.cardWithoutImage : ""}`} href={`/recipes/${recipe.id}`} key={recipe.id}>
-                {hasImage ? <div className={styles.image} style={{ backgroundImage: `url("${recipe.media.heroImage}")` }} /> : null}
+              <Link
+                className={`${styles.card} ${
+                  recipe.media.heroImage ? "" : styles.cardWithoutImage
+                }`}
+                href={`/recipes/${recipe.slug}`}
+                key={recipe.id}
+              >
+                {recipe.media.heroImage && (
+                  <div
+                    className={styles.image}
+                    style={{
+                      backgroundImage: `url("${recipe.media.heroImage}")`,
+                    }}
+                  />
+                )}
                 <div className={styles.body}>
                   <div className={styles.cardTopline}>
-                    <p>{recipe.classification.mainIngredients.join(" · ") || "Recipe"}</p>
-                    <button aria-label={recipe.personal.favorite ? "Remove from favorites" : "Add to favorites"} className={styles.favoriteButton} onClick={(event) => toggleFavorite(event, recipe)} type="button">
-                      <Heart aria-hidden="true" fill={recipe.personal.favorite ? "currentColor" : "none"} size={18} />
-                    </button>
+                    <p>{tags.map(humanize).join(" · ") || "Recipe"}</p>
+                    <span className={styles.personalIcons}>
+                      {recipe.personal.favorite && (
+                        <Heart aria-label="Favorite" fill="currentColor" size={17} />
+                      )}
+                      {recipe.personal.tested && (
+                        <CheckCircle2 aria-label="Tested" size={17} />
+                      )}
+                      {recipe.personal.thisWeekend && (
+                        <CalendarDays aria-label="This weekend" size={17} />
+                      )}
+                    </span>
                   </div>
                   <h2>{recipe.title}</h2>
-                  {sourceLine(recipe) ? <span className={styles.source}>{sourceLine(recipe)}</span> : null}
-                  <div className={styles.recipeMeta}>
-                    <span>{recipe.personal.tested ? "Tested" : "Not tested"}</span>
-                    <Rating value={recipe.personal.rating} />
-                  </div>
+                  {(recipe.source.author || recipe.source.type) && (
+                    <span className={styles.source}>
+                      {[recipe.source.author, recipe.source.type]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  )}
+                  {recipe.personal.rating && (
+                    <span
+                      aria-label={`${recipe.personal.rating} out of 5 stars`}
+                      className={styles.rating}
+                    >
+                      {Array.from({ length: 5 }, (_, index) => (
+                        <Star
+                          aria-hidden="true"
+                          fill={
+                            index < (recipe.personal.rating ?? 0)
+                              ? "currentColor"
+                              : "none"
+                          }
+                          key={index}
+                          size={13}
+                        />
+                      ))}
+                    </span>
+                  )}
                   <div className={styles.nutrition}>
-                    <strong>{recipe.nutrition.calories.min === null ? "Nutrition not provided" : `${formatRange(recipe.nutrition.calories)} kcal`}</strong>
-                    <span>{displayMacro(recipe.nutrition.proteinG, " g P")}</span>
-                    <span>{displayMacro(recipe.nutrition.carbohydratesG, " g C")}</span>
-                    <span>{displayMacro(recipe.nutrition.fatG, " g F")}</span>
-                    <span>{displayMacro(recipe.nutrition.fiberG, " g fiber")}</span>
+                    <strong>
+                      {recipe.nutrition.calories.min === null
+                        ? "Nutrition not calculated"
+                        : `${formatRange(recipe.nutrition.calories)} kcal`}
+                    </strong>
+                    {recipe.yield.servingsDisplay && (
+                      <span>{recipe.yield.servingsDisplay}</span>
+                    )}
+                    {recipe.yield.timeDisplay && (
+                      <span>{recipe.yield.timeDisplay}</span>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -395,9 +611,21 @@ export default function BrowsePage() {
         </section>
       ) : (
         <section className={styles.empty}>
-          <h2>{recipes.length ? "No recipes match these filters." : "No saved recipes yet."}</h2>
-          <p>{recipes.length ? "Clear the filters and try again." : "Paste a recipe and save it to add it to your library."}</p>
-          {hasFilters ? <button onClick={clearFilters} type="button">Clear filters</button> : <Link href="/paste">Add recipe</Link>}
+          <h2>
+            {personalisedRecipes.length
+              ? "No recipes match these filters."
+              : "No saved recipes yet."}
+          </h2>
+          <p>
+            {hasSearchOrFilters
+              ? "Remove a filter or try a broader search."
+              : "Add your first recipe to start the library."}
+          </p>
+          {hasSearchOrFilters ? (
+            <button onClick={clearAll} type="button">
+              Clear search and filters
+            </button>
+          ) : null}
         </section>
       )}
     </main>

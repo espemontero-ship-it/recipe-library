@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import styles from "./paste.module.css";
 import { createAndSaveRecipe } from "@/lib/browserRecipeStorage";
+import { AdminGate } from "@/components/AdminGate";
 
 type NutritionRange = {
   min: string;
@@ -36,14 +37,7 @@ type ParsedRecipe = {
   fiber: NutritionRange;
   servingSuggestion: string;
   mainIngredients: string[];
-  dishTypes: string[];
   methods: string[];
-  cuisines: string[];
-  collections: string[];
-  tested: boolean;
-  favorite: boolean;
-  thisWeekend: boolean;
-  rating: number | null;
 };
 
 type Confidence = "confirmed" | "review" | "missing";
@@ -187,7 +181,7 @@ function parseMethod(lines: string[]) {
     const wasMarkdownHeading = /^###\s+/.test(rawLine.trim());
 
     if (wasMarkdownHeading) {
-      if (current) {
+      if (current !== null) {
         steps.push({
           title: current.title,
           body: current.body.join("\n\n").trim(),
@@ -200,7 +194,7 @@ function parseMethod(lines: string[]) {
       continue;
     }
 
-    if (!current) {
+    if (current === null) {
       current = { title: "Method", body: [] };
     }
     current.body.push(line);
@@ -317,14 +311,7 @@ function parseRecipe(raw: string): ParsedRecipe {
     fiber: extractRange(raw, ["Fiber", "Fibre", "Fibra"]),
     servingSuggestion: servingSuggestionLines.join("\n\n"),
     mainIngredients,
-    dishTypes: [],
     methods: inferMethods(raw),
-    cuisines: [],
-    collections: [],
-    tested: false,
-    favorite: false,
-    thisWeekend: false,
-    rating: null,
   };
 }
 
@@ -391,7 +378,7 @@ function RangeInputs({
   );
 }
 
-export default function PasteRecipePage() {
+function PasteRecipePageContent() {
   const [raw, setRaw] = useState("");
   const [parsed, setParsed] = useState<ParsedRecipe | null>(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -458,14 +445,7 @@ export default function PasteRecipePage() {
         fiber: parsed.fiber,
         servingSuggestion: parsed.servingSuggestion,
         mainIngredients: parsed.mainIngredients,
-        dishTypes: parsed.dishTypes,
         methods: parsed.methods,
-        cuisines: parsed.cuisines,
-        collections: parsed.collections,
-        tested: parsed.tested,
-        favorite: parsed.favorite,
-        thisWeekend: parsed.thisWeekend,
-        rating: parsed.rating,
         rawSourceText: raw,
       });
 
@@ -485,7 +465,7 @@ export default function PasteRecipePage() {
           <ArrowLeft aria-hidden="true" size={17} />
           Back to library
         </Link>
-        <span className={styles.version}>Importer MVP · v0.5.5</span>
+        <span className={styles.version}>Importer MVP · v0.3.4</span>
       </header>
 
       <section className={styles.intro}>
@@ -674,88 +654,46 @@ export default function PasteRecipePage() {
                 <h2>Classification</h2>
 
                 <div className={styles.twoColumns}>
-                  {[
-                    ["mainIngredients", "Main ingredients"],
-                    ["dishTypes", "Dish types"],
-                    ["methods", "Cooking methods"],
-                    ["cuisines", "Cuisines"],
-                    ["collections", "Collections"],
-                  ].map(([key, label]) => {
-                    const fieldKey = key as
-                      | "mainIngredients"
-                      | "dishTypes"
-                      | "methods"
-                      | "cuisines"
-                      | "collections";
-                    return (
-                      <div className={styles.field} key={fieldKey}>
-                        <div className={styles.fieldLabel}>
-                          <label htmlFor={fieldKey}>{label}</label>
-                          <StatusBadge value={confidence(parsed[fieldKey])} />
-                        </div>
-                        <input
-                          id={fieldKey}
-                          onChange={(event) =>
-                            updateParsed(
-                              fieldKey,
-                              event.target.value
-                                .split(",")
-                                .map((item) => item.trim())
-                                .filter(Boolean),
-                            )
-                          }
-                          placeholder="Separate values with commas"
-                          value={parsed[fieldKey].join(", ")}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className={styles.personalFields}>
-                  <label>
+                  <div className={styles.field}>
+                    <div className={styles.fieldLabel}>
+                      <label htmlFor="mainIngredients">Main ingredients</label>
+                      <StatusBadge
+                        value={confidence(parsed.mainIngredients)}
+                      />
+                    </div>
                     <input
-                      checked={parsed.tested}
-                      onChange={(event) => updateParsed("tested", event.target.checked)}
-                      type="checkbox"
-                    />
-                    Tested
-                  </label>
-                  <label>
-                    <input
-                      checked={parsed.favorite}
-                      onChange={(event) => updateParsed("favorite", event.target.checked)}
-                      type="checkbox"
-                    />
-                    Favorite
-                  </label>
-                  <label>
-                    <input
-                      checked={parsed.thisWeekend}
-                      onChange={(event) => updateParsed("thisWeekend", event.target.checked)}
-                      type="checkbox"
-                    />
-                    This Weekend
-                  </label>
-                  <div className={styles.ratingField}>
-                    <label htmlFor="rating">Rating</label>
-                    <select
-                      id="rating"
+                      id="mainIngredients"
                       onChange={(event) =>
                         updateParsed(
-                          "rating",
-                          event.target.value ? Number(event.target.value) : null,
+                          "mainIngredients",
+                          event.target.value
+                            .split(",")
+                            .map((item) => item.trim())
+                            .filter(Boolean),
                         )
                       }
-                      value={parsed.rating ?? ""}
-                    >
-                      <option value="">Not rated</option>
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <option key={rating} value={rating}>
-                          {rating} star{rating === 1 ? "" : "s"}
-                        </option>
-                      ))}
-                    </select>
+                      value={parsed.mainIngredients.join(", ")}
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <div className={styles.fieldLabel}>
+                      <label htmlFor="methods">Methods</label>
+                      <StatusBadge value={confidence(parsed.methods)} />
+                    </div>
+                    <input
+                      id="methods"
+                      onChange={(event) =>
+                        updateParsed(
+                          "methods",
+                          event.target.value
+                            .split(",")
+                            .map((item) => item.trim())
+                            .filter(Boolean),
+                        )
+                      }
+                      value={parsed.methods.join(", ")}
+                    />
                   </div>
                 </div>
               </div>
@@ -884,5 +822,14 @@ export default function PasteRecipePage() {
         </>
       )}
     </main>
+  );
+}
+
+
+export default function PasteRecipePage() {
+  return (
+    <AdminGate>
+      <PasteRecipePageContent />
+    </AdminGate>
   );
 }

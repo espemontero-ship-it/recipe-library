@@ -597,3 +597,154 @@ input {
     display: none;
   }
 }
+
+.home-recipe-card__image--empty {
+  display: grid;
+  place-items: center;
+  background: #e6eee7;
+  color: #2f5a41;
+}
+
+.home-recipe-card__image--empty > span:not(.status-label) {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(4rem, 8vw, 7rem);
+}
+
+.home-personal-empty {
+  display: flex;
+  min-height: 150px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 1px solid #dcd6ca;
+  padding: 28px 30px;
+  background: #fffdf8;
+}
+
+.home-personal-empty p {
+  margin: 0;
+  color: #6e7169;
+}
+
+.home-personal-empty a {
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+@media (max-width: 620px) {
+  .home-personal-empty {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.app-header__auth {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #dcd6ca;
+  padding: 0 12px;
+  background: transparent;
+  color: #171915;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.app-header__auth:hover {
+  border-color: #171915;
+}
+
+.login-page,
+.admin-gate {
+  display: grid;
+  min-height: calc(100vh - 70px);
+  place-items: center;
+  padding: 48px 20px;
+}
+
+.login-card,
+.admin-gate {
+  text-align: left;
+}
+
+.login-card {
+  width: min(470px, 100%);
+  border: 1px solid var(--line);
+  padding: 38px;
+  background: var(--surface);
+}
+
+.login-card h1,
+.admin-gate h1 {
+  margin: 0 0 18px;
+  font-family: var(--display);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.login-card > p:not(.eyebrow) {
+  margin: 0 0 26px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.login-card form {
+  display: grid;
+  gap: 18px;
+  margin: 28px 0 22px;
+}
+
+.login-card label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.login-card input {
+  width: 100%;
+  border: 1px solid var(--line);
+  padding: 13px 14px;
+  background: white;
+  color: var(--ink);
+}
+
+.login-card button {
+  border: 0;
+  cursor: pointer;
+}
+
+.login-card button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.login-error {
+  margin: 0 !important;
+  color: #9f2f25 !important;
+  font-size: 0.85rem;
+}
+
+.admin-gate {
+  display: flex;
+  max-width: 760px;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+@media (max-width: 760px) {
+  .app-header__auth span {
+    display: none;
+  }
+
+  .app-header__auth {
+    width: 42px;
+    justify-content: center;
+    padding: 0;
+  }
+}

@@ -2,9 +2,24 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Clock3, Share2, Star, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Heart,
+  Share2,
+  Star,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { getStoredRecipe } from "@/lib/browserRecipeStorage";
+import { useAuth } from "@/lib/auth";
+import {
+  loadPrivateRecipeNotes,
+  savePersonalState,
+  subscribeToPersonalState,
+} from "@/lib/personalRecipeState";
+import { getSupabaseRecipe } from "@/lib/supabaseRecipes";
 import {
   formatRange,
   getRecipeIngredients,
@@ -23,29 +38,101 @@ function statusLabel(status: Recipe["personal"]["status"]) {
   }[status];
 }
 
-function Stars({ value }: { value: number | null }) {
-  const rating = value ?? 0;
-  return (
-    <span className={styles.stars} aria-label={rating ? `${rating} out of 5 stars` : "Not rated"}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <Star
-          aria-hidden="true"
-          fill={index < rating ? "currentColor" : "none"}
-          key={index}
-          size={15}
-        />
-      ))}
-    </span>
-  );
-}
-
 export default function RecipePage() {
   const params = useParams<{ id: string }>();
+  const { loading: authLoading, isAdmin } = useAuth();
   const [recipe, setRecipe] = useState<Recipe | null | undefined>(undefined);
+  const [privateNotesDraft, setPrivateNotesDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
-    setRecipe(getStoredRecipe(params.id));
+    let active = true;
+    setRecipe(undefined);
+
+    getSupabaseRecipe(params.id)
+      .then((item) => {
+        if (active) setRecipe(item);
+      })
+      .catch(() => {
+        if (active) setRecipe(null);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [params.id]);
+
+  useEffect(() => {
+    if (!recipe || authLoading || !isAdmin) return;
+
+    let active = true;
+    loadPrivateRecipeNotes(recipe.id)
+      .then((notes) => {
+        if (!active) return;
+        setPrivateNotesDraft(notes ?? "");
+        setRecipe((current) =>
+          current
+            ? {
+                ...current,
+                personal: { ...current.personal, privateNotes: notes },
+              }
+            : current,
+        );
+      })
+      .catch(() => {
+        if (active) setSaveError("Could not load private notes.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, isAdmin, recipe?.id]);
+
+  useEffect(
+    () =>
+      subscribeToPersonalState(() => {
+        getSupabaseRecipe(params.id)
+          .then((item) => {
+            if (item) {
+              setRecipe((current) => ({
+                ...item,
+                personal: {
+                  ...item.personal,
+                  privateNotes: current?.personal.privateNotes ?? null,
+                },
+              }));
+            }
+          })
+          .catch(() => undefined);
+      }),
+    [params.id],
+  );
+
+  async function updatePersonal(
+    patch: Partial<
+      Pick<
+        Recipe["personal"],
+        "favorite" | "tested" | "thisWeekend" | "rating" | "privateNotes"
+      >
+    >,
+  ) {
+    if (!recipe || !isAdmin || saving) return;
+
+    setSaving(true);
+    setSaveError("");
+
+    try {
+      const updated = await savePersonalState(recipe, patch);
+      setRecipe(updated);
+    } catch (reason) {
+      setSaveError(
+        reason instanceof Error ? reason.message : "Could not save the change.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (recipe === undefined) {
     return <main className={styles.messagePage}>Loading recipe…</main>;
@@ -55,7 +142,7 @@ export default function RecipePage() {
     return (
       <main className={styles.messagePage}>
         <p className={styles.eyebrow}>Recipe not found</p>
-        <h1>This recipe is not stored in this browser.</h1>
+        <h1>This recipe was not found in the database.</h1>
         <Link href="/browse">Return to the library</Link>
       </main>
     );
@@ -63,9 +150,11 @@ export default function RecipePage() {
 
   const ingredients = getRecipeIngredients(recipe);
   const steps = getRecipeSteps(recipe);
-  const image =
-    recipe.media.heroImage ||
-    "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1800&q=88";
+  const hasPublicState =
+    recipe.personal.favorite ||
+    recipe.personal.tested ||
+    recipe.personal.thisWeekend ||
+    recipe.personal.rating !== null;
 
   return (
     <main className={styles.page}>
@@ -80,33 +169,34 @@ export default function RecipePage() {
             <Share2 aria-hidden="true" size={16} />
             Share
           </button>
-          <button type="button" className={styles.darkButton}>Edit recipe</button>
         </div>
       </div>
 
       <article>
-        <header className={styles.hero}>
-          <div
-            className={styles.heroImage}
-            role="img"
-            aria-label={recipe.title}
-            style={{ backgroundImage: `url("${image}")` }}
-          />
+        <header className={`${styles.hero} ${!recipe.media.heroImage ? styles.heroNoImage : ""}`}>
+          {recipe.media.heroImage && (
+            <div
+              className={styles.heroImage}
+              role="img"
+              aria-label={recipe.title}
+              style={{ backgroundImage: `url("${recipe.media.heroImage}")` }}
+            />
+          )}
 
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>
-              {recipe.classification.mainIngredients.length
-                ? recipe.classification.mainIngredients.join(" · ")
+              {[...recipe.classification.dish, ...recipe.classification.formats].length
+                ? [...recipe.classification.dish, ...recipe.classification.formats].join(" · ")
                 : "Recipe"}
             </p>
 
             <h1>{recipe.title}</h1>
 
-            {(recipe.source.author || recipe.source.publication) && (
+            {(recipe.source.author || recipe.source.type) && (
               <p className={styles.byline}>
                 {recipe.source.author && <span>{recipe.source.author}</span>}
-                {recipe.source.author && recipe.source.publication && <span aria-hidden="true">·</span>}
-                {recipe.source.publication && <span>{recipe.source.publication}</span>}
+                {recipe.source.author && recipe.source.type && <span aria-hidden="true">·</span>}
+                {recipe.source.type && <span>{recipe.source.type}</span>}
               </p>
             )}
 
@@ -117,14 +207,117 @@ export default function RecipePage() {
                 <span><Clock3 aria-hidden="true" size={17} />{recipe.yield.timeDisplay}</span>
               )}
               {recipe.yield.servingsDisplay && (
-                <span><Users aria-hidden="true" size={17} />{recipe.yield.servingsDisplay} servings</span>
+                <span><Users aria-hidden="true" size={17} />{recipe.yield.servingsDisplay}</span>
               )}
             </div>
 
-            <div className={styles.personalRow}>
-              <span className={styles.status}>{statusLabel(recipe.personal.status)}</span>
-              <Stars value={recipe.personal.rating} />
-            </div>
+            {(isAdmin || hasPublicState) && (
+              <section aria-label="Recipe state" className={styles.personalPanel}>
+                {isAdmin ? (
+                  <>
+                    <div className={styles.personalButtons}>
+                      <button
+                        aria-pressed={recipe.personal.favorite}
+                        className={recipe.personal.favorite ? styles.personalButtonActive : ""}
+                        disabled={saving}
+                        onClick={() =>
+                          void updatePersonal({ favorite: !recipe.personal.favorite })
+                        }
+                        type="button"
+                      >
+                        <Heart
+                          aria-hidden="true"
+                          fill={recipe.personal.favorite ? "currentColor" : "none"}
+                          size={17}
+                        />
+                        Favorite
+                      </button>
+                      <button
+                        aria-pressed={recipe.personal.tested}
+                        className={recipe.personal.tested ? styles.personalButtonActive : ""}
+                        disabled={saving}
+                        onClick={() =>
+                          void updatePersonal({ tested: !recipe.personal.tested })
+                        }
+                        type="button"
+                      >
+                        <CheckCircle2 aria-hidden="true" size={17} />
+                        Tested
+                      </button>
+                      <button
+                        aria-pressed={recipe.personal.thisWeekend}
+                        className={recipe.personal.thisWeekend ? styles.personalButtonActive : ""}
+                        disabled={saving}
+                        onClick={() =>
+                          void updatePersonal({
+                            thisWeekend: !recipe.personal.thisWeekend,
+                          })
+                        }
+                        type="button"
+                      >
+                        <CalendarDays aria-hidden="true" size={17} />
+                        This weekend
+                      </button>
+                    </div>
+
+                    <div className={styles.ratingControl}>
+                      <span>Rating</span>
+                      <div>
+                        {Array.from({ length: 5 }, (_, index) => {
+                          const value = index + 1;
+                          const selected = value <= (recipe.personal.rating ?? 0);
+
+                          return (
+                            <button
+                              aria-label={`${value} star${value === 1 ? "" : "s"}`}
+                              aria-pressed={recipe.personal.rating === value}
+                              disabled={saving}
+                              key={value}
+                              onClick={() =>
+                                void updatePersonal({
+                                  rating:
+                                    recipe.personal.rating === value ? null : value,
+                                })
+                              }
+                              type="button"
+                            >
+                              <Star
+                                aria-hidden="true"
+                                fill={selected ? "currentColor" : "none"}
+                                size={20}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className={styles.personalSummary}>
+                      <span className={styles.status}>
+                        {statusLabel(recipe.personal.status)}
+                      </span>
+                      <span>{saving ? "Saving…" : "Synced with your account"}</span>
+                    </div>
+                    {saveError && <p className={styles.saveError}>{saveError}</p>}
+                  </>
+                ) : (
+                  <div className={styles.publicState}>
+                    {recipe.personal.favorite && (
+                      <span><Heart aria-hidden="true" fill="currentColor" size={16} />Favorite</span>
+                    )}
+                    {recipe.personal.tested && (
+                      <span><CheckCircle2 aria-hidden="true" size={16} />Tested</span>
+                    )}
+                    {recipe.personal.thisWeekend && (
+                      <span><CalendarDays aria-hidden="true" size={16} />This weekend</span>
+                    )}
+                    {recipe.personal.rating !== null && (
+                      <span><Star aria-hidden="true" fill="currentColor" size={16} />{recipe.personal.rating}/5</span>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         </header>
 
@@ -187,6 +380,34 @@ export default function RecipePage() {
               <div className={styles.editorialNote}>
                 <p className={styles.noteLabel}>Serving suggestion</p>
                 <p>{recipe.servingSuggestion}</p>
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className={styles.privateNote}>
+                <label htmlFor="private-notes">Private notes</label>
+                <textarea
+                  id="private-notes"
+                  onChange={(event) => setPrivateNotesDraft(event.target.value)}
+                  placeholder="What would you change next time?"
+                  value={privateNotesDraft}
+                />
+                <div className={styles.privateNoteActions}>
+                  <p>Only visible when you are signed in.</p>
+                  <button
+                    disabled={saving}
+                    onClick={() =>
+                      void updatePersonal({
+                        privateNotes: privateNotesDraft.trim()
+                          ? privateNotesDraft
+                          : null,
+                      })
+                    }
+                    type="button"
+                  >
+                    {saving ? "Saving…" : "Save note"}
+                  </button>
+                </div>
               </div>
             )}
           </section>

@@ -2,12 +2,13 @@ import Link from "next/link";
 
 type HomeRecipeCardProps = {
   title: string;
-  author: string;
-  publication: string;
-  calories: string;
-  protein: string;
-  image: string;
+  author: string | null;
+  publication: string | null;
+  calories: string | null;
+  protein: string | null;
+  image: string | null;
   status?: string;
+  href: string;
 };
 
 export function HomeRecipeCard({
@@ -18,23 +19,28 @@ export function HomeRecipeCard({
   protein,
   image,
   status,
+  href,
 }: HomeRecipeCardProps) {
+  const source = [author, publication].filter(Boolean).join(" · ");
+  const nutrition = [calories, protein].filter(Boolean).join(" · ");
+
   return (
-    <Link className="home-recipe-card" href="/browse">
+    <Link className="home-recipe-card" href={href}>
       <div
-        className="home-recipe-card__image"
-        style={{ backgroundImage: `url("${image}")` }}
+        className={`home-recipe-card__image ${
+          image ? "" : "home-recipe-card__image--empty"
+        }`}
+        style={image ? { backgroundImage: `url("${image}")` } : undefined}
       >
         {status ? <span className="status-label">{status}</span> : null}
+        {!image ? <span aria-hidden="true">{title.slice(0, 1)}</span> : null}
       </div>
 
       <div className="home-recipe-card__body">
         <h3>{title}</h3>
-        <p>
-          {author} <span aria-hidden="true">·</span> {publication}
-        </p>
+        {source && <p>{source}</p>}
         <p className="home-recipe-card__nutrition">
-          {calories} <span aria-hidden="true">·</span> {protein}
+          {nutrition || "Nutrition not calculated"}
         </p>
       </div>
     </Link>
