@@ -1,0 +1,5 @@
+npm run build: SUCCESS
+Next.js 16.2.10
+TypeScript: SUCCESS
+Static routes generated: 7/7
+Dynamic route: /recipes/[id]

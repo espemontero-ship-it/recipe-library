@@ -97,8 +97,6 @@ export type RecipePersonal = {
   thisWeekend: boolean;
   rating: number | null;
   privateNotes: string | null;
-  timesCooked: number;
-  lastCookedAt: string | null;
 };
 
 export type RecipeMedia = {
@@ -305,8 +303,6 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
           ? null
           : Math.min(5, Math.max(1, Math.round(input.rating))),
       privateNotes: null,
-      timesCooked: 0,
-      lastCookedAt: null,
     },
     media: {
       heroImage: input.image?.trim() || null,

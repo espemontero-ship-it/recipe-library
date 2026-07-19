@@ -3,21 +3,26 @@
 import Link from "next/link";
 import {
   CalendarDays,
-  CheckCircle2,
+  CalendarPlus,
   Grid2X2,
   Heart,
   List,
   Search,
   SlidersHorizontal,
-  Star,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { BrowseRecipeCard } from "@/components/BrowseRecipeCard";
 import {
   mergePersonalState,
   subscribeToPersonalState,
 } from "@/lib/personalRecipeState";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
+import {
+  addRecipesToPlanning,
+  getPlanning,
+  subscribeToPlanning,
+} from "@/lib/planning";
 import {
   formatRange,
   getRecipeIngredients,
@@ -33,8 +38,14 @@ type FacetKey =
   | "method"
   | "cuisine";
 
-type PersonalFilter = "favorite" | "tested" | "thisWeekend";
-type SortValue = "title-asc" | "title-desc" | "newest";
+type PersonalFilter = "favorite" | "planning";
+type RatingFilter = "all" | "5" | "4plus" | "3plus" | "unrated";
+type CookedFilter = "all" | "cooked" | "never";
+type SortValue =
+  | "title-asc"
+  | "title-desc"
+  | "newest"
+  | "rating-desc";
 type ViewValue = "grid" | "list";
 
 const FACETS: {
@@ -52,8 +63,7 @@ const FACETS: {
 
 const PERSONAL_FILTERS: { key: PersonalFilter; label: string }[] = [
   { key: "favorite", label: "Favorites" },
-  { key: "tested", label: "Tested" },
-  { key: "thisWeekend", label: "This weekend" },
+  { key: "planning", label: "Planning" },
 ];
 
 const EMPTY_FILTERS: Record<FacetKey, string[]> = {
@@ -109,15 +119,42 @@ export default function BrowsePage() {
   const [filters, setFilters] =
     useState<Record<FacetKey, string[]>>(EMPTY_FILTERS);
   const [personalFilters, setPersonalFilters] = useState<PersonalFilter[]>([]);
+  const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
+  const [cookedFilter, setCookedFilter] = useState<CookedFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sort, setSort] = useState<SortValue>("title-asc");
   const [view, setView] = useState<ViewValue>("grid");
+  const [planningMode, setPlanningMode] = useState(false);
+  const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
+  const [plannedRecipeIds, setPlannedRecipeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const initialQuery = new URLSearchParams(window.location.search).get("q");
+    const params = new URLSearchParams(window.location.search);
+    const initialQuery = params.get("q");
     if (initialQuery) setQuery(initialQuery);
+    if (params.get("plan") === "1") setPlanningMode(true);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const refreshPlan = async () => {
+      try {
+        const items = await getPlanning();
+        if (active) setPlannedRecipeIds(items.map((item) => item.recipeId));
+      } catch (reason) {
+        if (active) {
+          setError(reason instanceof Error ? reason.message : "Could not load Planning.");
+        }
+      }
+    };
+    void refreshPlan();
+    const unsubscribe = subscribeToPlanning(() => void refreshPlan());
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(
@@ -130,6 +167,7 @@ export default function BrowsePage() {
       }),
     [],
   );
+
 
   useEffect(() => {
     let active = true;
@@ -198,9 +236,11 @@ export default function BrowsePage() {
     () =>
       Object.values(filters).reduce(
         (total, selectedValues) => total + selectedValues.length,
-        personalFilters.length,
+        personalFilters.length +
+          (ratingFilter === "all" ? 0 : 1) +
+          (cookedFilter === "all" ? 0 : 1),
       ),
-    [filters, personalFilters],
+    [cookedFilter, filters, personalFilters, ratingFilter],
   );
 
   const filtered = useMemo(() => {
@@ -257,9 +297,27 @@ export default function BrowsePage() {
         }
       }
 
+      if (personalFilters.includes("favorite") && !recipe.personal.favorite) {
+        return false;
+      }
+
+      if (cookedFilter === "cooked" && !recipe.personal.tested) {
+        return false;
+      }
+
+      if (cookedFilter === "never" && recipe.personal.tested) {
+        return false;
+      }
+
+      const rating = recipe.personal.rating;
+      if (ratingFilter === "5" && rating !== 5) return false;
+      if (ratingFilter === "4plus" && (rating ?? 0) < 4) return false;
+      if (ratingFilter === "3plus" && (rating ?? 0) < 3) return false;
+      if (ratingFilter === "unrated" && rating !== null) return false;
+
       if (
-        personalFilters.length &&
-        !personalFilters.every((key) => recipe.personal[key])
+        personalFilters.includes("planning") &&
+        !plannedRecipeIds.includes(recipe.id)
       ) {
         return false;
       }
@@ -280,11 +338,27 @@ export default function BrowsePage() {
         );
       }
 
+      if (sort === "rating-desc") {
+        return (
+          (b.personal.rating ?? -1) - (a.personal.rating ?? -1) ||
+          a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
+        );
+      }
+
       return a.title.localeCompare(b.title, undefined, {
         sensitivity: "base",
       });
     });
-  }, [filters, personalFilters, personalisedRecipes, query, sort]);
+  }, [
+    cookedFilter,
+    filters,
+    personalFilters,
+    personalisedRecipes,
+    plannedRecipeIds,
+    query,
+    ratingFilter,
+    sort,
+  ]);
 
   function addFilter(key: FacetKey, value: string) {
     if (!value) return;
@@ -314,7 +388,43 @@ export default function BrowsePage() {
   function clearAll() {
     setFilters(EMPTY_FILTERS);
     setPersonalFilters([]);
+    setRatingFilter("all");
+    setCookedFilter("all");
     setQuery("");
+  }
+
+  function updateRecipeInList(updated: Recipe) {
+    setRecipes((current) =>
+      current.map((recipe) => (recipe.id === updated.id ? updated : recipe)),
+    );
+    setPersonalVersion((version) => version + 1);
+  }
+
+  function togglePlanningMode() {
+    setPlanningMode((current) => !current);
+    setSelectedRecipeIds([]);
+  }
+
+  function toggleRecipeSelection(recipeId: string) {
+    setSelectedRecipeIds((current) =>
+      current.includes(recipeId)
+        ? current.filter((id) => id !== recipeId)
+        : [...current, recipeId],
+    );
+  }
+
+  async function addSelectionToPlanning() {
+    const selectedRecipes = personalisedRecipes.filter((recipe) =>
+      selectedRecipeIds.includes(recipe.id),
+    );
+    try {
+      await addRecipesToPlanning(selectedRecipes);
+      setSelectedRecipeIds([]);
+      setPlanningMode(false);
+      window.location.href = "/planning";
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not update Planning.");
+    }
   }
 
   const hasSearchOrFilters = Boolean(query.trim()) || activeFilterCount > 0;
@@ -328,6 +438,17 @@ export default function BrowsePage() {
             <h1>Browse recipes</h1>
           </div>
 
+          <button
+            aria-pressed={planningMode}
+            className={`${styles.planModeButton} ${
+              planningMode ? styles.planModeButtonActive : ""
+            }`}
+            onClick={togglePlanningMode}
+            type="button"
+          >
+            <CalendarPlus aria-hidden="true" size={17} />
+            {planningMode ? "Cancel selection" : "Plan recipes"}
+          </button>
         </div>
 
         <div className={styles.searchRow}>
@@ -374,11 +495,7 @@ export default function BrowsePage() {
                 {PERSONAL_FILTERS.map((filter) => {
                   const active = personalFilters.includes(filter.key);
                   const Icon =
-                    filter.key === "favorite"
-                      ? Heart
-                      : filter.key === "tested"
-                        ? CheckCircle2
-                        : CalendarDays;
+                    filter.key === "favorite" ? Heart : CalendarDays;
 
                   return (
                     <button
@@ -402,6 +519,40 @@ export default function BrowsePage() {
                   );
                 })}
               </div>
+            </div>
+
+            <div className={styles.historyFilters}>
+              <label>
+                <span>Cooked</span>
+                <select
+                  aria-label="Filter by cooking history"
+                  onChange={(event) =>
+                    setCookedFilter(event.target.value as CookedFilter)
+                  }
+                  value={cookedFilter}
+                >
+                  <option value="all">All recipes</option>
+                  <option value="cooked">Made before</option>
+                  <option value="never">Never made</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Rating</span>
+                <select
+                  aria-label="Filter by rating"
+                  onChange={(event) =>
+                    setRatingFilter(event.target.value as RatingFilter)
+                  }
+                  value={ratingFilter}
+                >
+                  <option value="all">Any rating</option>
+                  <option value="5">5 stars</option>
+                  <option value="4plus">4 stars or more</option>
+                  <option value="3plus">3 stars or more</option>
+                  <option value="unrated">Not rated</option>
+                </select>
+              </label>
             </div>
 
             <div className={styles.facets}>
@@ -446,6 +597,23 @@ export default function BrowsePage() {
                 <X aria-hidden="true" size={13} />
               </button>
             ))}
+            {cookedFilter !== "all" && (
+              <button onClick={() => setCookedFilter("all")} type="button">
+                {cookedFilter === "cooked" ? "Made before" : "Never made"}
+                <X aria-hidden="true" size={13} />
+              </button>
+            )}
+            {ratingFilter !== "all" && (
+              <button onClick={() => setRatingFilter("all")} type="button">
+                {{
+                  "5": "5 stars",
+                  "4plus": "4+ stars",
+                  "3plus": "3+ stars",
+                  unrated: "Not rated",
+                }[ratingFilter]}
+                <X aria-hidden="true" size={13} />
+              </button>
+            )}
             {FACETS.flatMap((facet) =>
               filters[facet.key].map((value) => (
                 <button
@@ -488,6 +656,7 @@ export default function BrowsePage() {
                 <option value="title-asc">Title A–Z</option>
                 <option value="title-desc">Title Z–A</option>
                 <option value="newest">Recently updated</option>
+                <option value="rating-desc">Highest rated</option>
               </select>
             </label>
 
@@ -527,85 +696,22 @@ export default function BrowsePage() {
       ) : filtered.length ? (
         <section className={view === "grid" ? styles.grid : styles.list}>
           {filtered.map((recipe) => {
-            const tags = [
-              ...recipe.classification.dish,
-              ...recipe.classification.formats,
-              ...recipe.classification.mealTypes,
-            ].slice(0, 3);
+            const selected = selectedRecipeIds.includes(recipe.id);
+            const alreadyPlanned = plannedRecipeIds.includes(recipe.id);
 
             return (
-              <Link
-                className={`${styles.card} ${
-                  recipe.media.heroImage ? "" : styles.cardWithoutImage
-                }`}
-                href={`/recipes/${recipe.slug}`}
+              <BrowseRecipeCard
+                alreadyPlanned={alreadyPlanned}
                 key={recipe.id}
-              >
-                {recipe.media.heroImage && (
-                  <div
-                    className={styles.image}
-                    style={{
-                      backgroundImage: `url("${recipe.media.heroImage}")`,
-                    }}
-                  />
-                )}
-                <div className={styles.body}>
-                  <div className={styles.cardTopline}>
-                    <p>{tags.map(humanize).join(" · ") || "Recipe"}</p>
-                    <span className={styles.personalIcons}>
-                      {recipe.personal.favorite && (
-                        <Heart aria-label="Favorite" fill="currentColor" size={17} />
-                      )}
-                      {recipe.personal.tested && (
-                        <CheckCircle2 aria-label="Tested" size={17} />
-                      )}
-                      {recipe.personal.thisWeekend && (
-                        <CalendarDays aria-label="This weekend" size={17} />
-                      )}
-                    </span>
-                  </div>
-                  <h2>{recipe.title}</h2>
-                  {(recipe.source.author || recipe.source.type) && (
-                    <span className={styles.source}>
-                      {[recipe.source.author, recipe.source.type]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  )}
-                  {recipe.personal.rating && (
-                    <span
-                      aria-label={`${recipe.personal.rating} out of 5 stars`}
-                      className={styles.rating}
-                    >
-                      {Array.from({ length: 5 }, (_, index) => (
-                        <Star
-                          aria-hidden="true"
-                          fill={
-                            index < (recipe.personal.rating ?? 0)
-                              ? "currentColor"
-                              : "none"
-                          }
-                          key={index}
-                          size={13}
-                        />
-                      ))}
-                    </span>
-                  )}
-                  <div className={styles.nutrition}>
-                    <strong>
-                      {recipe.nutrition.calories.min === null
-                        ? "Nutrition not calculated"
-                        : `${formatRange(recipe.nutrition.calories)} kcal`}
-                    </strong>
-                    {recipe.yield.servingsDisplay && (
-                      <span>{recipe.yield.servingsDisplay}</span>
-                    )}
-                    {recipe.yield.timeDisplay && (
-                      <span>{recipe.yield.timeDisplay}</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
+                onRecipeChange={updateRecipeInList}
+                onToggleSelection={() => {
+                  if (!alreadyPlanned) toggleRecipeSelection(recipe.id);
+                }}
+                planningMode={planningMode}
+                recipe={recipe}
+                selected={selected}
+                view={view}
+              />
             );
           })}
         </section>
@@ -627,6 +733,25 @@ export default function BrowsePage() {
             </button>
           ) : null}
         </section>
+      )}
+
+      {planningMode && (
+        <aside className={styles.selectionTray} aria-live="polite">
+          <div>
+            <CalendarDays aria-hidden="true" size={20} />
+            <p>
+              <strong>{selectedRecipeIds.length} selected</strong>
+              <span>They will be added to this week first.</span>
+            </p>
+          </div>
+          <button
+            disabled={!selectedRecipeIds.length}
+            onClick={() => void addSelectionToPlanning()}
+            type="button"
+          >
+            Add to this week
+          </button>
+        </aside>
       )}
     </main>
   );

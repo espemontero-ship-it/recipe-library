@@ -1,0 +1,6 @@
+Recipe Library v0.9.1.7 QA
+- Installer upgrade path: v0.9.1.6 -> v0.9.1.7
+- Installer fresh path: v0.9.1.3-compatible fixture -> v0.9.1.7
+- Migration has no static ALTER/UPDATE dependency on a recipe table name.
+- Active table detection order: recipe_private_state FK, known tables, compatible public table.
+- Backfill obtains the selected table through recipe_library_active_table(), then falls back to known names.

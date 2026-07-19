@@ -1,0 +1,537 @@
+.page {
+  --paper: #fffdf8;
+  --warm: #f7f3eb;
+  --ink: #171915;
+  --muted: #6e7169;
+  --line: #dcd6ca;
+  --green: #2f5a41;
+  --green-soft: #e6eee7;
+  max-width: 1440px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0 42px 100px;
+  color: var(--ink);
+}
+
+.topBar {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.version,
+.stepLabel,
+.sectionNumber,
+.eyebrow {
+  color: var(--green);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.intro {
+  max-width: 940px;
+  padding: 82px 0 54px;
+}
+
+.intro h1 {
+  max-width: 920px;
+  margin: 16px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(4.2rem, 8vw, 8rem);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 0.9;
+}
+
+.intro > p:last-child {
+  max-width: 670px;
+  margin: 28px 0 0;
+  color: var(--muted);
+  font-size: 1.04rem;
+  line-height: 1.7;
+}
+
+.pasteLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  align-items: start;
+}
+
+.pastePanel,
+.helpPanel,
+.originalPanel,
+.extractedPanel,
+.reviewSummary {
+  background: var(--paper);
+}
+
+.pastePanel {
+  padding: 32px;
+  border: 1px solid var(--line);
+}
+
+.panelHeading,
+.fieldLabel,
+.pasteActions,
+.saveBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.panelHeading h2,
+.reviewSummary h2,
+.formSection h2,
+.helpPanel h2 {
+  margin: 6px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+
+.pastePanel textarea {
+  width: 100%;
+  min-height: 440px;
+  margin-top: 28px;
+  border: 1px solid var(--line);
+  padding: 22px;
+  resize: vertical;
+  background: white;
+  color: var(--ink);
+  font: 0.92rem/1.65 "DM Sans", Arial, sans-serif;
+  outline: 0;
+}
+
+.pastePanel textarea:focus,
+.field input:focus,
+.extractedPanel textarea:focus,
+.rangeInputs input:focus,
+.methodStep input:focus,
+.methodStep textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(47, 90, 65, 0.12);
+}
+
+.pasteActions {
+  margin-top: 18px;
+}
+
+.primaryButton,
+.sampleButton,
+.textButton {
+  min-height: 44px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 18px;
+  background: var(--ink);
+  color: white;
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.sampleButton,
+.textButton {
+  padding: 0;
+  background: transparent;
+  color: var(--green);
+}
+
+.helpPanel {
+  position: sticky;
+  top: 24px;
+  padding: 30px;
+  border-top: 4px solid var(--green);
+}
+
+.helpPanel p,
+.helpPanel li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.helpPanel ul {
+  padding-left: 20px;
+}
+
+.reviewSummary {
+  padding: 30px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.reviewChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.reviewChips > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  padding: 5px 7px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.status_confirmed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.status_review {
+  background: #f8ead1;
+  color: #7a4e0f;
+}
+
+.status_missing {
+  background: #f4dddd;
+  color: #8b3434;
+}
+
+.reviewLayout {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.78fr) minmax(0, 1.22fr);
+  gap: 28px;
+  margin-top: 28px;
+  align-items: start;
+}
+
+.originalPanel {
+  position: sticky;
+  top: 22px;
+  max-height: calc(100vh - 44px);
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid var(--line);
+}
+
+.originalPanel pre {
+  margin: 24px 0 0;
+  white-space: pre-wrap;
+  color: var(--muted);
+  font: 0.78rem/1.65 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.extractedPanel {
+  border: 1px solid var(--line);
+}
+
+.formSection {
+  padding: 38px;
+  border-bottom: 1px solid var(--line);
+}
+
+.formSection h2 {
+  margin-bottom: 28px;
+  font-size: 2.4rem;
+}
+
+.field {
+  margin-top: 20px;
+}
+
+.fieldLabel {
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.fieldLabel label,
+.fieldLabel > span:first-child {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.field input,
+.extractedPanel textarea,
+.rangeInputs input,
+.methodStep input,
+.methodStep textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  outline: 0;
+}
+
+.field input,
+.rangeInputs input,
+.methodStep input {
+  min-height: 48px;
+  padding: 0 13px;
+}
+
+.extractedPanel textarea,
+.methodStep textarea {
+  min-height: 150px;
+  padding: 15px;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.6;
+}
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.ingredientsTextarea {
+  min-height: 340px !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 1rem !important;
+}
+
+.methodEditor {
+  display: grid;
+  gap: 24px;
+}
+
+.methodStep {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.methodStep > span {
+  padding-top: 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.7rem;
+}
+
+.methodStep input {
+  font-weight: 800;
+}
+
+.methodStep textarea {
+  min-height: 130px;
+  margin-top: 8px;
+}
+
+.nutritionGrid {
+  display: grid;
+  gap: 20px;
+}
+
+.rangeInputs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: 9px;
+  align-items: center;
+}
+
+.rangeInputs > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  padding: 20px 28px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.saveBar p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.savedMessage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--green) !important;
+  font-weight: 800;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1000px) {
+  .page {
+    padding-inline: 24px;
+  }
+
+  .pasteLayout,
+  .reviewLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .helpPanel,
+  .originalPanel {
+    position: static;
+  }
+
+  .originalPanel {
+    max-height: 500px;
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 0 16px 70px;
+  }
+
+  .version {
+    display: none;
+  }
+
+  .intro {
+    padding: 56px 0 38px;
+  }
+
+  .intro h1 {
+    font-size: clamp(3.5rem, 16vw, 5.4rem);
+  }
+
+  .pastePanel,
+  .helpPanel,
+  .reviewSummary,
+  .originalPanel {
+    padding: 22px;
+  }
+
+  .pastePanel textarea {
+    min-height: 390px;
+  }
+
+  .pasteActions,
+  .saveBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sampleButton {
+    min-height: 42px;
+  }
+
+  .formSection {
+    padding: 28px 20px;
+  }
+
+  .twoColumns {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .rangeInputs {
+    grid-template-columns: 1fr auto 1fr auto;
+  }
+
+  .reviewChips {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .reviewChips > span {
+    justify-content: space-between;
+  }
+
+  .saveBar {
+    align-items: stretch;
+  }
+}
+
+.personalFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: end;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.personalFields > label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.personalFields input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.ratingField {
+  display: grid;
+  gap: 7px;
+  min-width: 150px;
+}
+
+.ratingField label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.ratingField select {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  padding: 0 12px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}

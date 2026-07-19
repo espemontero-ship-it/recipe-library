@@ -9,6 +9,8 @@ import { useAuth } from "@/lib/auth";
 const links = [
   { href: "/", label: "Home" },
   { href: "/browse", label: "Browse" },
+  { href: "/planning", label: "Planning" },
+  { href: "/shopping", label: "Shopping" },
 ];
 
 export function AppHeader() {

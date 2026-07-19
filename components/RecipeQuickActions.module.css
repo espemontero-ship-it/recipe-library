@@ -1,0 +1,82 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconButton,
+.cookedButton,
+.starButton {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dcd6ca;
+  background: #fffdf8;
+  color: #4f544c;
+  cursor: pointer;
+  font: inherit;
+}
+
+.iconButton {
+  width: 36px;
+}
+
+.cookedButton {
+  gap: 7px;
+  padding: 0 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.iconButton:hover,
+.cookedButton:hover,
+.starButton:hover,
+.active {
+  border-color: #2f5a41;
+  background: #e6eee7;
+  color: #2f5a41;
+}
+
+.iconButton:disabled,
+.cookedButton:disabled,
+.starButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 2px;
+}
+
+.starButton {
+  width: 28px;
+  min-height: 34px;
+  border-color: transparent;
+  padding: 0;
+  background: transparent;
+}
+
+.starButton:hover,
+.starButton.active {
+  border-color: transparent;
+  background: transparent;
+}
+
+.error {
+  width: 100%;
+  margin: 0;
+  color: #9f2f25;
+  font-size: 0.7rem;
+}
+
+.iconButton:focus-visible,
+.cookedButton:focus-visible,
+.starButton:focus-visible {
+  outline: 3px solid #a4c7ae;
+  outline-offset: 2px;
+}

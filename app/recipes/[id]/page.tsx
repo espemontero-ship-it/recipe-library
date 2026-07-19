@@ -5,21 +5,30 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
+  CalendarPlus,
   CheckCircle2,
   Clock3,
+  ExternalLink,
   Heart,
   Share2,
   Star,
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { useAuth } from "@/lib/auth";
 import {
   loadPrivateRecipeNotes,
+  mergePersonalState,
   savePersonalState,
   subscribeToPersonalState,
 } from "@/lib/personalRecipeState";
 import { getSupabaseRecipe } from "@/lib/supabaseRecipes";
+import {
+  addRecipesToPlanning,
+  getPlanning,
+  subscribeToPlanning,
+} from "@/lib/planning";
 import {
   formatRange,
   getRecipeIngredients,
@@ -45,6 +54,7 @@ export default function RecipePage() {
   const [privateNotesDraft, setPrivateNotesDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [inPlanning, setInPlanning] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -52,7 +62,7 @@ export default function RecipePage() {
 
     getSupabaseRecipe(params.id)
       .then((item) => {
-        if (active) setRecipe(item);
+        if (active) setRecipe(item ? mergePersonalState(item) : item);
       })
       .catch(() => {
         if (active) setRecipe(null);
@@ -89,16 +99,35 @@ export default function RecipePage() {
     };
   }, [authLoading, isAdmin, recipe?.id]);
 
+  useEffect(() => {
+    let active = true;
+    const refreshPlan = async () => {
+      try {
+        const items = await getPlanning();
+        if (active) setInPlanning(items.some((item) => item.recipeId === recipe?.id));
+      } catch {
+        if (active) setInPlanning(false);
+      }
+    };
+    void refreshPlan();
+    const unsubscribe = subscribeToPlanning(() => void refreshPlan());
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [recipe?.id]);
+
   useEffect(
     () =>
       subscribeToPersonalState(() => {
         getSupabaseRecipe(params.id)
           .then((item) => {
             if (item) {
+              const merged = mergePersonalState(item);
               setRecipe((current) => ({
-                ...item,
+                ...merged,
                 personal: {
-                  ...item.personal,
+                  ...merged.personal,
                   privateNotes: current?.personal.privateNotes ?? null,
                 },
               }));
@@ -108,6 +137,7 @@ export default function RecipePage() {
       }),
     [params.id],
   );
+
 
   async function updatePersonal(
     patch: Partial<
@@ -134,6 +164,16 @@ export default function RecipePage() {
     }
   }
 
+  async function addToPlanning() {
+    if (!recipe || inPlanning) return;
+    try {
+      await addRecipesToPlanning([recipe]);
+      setInPlanning(true);
+    } catch (reason) {
+      setSaveError(reason instanceof Error ? reason.message : "Could not update Planning.");
+    }
+  }
+
   if (recipe === undefined) {
     return <main className={styles.messagePage}>Loading recipe…</main>;
   }
@@ -153,7 +193,6 @@ export default function RecipePage() {
   const hasPublicState =
     recipe.personal.favorite ||
     recipe.personal.tested ||
-    recipe.personal.thisWeekend ||
     recipe.personal.rating !== null;
 
   return (
@@ -165,6 +204,24 @@ export default function RecipePage() {
         </Link>
 
         <div className={styles.utilityActions}>
+          {inPlanning ? (
+            <Link
+              className={`${styles.quietButton} ${styles.weekButtonActive}`}
+              href="/planning"
+            >
+              <CalendarDays aria-hidden="true" size={16} />
+              Open planning
+            </Link>
+          ) : (
+            <button
+              className={styles.quietButton}
+              onClick={() => void addToPlanning()}
+              type="button"
+            >
+              <CalendarPlus aria-hidden="true" size={16} />
+              Add to planning
+            </button>
+          )}
           <button type="button" className={styles.quietButton}>
             <Share2 aria-hidden="true" size={16} />
             Share
@@ -200,6 +257,18 @@ export default function RecipePage() {
               </p>
             )}
 
+            {recipe.source.originalUrl && (
+              <a
+                className={styles.sourceLink}
+                href={recipe.source.originalUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                View original recipe
+                <ExternalLink aria-hidden="true" size={15} />
+              </a>
+            )}
+
             {recipe.summary && <p className={styles.description}>{recipe.summary}</p>}
 
             <div className={styles.metaRow}>
@@ -215,88 +284,30 @@ export default function RecipePage() {
               <section aria-label="Recipe state" className={styles.personalPanel}>
                 {isAdmin ? (
                   <>
-                    <div className={styles.personalButtons}>
-                      <button
-                        aria-pressed={recipe.personal.favorite}
-                        className={recipe.personal.favorite ? styles.personalButtonActive : ""}
-                        disabled={saving}
-                        onClick={() =>
-                          void updatePersonal({ favorite: !recipe.personal.favorite })
-                        }
-                        type="button"
-                      >
-                        <Heart
-                          aria-hidden="true"
-                          fill={recipe.personal.favorite ? "currentColor" : "none"}
-                          size={17}
-                        />
-                        Favorite
-                      </button>
-                      <button
-                        aria-pressed={recipe.personal.tested}
-                        className={recipe.personal.tested ? styles.personalButtonActive : ""}
-                        disabled={saving}
-                        onClick={() =>
-                          void updatePersonal({ tested: !recipe.personal.tested })
-                        }
-                        type="button"
-                      >
-                        <CheckCircle2 aria-hidden="true" size={17} />
-                        Tested
-                      </button>
-                      <button
-                        aria-pressed={recipe.personal.thisWeekend}
-                        className={recipe.personal.thisWeekend ? styles.personalButtonActive : ""}
-                        disabled={saving}
-                        onClick={() =>
-                          void updatePersonal({
-                            thisWeekend: !recipe.personal.thisWeekend,
-                          })
-                        }
-                        type="button"
-                      >
-                        <CalendarDays aria-hidden="true" size={17} />
-                        This weekend
-                      </button>
-                    </div>
-
-                    <div className={styles.ratingControl}>
-                      <span>Rating</span>
-                      <div>
-                        {Array.from({ length: 5 }, (_, index) => {
-                          const value = index + 1;
-                          const selected = value <= (recipe.personal.rating ?? 0);
-
-                          return (
-                            <button
-                              aria-label={`${value} star${value === 1 ? "" : "s"}`}
-                              aria-pressed={recipe.personal.rating === value}
-                              disabled={saving}
-                              key={value}
-                              onClick={() =>
-                                void updatePersonal({
-                                  rating:
-                                    recipe.personal.rating === value ? null : value,
-                                })
-                              }
-                              type="button"
-                            >
-                              <Star
-                                aria-hidden="true"
-                                fill={selected ? "currentColor" : "none"}
-                                size={20}
-                              />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <RecipeQuickActions
+                      onChange={(updated) =>
+                        setRecipe({
+                          ...updated,
+                          personal: {
+                            ...updated.personal,
+                            privateNotes: recipe.personal.privateNotes,
+                          },
+                        })
+                      }
+                      recipe={recipe}
+                    />
 
                     <div className={styles.personalSummary}>
                       <span className={styles.status}>
                         {statusLabel(recipe.personal.status)}
                       </span>
-                      <span>{saving ? "Saving…" : "Synced with your account"}</span>
+                      <span>
+                        {saving
+                          ? "Saving…"
+                          : recipe.personal.tested
+                            ? "Made"
+                            : "Not made yet"}
+                      </span>
                     </div>
                     {saveError && <p className={styles.saveError}>{saveError}</p>}
                   </>
@@ -306,10 +317,10 @@ export default function RecipePage() {
                       <span><Heart aria-hidden="true" fill="currentColor" size={16} />Favorite</span>
                     )}
                     {recipe.personal.tested && (
-                      <span><CheckCircle2 aria-hidden="true" size={16} />Tested</span>
-                    )}
-                    {recipe.personal.thisWeekend && (
-                      <span><CalendarDays aria-hidden="true" size={16} />This weekend</span>
+                      <span>
+                        <CheckCircle2 aria-hidden="true" size={16} />
+                        Made
+                      </span>
                     )}
                     {recipe.personal.rating !== null && (
                       <span><Star aria-hidden="true" fill="currentColor" size={16} />{recipe.personal.rating}/5</span>

@@ -246,8 +246,6 @@ export function mapRecipeRow(row: RecipeRow): Recipe {
       thisWeekend: Boolean(row.this_weekend),
       rating: row.rating,
       privateNotes: null,
-      timesCooked: row.tested ? 1 : 0,
-      lastCookedAt: null,
     },
     media: { heroImage: row.cover_image },
     visibility: "private",

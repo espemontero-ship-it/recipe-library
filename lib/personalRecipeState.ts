@@ -38,10 +38,6 @@ function deriveStatus(
 function applyPatch(recipe: Recipe, patch: PersonalPatch): Recipe {
   const personal = { ...recipe.personal, ...patch };
   personal.status = deriveStatus(personal);
-  personal.timesCooked = personal.tested
-    ? Math.max(1, personal.timesCooked)
-    : 0;
-
   return {
     ...recipe,
     personal,
