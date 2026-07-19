@@ -1,4 +1,9 @@
-import { Recipe, RECIPE_SCHEMA_VERSION } from "@/lib/recipeModel";
+import {
+  Recipe,
+  RecipeInput,
+  RECIPE_SCHEMA_VERSION,
+  slugifyRecipeTitle,
+} from "@/lib/recipeModel";
 import { getSupabaseClient } from "@/lib/supabase";
 
 const RECIPE_TABLE = "recipes_clean_v14_final";
@@ -47,10 +52,40 @@ function asStringArray(value: unknown): string[] {
     : [];
 }
 
-function asNotes(value: unknown): string | null {
-  if (typeof value === "string") return value.trim() || null;
-  const notes = asStringArray(value);
-  return notes.length ? notes.join("\n\n") : null;
+function asRecipeNotes(value: unknown): {
+  servingSuggestion: string | null;
+  publicNotes: string | null;
+} {
+  if (typeof value === "string") {
+    return { servingSuggestion: null, publicNotes: value.trim() || null };
+  }
+
+  if (Array.isArray(value)) {
+    const notes = asStringArray(value);
+    return {
+      servingSuggestion: null,
+      publicNotes: notes.length ? notes.join("\n\n") : null,
+    };
+  }
+
+  if (value && typeof value === "object") {
+    const notes = value as {
+      serving_suggestion?: unknown;
+      public_notes?: unknown;
+    };
+    const servingSuggestion =
+      typeof notes.serving_suggestion === "string"
+        ? notes.serving_suggestion.trim() || null
+        : null;
+    const publicNotes =
+      typeof notes.public_notes === "string"
+        ? notes.public_notes.trim() || null
+        : asStringArray(notes.public_notes).join("\n\n") || null;
+
+    return { servingSuggestion, publicNotes };
+  }
+
+  return { servingSuggestion: null, publicNotes: null };
 }
 
 function ingredientItems(recipeId: string, sectionIndex: number, lines: string[]) {
@@ -136,6 +171,7 @@ export function mapRecipeRow(row: RecipeRow): Recipe {
   const method = asMethod(row.method);
   const createdAt = row.created_at || new Date(0).toISOString();
   const updatedAt = row.updated_at || createdAt;
+  const notes = asRecipeNotes(row.notes);
 
   let status: Recipe["personal"]["status"] = "to_try";
   if (row.favorite) status = "favorite";
@@ -180,8 +216,8 @@ export function mapRecipeRow(row: RecipeRow): Recipe {
         temperatureC: null,
       })),
     }],
-    servingSuggestion: null,
-    publicNotes: asNotes(row.notes),
+    servingSuggestion: notes.servingSuggestion,
+    publicNotes: notes.publicNotes,
     nutrition: {
       scope: "per_serving",
       calories: range(row.calories),
@@ -250,4 +286,167 @@ export async function getSupabaseRecipe(idOrSlug: string): Promise<Recipe | null
 
   if (error) throw error;
   return data ? mapRecipeRow(data as RecipeRow) : null;
+}
+
+
+function parseFirstInteger(value?: string) {
+  if (!value) return null;
+  const match = value.match(/\d+(?:[.,]\d+)?/);
+  if (!match) return null;
+  const parsed = Number.parseFloat(match[0].replace(",", "."));
+  return Number.isFinite(parsed) ? Math.max(1, Math.round(parsed)) : null;
+}
+
+function uniqueNormalised(values: string[] | undefined) {
+  return Array.from(
+    new Set(
+      (values ?? [])
+        .map((value) =>
+          value
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim(),
+        )
+        .filter(Boolean),
+    ),
+  );
+}
+
+const METHOD_ALIASES: Record<string, string> = {
+  "air fryer": "air_fryer",
+  "air fry": "air_fryer",
+  broiler: "broiled",
+  broil: "broiled",
+  grilled: "grill",
+  grilling: "grill",
+  "no cook": "no_cook",
+  "ninja creami": "ninja_creami",
+  "pressure cooker": "pressure_cooker",
+  "rice cooker": "rice_cooker",
+  "shallow fried": "shallow_fried",
+  "slow cooker": "slow_cooker",
+};
+
+function normaliseMethods(values: string[] | undefined) {
+  return uniqueNormalised(values).map((value) =>
+    METHOD_ALIASES[value] ?? value.replace(/\s+/g, "_"),
+  );
+}
+
+function sourceNutrition(input: RecipeInput) {
+  return {
+    calories: input.calories ?? null,
+    protein: input.protein ?? null,
+    carbohydrates: input.carbs ?? null,
+    fat: input.fat ?? null,
+    fiber: input.fiber ?? null,
+  };
+}
+
+export async function createSupabaseRecipe(input: RecipeInput): Promise<Recipe> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+
+  const title = input.title.trim();
+  if (!title) throw new Error("Add a title before saving the recipe.");
+
+  const slug = slugifyRecipeTitle(title);
+  if (!slug) throw new Error("The title could not be converted into a recipe URL.");
+
+  const ingredients = (input.ingredients ?? [])
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const method = (input.method ?? [])
+    .map((step) => ({
+      title: step.title.trim() || null,
+      body: step.body.trim(),
+    }))
+    .filter((step) => step.body);
+
+  const { data: duplicate, error: duplicateError } = await supabase
+    .from(RECIPE_TABLE)
+    .select("id,title,slug")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (duplicateError) throw duplicateError;
+  if (duplicate) {
+    throw new Error(`A recipe with this title already exists: ${duplicate.title}`);
+  }
+
+  const sourceLimitations: string[] = [];
+  if (!ingredients.length) sourceLimitations.push("No ingredient list was provided.");
+  if (!method.length) sourceLimitations.push("No method was provided.");
+
+  const rawSourceText = input.rawSourceText?.trim();
+  if (!rawSourceText) {
+    throw new Error("The original pasted text is required before saving.");
+  }
+
+  const row = {
+    title,
+    slug,
+    summary: null,
+    tested: false,
+    favorite: false,
+    this_weekend: false,
+    rating: null,
+    servings: parseFirstInteger(input.servings),
+    servings_display: input.servings?.trim() || null,
+    total_time_minutes: null,
+    time_display: input.time?.trim() || null,
+    source_author: input.author?.trim() || null,
+    source_type: input.publication?.trim() || null,
+    source_url: input.originalUrl?.trim() || null,
+    cover_image: input.image?.trim() || null,
+    ingredients_raw: ingredients,
+    ingredient_sections: ingredients.length
+      ? [{ title: null, items: ingredients }]
+      : [],
+    ingredients_index: uniqueNormalised(input.mainIngredients),
+    method,
+    notes: {
+      serving_suggestion: input.servingSuggestion?.trim() || null,
+      public_notes: null,
+    },
+    dish: [],
+    format: uniqueNormalised(input.dishTypes),
+    meal_type: [],
+    cooking_methods: normaliseMethods(input.methods),
+    cuisines: uniqueNormalised(input.cuisines),
+    collections: uniqueNormalised(input.collections),
+    // Source macros are preserved in qa, but canonical macro fields stay empty
+    // until the dedicated nutrition-calculation phase.
+    calories: null,
+    protein: null,
+    carbs: null,
+    fat: null,
+    fiber: null,
+    raw_source_text: rawSourceText,
+    phase1_status:
+      ingredients.length && method.length ? "complete" : "partial_from_source",
+    source_limitations: sourceLimitations,
+    parser_issues: [],
+    qa: {
+      created_via: "paste_importer_v0.9.1",
+      source_nutrition: sourceNutrition(input),
+      canonical_nutrition_status: "pending_recalculation",
+    },
+  };
+
+  const { data, error } = await supabase
+    .from(RECIPE_TABLE)
+    .insert(row)
+    .select("*")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("A recipe with this title already exists.");
+    }
+    throw error;
+  }
+
+  return mapRecipeRow(data as RecipeRow);
 }

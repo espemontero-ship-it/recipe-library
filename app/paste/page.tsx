@@ -14,7 +14,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import styles from "./paste.module.css";
-import { createAndSaveRecipe } from "@/lib/browserRecipeStorage";
+import { createSupabaseRecipe } from "@/lib/supabaseRecipes";
 import { AdminGate } from "@/components/AdminGate";
 
 type NutritionRange = {
@@ -424,13 +424,13 @@ function PasteRecipePageContent() {
     setParsed((current) => (current ? { ...current, [key]: value } : current));
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!parsed) return;
 
     setIsSaving(true);
 
     try {
-      const recipe = createAndSaveRecipe({
+      const recipe = await createSupabaseRecipe({
         title: parsed.title,
         author: parsed.author,
         publication: parsed.publication,
@@ -449,7 +449,8 @@ function PasteRecipePageContent() {
         rawSourceText: raw,
       });
 
-      router.push(`/recipes/${recipe.id}`);
+      router.push(`/recipes/${recipe.slug}`);
+      router.refresh();
     } catch (error) {
       setIsSaving(false);
       window.alert(
@@ -465,7 +466,7 @@ function PasteRecipePageContent() {
           <ArrowLeft aria-hidden="true" size={17} />
           Back to library
         </Link>
-        <span className={styles.version}>Importer MVP · v0.3.4</span>
+        <span className={styles.version}>Importer · v0.9.1</span>
       </header>
 
       <section className={styles.intro}>
@@ -571,7 +572,7 @@ function PasteRecipePageContent() {
               className={styles.extractedPanel}
               onSubmit={(event) => {
                 event.preventDefault();
-                handleSave();
+                void handleSave();
               }}
             >
               <div className={styles.formSection}>
