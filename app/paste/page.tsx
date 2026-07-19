@@ -246,6 +246,7 @@ function inferMethods(source: string) {
 }
 
 function parseRecipe(raw: string): ParsedRecipe {
+  const normalizedRaw = stripMarkdown(raw);
   const lines = raw.replace(/\r/g, "").split("\n");
   const nonEmpty = lines.map((line) => line.trim()).filter(Boolean);
 
@@ -259,12 +260,14 @@ function parseRecipe(raw: string): ParsedRecipe {
     ) ||
     "";
 
-  const attribution = raw.match(
+  const attribution = normalizedRaw.match(
     /(?:Original recipe|Recipe by|By)\s*:?\s*\**([^,\n*]+?)\**\s*(?:,\s*\**([^*\n]+)\**)?(?:\n|$)/i,
   );
 
-  const servings = raw.match(/(?:Servings?|Yield|Raciones?)\s*:?\s*(\d+(?:[.,]\d+)?)/i);
-  const time = raw.match(/(?:Time|Total time|Tiempo)\s*:?\s*([^\n]+)/i);
+  const servings = normalizedRaw.match(
+    /(?:Servings?|Serves|Yield|Makes|Raciones?)\s*:?\s*(\d+(?:[.,]\d+)?)/i,
+  );
+  const time = normalizedRaw.match(/(?:Time|Total time|Tiempo)\s*:?\s*([^\n]+)/i);
 
   const ingredientLines = findSection(
     lines,

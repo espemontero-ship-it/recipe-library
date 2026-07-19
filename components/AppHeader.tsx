@@ -15,6 +15,9 @@ export function AppHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { loading, isAdmin, signOut } = useAuth();
+  const navigationLinks = isAdmin
+    ? [...links, { href: "/paste", label: "Add recipe" }]
+    : links;
 
   return (
     <header className="app-header">
@@ -27,7 +30,7 @@ export function AppHeader() {
           aria-label="Primary navigation"
           className={`app-header__nav ${open ? "app-header__nav--open" : ""}`}
         >
-          {links.map((link) => {
+          {navigationLinks.map((link) => {
             const active =
               link.href === "/"
                 ? pathname === "/"
