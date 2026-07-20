@@ -1,0 +1,1122 @@
+{
+  "format": "recipe-library-researched-source-batch-v1",
+  "generatedAt": "2026-07-20T20:37:59.434641Z",
+  "summary": {
+    "researchedLinks": 90,
+    "exactWebMatches": 83,
+    "exactDuplicateMatches": 7,
+    "imagesIncluded": 0
+  },
+  "items": [
+    {
+      "recipeId": "8f3c48ed-6ecd-4d88-9201-07dea0056675",
+      "title": "Epic Chicken Ranch Bake... 🤤",
+      "sourceUrl": "https://www.facebook.com/reel/1318352366567381",
+      "confidence": "duplicate_high",
+      "evidence": [
+        "exact_duplicate_recipe_match"
+      ],
+      "sourceMedium": "facebook",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "5ac8c536-f65b-40c9-925a-65df7333b0af",
+      "title": "GNOCCHI SALAD TRAYBAKE BOWL",
+      "sourceUrl": "https://www.facebook.com/reel/1463215138818008",
+      "confidence": "duplicate_high",
+      "evidence": [
+        "exact_duplicate_recipe_match"
+      ],
+      "sourceMedium": "facebook",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "f1ef738b-1cdc-4425-ace8-57516b72a715",
+      "title": "Korean BBQ Chicken Wraps🍗🌯🔥",
+      "sourceUrl": "https://www.instagram.com/reels/DXhZI6xAka6/",
+      "confidence": "duplicate_high",
+      "evidence": [
+        "duplicate_of:6a1494db-4de8-440f-91c3-60a477364a86",
+        "title_similarity:0.80",
+        "raw_similarity:0.85"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "e9d65959-925d-4582-bc09-c2cf5c6d6fe0",
+      "title": "Malai chicken",
+      "sourceUrl": "https://www.facebook.com/reel/958001320560492",
+      "confidence": "duplicate_high",
+      "evidence": [
+        "duplicate_of:359be726-1a5d-4e1a-9c49-b84ce3dab7c7",
+        "title_similarity:1.00",
+        "raw_similarity:0.84"
+      ],
+      "sourceMedium": "facebook",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "ef6b16f4-fe82-4d12-acb3-87ee66c40846",
+      "title": "No Fold Shrimp Dumpling",
+      "sourceUrl": "https://www.facebook.com/reel/1872542476756125",
+      "confidence": "duplicate_high",
+      "evidence": [
+        "duplicate_of:adc8d83f-78bb-43cf-841c-c930a90b4eb4",
+        "title_similarity:0.57",
+        "raw_similarity:1.00"
+      ],
+      "sourceMedium": "facebook",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "cfe4de22-a7c7-46bf-9461-136848fb3c73",
+      "title": "Pork Laab",
+      "sourceUrl": "https://www.instagram.com/p/DUfbAjSjZpg/",
+      "confidence": "duplicate_high",
+      "evidence": [
+        "duplicate_of:66fe6d2a-a722-4733-9e8c-3f45f47aad23",
+        "title_similarity:1.00",
+        "raw_similarity:0.19"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "ad267775-b4be-40ef-8244-142212d24f07",
+      "title": "SLOW COOKED HIGH PROTEIN BEEF",
+      "sourceUrl": "https://www.facebook.com/reel/1088736594312286",
+      "confidence": "duplicate_high",
+      "evidence": [
+        "duplicate_of:fc606e45-1ebc-445c-9af1-cff8845c81f2",
+        "title_similarity:1.00",
+        "raw_similarity:0.79"
+      ],
+      "sourceMedium": "facebook",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "7e0e07e6-2222-4a90-83a8-6016b6b1f24e",
+      "title": "3 Cheese Spaghetti Bake",
+      "sourceUrl": "https://www.facebook.com/AdamHoadCoaching/posts/122158927262263237/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "facebook",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "32f2538b-e7f6-4259-ade4-de932fe63b8c",
+      "title": "5 Minute Mince Tortilla Wrap",
+      "sourceUrl": "https://www.instagram.com/reel/DICNR5TMFGs/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "91e40edf-5cf7-4e47-86b7-4e641d24587e",
+      "title": "A High-Protein Chicken Tikka Masala 🔥",
+      "sourceUrl": "https://www.instagram.com/reel/DTJDpxTj5ke/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_shredhappens"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "cbbc53ff-3671-44af-a18d-2cd66ad51d0d",
+      "title": "A Lemon-Dill Meatballs With Orzo",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1024124-lemon-dill-meatballs-with-orzo",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "141d9de9-eadc-4b9a-a630-627ca41a85da",
+      "title": "A Marry Me Chicken Salad",
+      "sourceUrl": "https://www.instagram.com/p/DYlOCepu3BB/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "be9699ac-6e9a-4183-8c70-7278e5282bfc",
+      "title": "A Soy Honey Garlic Chicken Thighs",
+      "sourceUrl": "https://www.instagram.com/reel/DVbum-5EVsN/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "5f9ecf9a-3e02-4201-88e6-1e5d468d6e49",
+      "title": "A 🌯 High Protein Chicken Fajita Wraps (4 servings):",
+      "sourceUrl": "https://www.instagram.com/reel/DMbLgd6MQus/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "d4ddcde3-0a77-41d2-a95f-6aabc3fe63ce",
+      "title": "B Easy High Protein Crispy Chicken Nuggets!🍗🔥",
+      "sourceUrl": "https://www.instagram.com/reel/C8Zw9jANkZz/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_panaceapalm"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "54553bc4-5fd8-4228-831c-d5ad317e3aaf",
+      "title": "B Quick Harissa Apricot Chicken",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/778010695-quick-harissa-apricot-chicken",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "4d662133-d426-44b3-920f-47e55b013b16",
+      "title": "BACON & EGG WRAP 14",
+      "sourceUrl": "https://www.instagram.com/p/DFVXSJWM4a8/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "3fba5e09-d3e6-4bbb-a343-a046c929118e",
+      "title": "BEEF CURRY WITH RICE & LENTILS",
+      "sourceUrl": "https://www.instagram.com/reel/DXCpBtNDE--/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "5d6a4cd0-3d37-4a2c-a13f-956ac6e432d3",
+      "title": "BEEF SKEWERS & RICE",
+      "sourceUrl": "https://www.instagram.com/reel/DSX0C_EDEVJ/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "b18998c2-b392-4561-a3ed-4c9cf99a9b3d",
+      "title": "Black Pepper Beef and Cabbage Stir-Fry",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1020506-black-pepper-beef-and-cabbage-stir-fry",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "0770b9f7-878a-4e5e-8ed4-399e17cd6033",
+      "title": "BLACKBERRY PANCAKES",
+      "sourceUrl": "https://www.instagram.com/reel/DIdaw6mzQdU/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "f7d9ed8c-3827-45d9-86fa-5dd47b6756e5",
+      "title": "cheesy chicken fajita pasta bake review:",
+      "sourceUrl": "https://www.instagram.com/reel/DUi-WBiiG1N/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "full_text_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "d5c59647-f229-4543-a391-96078e4d465f",
+      "title": "Cheesy Chipotle Steak Tacos with Creamy Chipotle Sauce",
+      "sourceUrl": "https://www.instagram.com/reel/DXxkWactOp3/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "a1b95495-2dd4-4156-81c3-ec147fe9a565",
+      "title": "Cheesy Pasta Meatballs 15 minutes",
+      "sourceUrl": "https://www.instagram.com/p/DESisc7sejB/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "7ee59a43-2bb7-454e-8554-13ecdcefad66",
+      "title": "Cheesy Tuna Pasta Bake",
+      "sourceUrl": "https://www.instagram.com/reel/DFn95Q9sziB/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "afcd912b-ad25-4900-8033-dde093557a3f",
+      "title": "Chicken and Red Lentil Soup With Lemony Yogurt",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1026473-chicken-and-red-lentil-soup-with-lemony-yogurt",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "2fd0d1db-e1b3-4213-b78a-4edac5d8c793",
+      "title": "Chicken Breasts With Miso-Garlic Sauce",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1021981-chicken-breasts-with-miso-garlic-sauce",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "a8107c7a-8b81-4dcf-9371-e8ff1fa360c0",
+      "title": "Chicken Fajita Feta Rice",
+      "sourceUrl": "https://www.instagram.com/reel/C94USTOs5XM/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "54b53926-4d50-4140-b5d1-ee107b0d8a11",
+      "title": "Chicken Garlic Rice 🍗",
+      "sourceUrl": "https://www.instagram.com/reel/DX6kHZ0T1wv/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "c4147c9c-d5fb-40af-846b-309f659641be",
+      "title": "Chicken Kebabs With Turmeric and Chile",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1014920-chicken-thigh-kebabs-with-turmeric-chile-and-saffron",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "621c33c6-2115-4bce-bbb9-8628840801ce",
+      "title": "CHICKEN MEXICAN RICE",
+      "sourceUrl": "https://www.instagram.com/reel/DV9ZJ1mDIZm/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "30130ada-21d8-4357-941d-6a7083a27676",
+      "title": "CHICKEN PESTO & RICE",
+      "sourceUrl": "https://www.instagram.com/reel/DUbH8CIjOsX/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "b519614b-616e-471e-9ee9-2c120d3edc65",
+      "title": "Chicken Summer Rolls",
+      "sourceUrl": "https://www.instagram.com/p/CHlFId3AJiE/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "3d3f5547-27c1-415d-b83b-a5e3efef07da",
+      "title": "CHICKEN SWEET POTATO TRAYBAKE",
+      "sourceUrl": "https://www.instagram.com/p/C6QsLYFibjV/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "874db338-74b2-4f75-9c76-a8366777a69d",
+      "title": "Chipotle Lime Chicken Pasta Salad (4 raciones)",
+      "sourceUrl": "https://www.instagram.com/reel/DaQnmWBNH5s/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "5c64c5ea-1505-4b5c-8151-9d488403cf4f",
+      "title": "Chipotle Lime Shrimp Bowl 🤯 (recipe 👇🏽)",
+      "sourceUrl": "https://www.instagram.com/reel/DOuW21kge0k/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_full_text",
+        "creator_ice.karimcooks"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "0ea6f841-46bc-4f96-8435-3bf917cd4c22",
+      "title": "CHOCOLATE & DATE MOUSSE",
+      "sourceUrl": "https://www.instagram.com/reel/DYmBQP8pZGc/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "19eeb64c-7b17-4cf4-abcc-45324062e4a8",
+      "title": "Cold Noodles With Tomatoes",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1022543-cold-noodles-with-tomatoes",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "d4d19987-0bc4-4695-9b70-ba3a87294964",
+      "title": "COLIFLOR ADICTIVO- CRUJE!",
+      "sourceUrl": "https://www.instagram.com/p/DXclsRCEZzp/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "6d505ea8-ab85-43f5-9a47-f4384935dbd1",
+      "title": "Creamy Macaroni and Cheese",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1015825-creamy-macaroni-and-cheese",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "4c825ce4-0a9d-4936-bd5f-d0117c5ef757",
+      "title": "Creamy Shrimp Orzo 🍤🍅",
+      "sourceUrl": "https://www.instagram.com/p/DWtp1QIDRMo/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "89924bf7-e17d-4d79-ac9f-af894dbe17b5",
+      "title": "Dumpling Lasagna Reaction Video: Deadpan Diya #34",
+      "sourceUrl": "https://www.instagram.com/reel/DVuZzudDP2x/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_diyaeatswell"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "fe3d5ae3-f245-4a9c-872f-e52109437671",
+      "title": "Greek Chicken & Rice Bowl",
+      "sourceUrl": "https://www.instagram.com/reel/DOKKj6PD7DC/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "8d1293e9-62d8-4101-a728-1f4ec6e6a399",
+      "title": "Harissa Steak Tacos",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/762532944-harissa-steak-tacos",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "a37004d6-1fbf-4ff3-a2f8-e7813b618a1c",
+      "title": "HEALTHY SAUSAGE BREAKFAST MUFFINS",
+      "sourceUrl": "https://www.instagram.com/reel/DUggs9BDUQw/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "c4f9d7f2-3d60-4382-a658-6c56ddfd811f",
+      "title": "High Protein Butternut Squash Feta Pasta",
+      "sourceUrl": "https://www.instagram.com/reel/DQvEEYKj5RQ/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_arash_kaizen"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "56de7248-9308-4a12-8bc0-d6a53e51c93e",
+      "title": "High Protein Coffee Ice Cream ☕️🍦",
+      "sourceUrl": "https://www.instagram.com/reel/C5i4fV6LPkz/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "657ed46e-56ae-4ee6-964d-3cc92e8055b3",
+      "title": "High Protein Street Corn Chicken Dip",
+      "sourceUrl": "https://www.instagram.com/reel/DaLOdkJREqg/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "gnclivewell_collab"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "06e28bf3-e977-4e1d-b8b4-d1bc7ebd7a22",
+      "title": "High-Protein Chocolate Peanut Butter Lava Cake",
+      "sourceUrl": "https://www.instagram.com/reel/DX43DSTvEnT/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "4ee1b411-d4ba-477b-b100-bf5a59255cbd",
+      "title": "Honey BBQ Chicken Slider",
+      "sourceUrl": "https://www.instagram.com/reel/DVmtNsfjjdF/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "5258fea8-3b16-46c0-b944-dd31d085a0ee",
+      "title": "Honey Garlic Parm Chicken",
+      "sourceUrl": "https://www.instagram.com/p/DYFo9IYRx39/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "c8ab9413-dcc9-4e29-b2c9-be59c22b535f",
+      "title": "Hot Honey Beef and Butternut Squash Bowls",
+      "sourceUrl": "https://www.instagram.com/reel/DX71-OBhwq6/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "cb62ab4b-fc14-4e6e-a2b9-eb3a14bd265a",
+      "title": "Kerala fried chicken",
+      "sourceUrl": "https://www.instagram.com/reel/C_kaV_US152/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "3443d2a8-8dd0-4c23-9936-9570a0efba4b",
+      "title": "KEY LIME PROTEIN ICE CREAM",
+      "sourceUrl": "https://www.instagram.com/reel/C4Q6IV1hAUb/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "54e0beae-b243-43f3-a255-49bb9324ca64",
+      "title": "Korean BBQ-Style Meatballs",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1019763-korean-bbq-style-meatballs",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "b8cb9aec-03c7-4aa6-9194-f110a2ce0231",
+      "title": "Korean Chicken Skewers",
+      "sourceUrl": "https://www.instagram.com/reel/DVhgcwHjjgt/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "8010d60b-2473-41f5-b0e2-681ad5071310",
+      "title": "LEMON & HERB CHICKEN THIGH TRAY BAKE",
+      "sourceUrl": "https://www.instagram.com/reel/DUD9KtSkRWu/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_adamhoad"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "efb3aa48-e76d-403d-8cb0-7b872c82d745",
+      "title": "Lemon Pepper Chicken Bites 🍋🍗🤤",
+      "sourceUrl": "https://www.instagram.com/reel/DVH1dW1jLHa/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "e7a69173-1b41-439a-91d1-81382c5458bb",
+      "title": "Lemongrass Ground Beef",
+      "sourceUrl": "https://www.instagram.com/reel/DZJDtIUOcld/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "8c90dcbd-759f-46d7-be6f-61fad029a10c",
+      "title": "Lime And Herb Masala Chicken",
+      "sourceUrl": "https://www.instagram.com/reel/DZXVLajTl82/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "7bf511c3-83dc-4a9e-ad2c-5e18bf37273e",
+      "title": "Mediterranean Chicken, Pistachio & Herb Salad",
+      "sourceUrl": "https://www.instagram.com/reel/DNyGpeEwFGf/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "d25db0ea-0db8-4404-8180-445cfb56fb8e",
+      "title": "No Fold Shrimp and Beef Dumpling",
+      "sourceUrl": "https://www.instagram.com/reel/DXLKg_zjpXh/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "4c505ba8-3bdd-4ddc-880a-da3a7ba15932",
+      "title": "One Pan Chicken with Roasted Sweet Potato & Broccoli",
+      "sourceUrl": "https://www.instagram.com/reel/DUZWrWyjzi0/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "8f7228ce-1f4b-465c-9c91-662275831029",
+      "title": "One-Pan Roasted Fish With Cherry Tomatoes",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1020454-one-pan-roasted-fish-with-cherry-tomatoes",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "1f866b7e-f12a-40c6-b939-ce9dcbe61ed2",
+      "title": "Pork Bulgogi With Spring Vegetables",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1024135-pork-bulgogi-with-spring-vegetables",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "43046995-df3d-48a8-9aee-1e90940ac819",
+      "title": "Puttanesca Poached Fish",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/769726376-puttanesca-poached-fish",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "f08b4812-920f-40bb-adc2-6a6ece628871",
+      "title": "Rice Paper Shrimp Pancake",
+      "sourceUrl": "https://www.instagram.com/reel/DYQW5i7ujDK/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "6a1c8f69-0193-41e3-b824-7251031dfc2e",
+      "title": "Roasted spiced crunchy chickpeas, cauliflower and brussels sprouts over creamy cucumber yogurt sauce.",
+      "sourceUrl": "https://www.instagram.com/reel/DQg1JSQklh2/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_tessbegg",
+        "ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "324c7584-9af5-4247-9b2b-a09d8401a323",
+      "title": "Salmon with Lemon-Herb Marinade",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/5824-salmon-with-lemon-herb-marinade",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "3b5319f7-292c-4150-9852-fa0292c5ced5",
+      "title": "Salmón de Noruega con salsa de miel y naranja.",
+      "sourceUrl": "https://www.instagram.com/reel/DRelWaLCGIu/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "sponsored_mardenoruega"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "5d84dab9-5035-4fea-b95f-93c47c56d135",
+      "title": "Seared Zucchini and Halloumi in Red-Wine Vinaigrette",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/779127092-seared-zucchini-and-halloumi-in-red-wine-vinaigrette",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "87b4f6bf-dfea-4083-88eb-d1eead934482",
+      "title": "Sheet-Pan Hot Honey Chicken",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/764709448-sheet-pan-hot-honey-chicken",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "ff920c9b-567a-441f-aab2-38901572f013",
+      "title": "Sheet-Pan Malai Chicken and Potatoes",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1026512-sheet-pan-malai-chicken-and-potatoes",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "2f0867e7-9ef7-4fcc-aebb-94ee7d30a98d",
+      "title": "Slow Cooked Beef 🥩 MUST TRY ✅",
+      "sourceUrl": "https://www.instagram.com/p/DX6XpWRCEiq/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "5110a74a-6166-42a3-b17c-e370179656b3",
+      "title": "SPICY PEANUT PRAWN NOODLES",
+      "sourceUrl": "https://www.instagram.com/reel/DZUY6o_xKB7/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "f80ef7c1-112a-41c5-a078-60464b5f39b3",
+      "title": "SUSHI ROLL DE GAMBONES 🍣",
+      "sourceUrl": "https://www.instagram.com/p/DXM0nvbxYoY/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "e4e20fb6-85c1-49af-8ad9-646d12524477",
+      "title": "Sweet Chilli Popcorn Chicken Meal Prep",
+      "sourceUrl": "https://www.instagram.com/reel/DROmCZokxvk/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "full_text_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "a4fa1f95-8c8f-4caa-8a5d-f6f767a72cef",
+      "title": "Tajín Grilled Chicken",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1023145-tajin-grilled-chicken",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "0aad4362-b654-4cf7-aab5-dcc957ce649f",
+      "title": "Tiramisu Overnight Oats",
+      "sourceUrl": "https://www.instagram.com/reel/DZERWEJT7uB/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "2e3ea025-d3a6-4f55-b69e-39c22f1d8d57",
+      "title": "Turkish Style Sheet Pan Chicken Kebabs",
+      "sourceUrl": "https://www.instagram.com/reel/DV_suo-IKPE/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_shredhappens"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "974b6448-3064-4de8-91e6-0678eef7178d",
+      "title": "Turmeric-Black Pepper Chicken With Asparagus",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1020970-turmeric-black-pepper-chicken-with-asparagus",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "web",
+      "publication": "NYT Cooking",
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "6a54e03a-49dd-4ad6-9f58-0315acfa79ba",
+      "title": "TZATZIKI CUCUMBER SALAD, PROTEIN EDITION F*ck or Suck 🔥",
+      "sourceUrl": "https://www.instagram.com/reel/DRAg_MngZiN/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "credited_creator_logansfewd"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "eef019a1-7298-4766-b214-e7d620ed342e",
+      "title": "Viral Blanket Dumplings (High Protein + Meal Prep Friendly!)",
+      "sourceUrl": "https://www.instagram.com/reel/DXq0zSED5ar/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "full_ingredients_match",
+        "creator_eliya.eats"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "c7d590fb-3201-41d6-a69f-83bfa7ba712a",
+      "title": "VIRAL COSTCO CHICKEN",
+      "sourceUrl": "https://www.instagram.com/reel/DSc6uYyDjAn/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "858e58f1-d221-4896-a9af-4045afed60c5",
+      "title": "VOLCÁN de CHOCOLATE en 5 minutos en Airfryer con solo 4 ingredientes!😍",
+      "sourceUrl": "https://www.instagram.com/reel/DXm5H3xEimX/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_pulicocina"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "667e985d-9393-4e9c-b0b7-b45d9651730d",
+      "title": "Zingy Chicken Power Bowl: 476 cals, 54g protein",
+      "sourceUrl": "https://www.instagram.com/reel/DMtiopCOcfa/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_shredhappens_arash"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "7c9fbacc-1f73-4c9c-b5b8-e9b80f7bb69c",
+      "title": "🌯 High Protein Chicken Shawarma Wraps",
+      "sourceUrl": "https://www.instagram.com/reel/DLkywIHsTzj/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "316ba27b-2b72-4bc9-b17b-c22e7536cb2c",
+      "title": "🍉🍓 Watermelon & Strawberry Sorbet",
+      "sourceUrl": "https://www.instagram.com/p/C6UYrQ1rR6s/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title_creator_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "1af74d7c-0d98-411e-9c38-45d274fb50a3",
+      "title": "🍓🫐The Berry Burst High Protein Creami!",
+      "sourceUrl": "https://www.instagram.com/reel/DYnupgppGBs/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "creator_thecheatcodekitchen"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    },
+    {
+      "recipeId": "964a45ff-12a9-403d-8efc-8ec9ae042182",
+      "title": "🔥 Smoky Chicken Skewers with Garlic Yogurt Marinade & Tangy Herb Oil 🔥",
+      "sourceUrl": "https://www.instagram.com/reel/DMnRoY9M5uS/",
+      "confidence": "web_exact",
+      "evidence": [
+        "exact_title",
+        "full_ingredients_match"
+      ],
+      "sourceMedium": "instagram",
+      "publication": null,
+      "replaceExisting": false
+    }
+  ]
+}

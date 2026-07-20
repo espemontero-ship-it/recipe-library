@@ -975,3 +975,99 @@ export async function restoreSupabaseRecipeRepairBackup(
     onProgress?.(completed, rows.length);
   }
 }
+
+export type RecipeSourceBackupRow = {
+  id: string;
+  title: string;
+  updated_at: string | null;
+  source_author: string | null;
+  source_type: string | null;
+  source_medium: string | null;
+  source_publication: string | null;
+  source_url: string | null;
+  cover_image: string | null;
+  source_url_confidence?: string | null;
+  image_source?: string | null;
+  image_needs_review?: boolean | null;
+};
+
+export type RecipeSourceUpdate = {
+  id: string;
+  expectedUpdatedAt: string;
+  sourceUrl?: string | null;
+  author?: string | null;
+  publication?: string | null;
+  sourceMedium?: string | null;
+  coverImage?: string | null;
+  sourceUrlConfidence?: string | null;
+  imageSource?: string | null;
+  imageNeedsReview?: boolean;
+};
+
+export async function getRecipeSourceBackup(): Promise<RecipeSourceBackupRow[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  const { data, error } = await supabase
+    .from(RECIPE_TABLE)
+    .select("id,title,updated_at,source_author,source_type,source_medium,source_publication,source_url,cover_image,source_url_confidence,image_source,image_needs_review")
+    .order("title", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as RecipeSourceBackupRow[];
+}
+
+export async function updateSupabaseRecipeSource(update: RecipeSourceUpdate): Promise<Recipe> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  const values: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (Object.prototype.hasOwnProperty.call(update, "sourceUrl")) values.source_url = update.sourceUrl?.trim() || null;
+  if (Object.prototype.hasOwnProperty.call(update, "author")) values.source_author = update.author?.trim() || null;
+  if (Object.prototype.hasOwnProperty.call(update, "publication")) {
+    values.source_publication = update.publication?.trim() || null;
+    values.source_type = update.publication?.trim() || null;
+  }
+  if (Object.prototype.hasOwnProperty.call(update, "sourceMedium")) values.source_medium = update.sourceMedium?.trim() || null;
+  if (Object.prototype.hasOwnProperty.call(update, "coverImage")) values.cover_image = update.coverImage?.trim() || null;
+  if (Object.prototype.hasOwnProperty.call(update, "sourceUrlConfidence")) values.source_url_confidence = update.sourceUrlConfidence?.trim() || null;
+  if (Object.prototype.hasOwnProperty.call(update, "imageSource")) values.image_source = update.imageSource?.trim() || null;
+  if (Object.prototype.hasOwnProperty.call(update, "imageNeedsReview")) values.image_needs_review = Boolean(update.imageNeedsReview);
+
+  const { data, error } = await supabase
+    .from(RECIPE_TABLE)
+    .update(values)
+    .eq("id", update.id)
+    .eq("updated_at", update.expectedUpdatedAt)
+    .select("*")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Recipe changed while source recovery was running; it was skipped safely.");
+  return mapRecipeRow(data as RecipeRow);
+}
+
+export async function restoreSupabaseRecipeSourceBackup(
+  rows: RecipeSourceBackupRow[],
+  onProgress?: (completed: number, total: number) => void,
+) {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  let completed = 0;
+  for (const row of rows) {
+    const { error } = await supabase
+      .from(RECIPE_TABLE)
+      .update({
+        source_author: row.source_author,
+        source_type: row.source_type,
+        source_medium: row.source_medium,
+        source_publication: row.source_publication,
+        source_url: row.source_url,
+        cover_image: row.cover_image,
+        source_url_confidence: row.source_url_confidence ?? null,
+        image_source: row.image_source ?? null,
+        image_needs_review: row.image_needs_review ?? false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+    if (error) throw error;
+    completed += 1;
+    onProgress?.(completed, rows.length);
+  }
+}

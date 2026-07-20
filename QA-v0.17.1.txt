@@ -1,0 +1,16 @@
+RECIPE LIBRARY v0.17.1 — QA
+
+Verified in code:
+- Google HTML search is the primary discovery source.
+- Bing RSS and DuckDuckGo HTML remain fallbacks.
+- Up to six query variants are generated per recipe.
+- Social search results are retained when their pages block server inspection.
+- Exact raw-text URLs still take priority.
+- Automatic matches require at least two independent confidence signals, except exact URL matches.
+- Low-quality repost/document hosts are penalized.
+- Existing SSRF protection, backups, optimistic concurrency and image proxying remain unchanged.
+- No SQL is required.
+- Installation verified over the full cumulative project history through v0.17.0.
+- Next.js production build passed.
+- Parser strict regression suite passed: 77/77.
+- Generated routes retain /maintenance and the three source APIs; temporary audit/repair routes remain absent.

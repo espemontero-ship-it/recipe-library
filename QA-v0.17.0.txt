@@ -1,0 +1,21 @@
+RECIPE LIBRARY v0.17.0 — QA
+
+Verified:
+- Recipe Audit route removed.
+- Recipe Repair route removed.
+- Repair Batch route removed.
+- All temporary navigation links removed.
+- Hidden /maintenance route generated and protected by AdminGate.
+- Exact raw-text URL recovery implemented.
+- High-confidence web source discovery implemented with two search fallbacks.
+- SSRF protection retained for page and image fetching.
+- Source metadata extraction supports JSON-LD, Open Graph, Twitter metadata and canonical URLs.
+- Confirmed source images are proxied safely and uploaded to the authenticated user's recipe-images folder.
+- Source updates use optimistic concurrency and skip changed recipes.
+- Source backup and repair backup restoration included.
+- Explicit book sources and ambiguous matches remain unchanged.
+- TypeScript check passed.
+- Parser regression suite: 77/77.
+- Next.js production build passed.
+- Generated routes include /maintenance, /api/source-discovery and /api/source-image.
+- Generated routes do not include /recipe-audit, /recipe-repair or /recipe-repair-batch.

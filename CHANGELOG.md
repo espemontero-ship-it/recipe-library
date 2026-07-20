@@ -1,4 +1,31 @@
+# Recipe Library v0.17.2
+
+- Replaces the failed in-app web scraper with a fixed batch of 90 externally researched source links.
+- Includes 83 exact web matches and 7 exact duplicate-recipe matches.
+- Applies links with backup, existing-link preservation, optimistic concurrency and an application log.
+- Removes the temporary source discovery, source metadata and source image API routes.
+- Disables image uploads until the Supabase Storage RLS policy is deliberately fixed.
+
+# Recipe Library v0.17.1
+
+- Uses Google search as the primary source discovery engine.
+- Expands each recipe into title, creator, phrase, ingredient and social-site queries.
+- Retains high-confidence Instagram, Facebook and TikTok results even when those sites block metadata fetching.
+- Matches with multiple signals instead of requiring an accessible source page.
+- Keeps Bing and DuckDuckGo as fallbacks and preserves all v0.17.0 safety protections.
+
 # Recipe Library changelog
+
+## v0.17.0 — Source recovery and maintenance cleanup
+
+- Removes the temporary Recipe Audit, Recipe Repair and Repair Batch routes and navigation links.
+- Adds a hidden administrator-only maintenance area at `/maintenance`.
+- Recovers exact source URLs from original pasted text and searches the web only for high-confidence matches.
+- Reads recipe metadata from confirmed source pages and copies public cover images into Recipe Library storage.
+- Leaves ambiguous links, inaccessible images and explicit book sources unchanged.
+- Downloads a complete source-field backup before the first update.
+- Keeps repair backup restoration and the technical repair record inside maintenance.
+- Adds conflict protection so recipes edited during recovery are skipped rather than overwritten.
 
 ## v0.16.0 — Password sign-in and recovery
 
