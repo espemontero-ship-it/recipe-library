@@ -32,6 +32,7 @@ import {
   updatePlanningItem,
   type PlanningItem,
 } from "@/lib/planning";
+import { regenerateShoppingWeekIfExists } from "@/lib/shoppingList";
 import styles from "./planning.module.css";
 
 type PlannedRecipe = {
@@ -161,11 +162,16 @@ export default function PlanningPage() {
   ).length;
   const weekOptions = getPlanningWeekOptions(12);
 
+  async function regenerateWeek(weekStart: string) {
+    await regenerateShoppingWeekIfExists(recipes, weekStart);
+  }
+
   async function changeServings(item: PlanningItem, nextValue: number) {
     try {
       await updatePlanningItem(item.id, {
         servings: Math.max(0.5, Math.round(nextValue * 10) / 10),
       });
+      await regenerateWeek(item.weekStart);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not update servings.");
     }
@@ -174,12 +180,19 @@ export default function PlanningPage() {
   async function moveItem(item: PlanningItem, targetWeek: string) {
     if (targetWeek === item.weekStart) return;
     try {
-      const result = await movePlanningItem(item.id, targetWeek);
+      let result = await movePlanningItem(item.id, targetWeek);
       if (result.duplicate) {
         const replace = window.confirm(
           "This recipe is already in that week. Replace the existing entry with this one and keep these servings?",
         );
-        if (replace) await movePlanningItem(item.id, targetWeek, true);
+        if (!replace) return;
+        result = await movePlanningItem(item.id, targetWeek, true);
+      }
+      if (result.moved) {
+        await Promise.all([
+          regenerateWeek(item.weekStart),
+          regenerateWeek(targetWeek),
+        ]);
       }
       setCustomMoveItemId(null);
     } catch (reason) {
@@ -194,6 +207,35 @@ export default function PlanningPage() {
     setPersonalVersion((version) => version + 1);
   }
 
+  async function changeShoppingInclusion(
+    item: PlanningItem,
+    includeInShopping: boolean,
+  ) {
+    try {
+      await updatePlanningItem(item.id, { includeInShopping });
+      await regenerateWeek(item.weekStart);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Could not update the shopping list.",
+      );
+    }
+  }
+
+  async function removeItem(item: PlanningItem) {
+    try {
+      await removePlanningItem(item.id);
+      await regenerateWeek(item.weekStart);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Could not remove the recipe.",
+      );
+    }
+  }
+
   async function confirmClearWeek(group: PlanningGroup) {
     if (
       window.confirm(
@@ -202,6 +244,7 @@ export default function PlanningPage() {
     ) {
       try {
         await clearPlanningWeek(group.weekStart);
+        await regenerateWeek(group.weekStart);
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : "Could not clear this week.");
       }
@@ -443,10 +486,9 @@ export default function PlanningPage() {
                             <input
                               checked={item.includeInShopping}
                               onChange={(event) =>
-                                void updatePlanningItem(item.id, {
-                                  includeInShopping: event.target.checked,
-                                }).catch((reason: unknown) =>
-                                  setError(reason instanceof Error ? reason.message : "Could not update Planning."),
+                                void changeShoppingInclusion(
+                                  item,
+                                  event.target.checked,
                                 )
                               }
                               type="checkbox"
@@ -468,11 +510,7 @@ export default function PlanningPage() {
 
                           <button
                             className={styles.removeButton}
-                            onClick={() =>
-                              void removePlanningItem(item.id).catch((reason: unknown) =>
-                                setError(reason instanceof Error ? reason.message : "Could not remove the recipe."),
-                              )
-                            }
+                            onClick={() => void removeItem(item)}
                             type="button"
                           >
                             Remove from planning

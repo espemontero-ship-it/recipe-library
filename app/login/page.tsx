@@ -8,9 +8,17 @@ import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading, isAdmin, sendMagicLink, signOut } = useAuth();
+  const {
+    user,
+    loading,
+    isAdmin,
+    sendMagicLink,
+    signInWithGoogle,
+    signOut,
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -31,6 +39,22 @@ export default function LoginPage() {
       setError(reason instanceof Error ? reason.message : "Could not send the sign-in link.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setGoogleSubmitting(true);
+    setError("");
+    setMessage("");
+    try {
+      await signInWithGoogle();
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Could not start Google sign-in.",
+      );
+      setGoogleSubmitting(false);
     }
   }
 
@@ -57,7 +81,19 @@ export default function LoginPage() {
       <section className="login-card">
         <p className="eyebrow">Recipe Library administration</p>
         <h1>Sign in</h1>
-        <p>Your friends can browse without an account. Enter your administrator email and we will send you a private sign-in link.</p>
+        <p>Your friends can browse without an account. Sign in with Google or use the administrator email link.</p>
+
+        <button
+          className="login-google-button"
+          disabled={googleSubmitting || submitting}
+          onClick={() => void handleGoogleSignIn()}
+          type="button"
+        >
+          <span aria-hidden="true" className="login-google-mark">G</span>
+          {googleSubmitting ? "Opening Google…" : "Continue with Google"}
+        </button>
+
+        <div className="login-divider"><span>or</span></div>
 
         <form onSubmit={handleSubmit}>
           <label>

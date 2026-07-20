@@ -3,7 +3,8 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Recipe } from "@/lib/recipeModel";
 import type { PlanningItem } from "@/lib/planning";
-import { getRecipeDefaultServings, getWeekStart } from "@/lib/planning";
+import { ingredientDisplayLine } from "@/lib/ingredientParser";
+import { getPlanning, getRecipeDefaultServings, getWeekStart } from "@/lib/planning";
 import { getSupabaseClient } from "@/lib/supabase";
 
 const TABLE = "recipe_shopping_items";
@@ -33,6 +34,21 @@ export type ShoppingWeek = {
   items: ShoppingItem[];
   updatedAt: string;
 };
+
+export const SHOPPING_CATEGORIES = [
+  "Fruit & vegetables",
+  "Meat & fish",
+  "Dairy & eggs",
+  "Bakery",
+  "Pasta, rice & cereals",
+  "Pantry & preserves",
+  "Sauces & condiments",
+  "Spices",
+  "Frozen",
+  "Other",
+] as const;
+
+export type ShoppingCategory = (typeof SHOPPING_CATEGORIES)[number];
 
 export type ShoppingDraftItem = {
   id: string;
@@ -241,6 +257,137 @@ function normalizeIngredientName(value: string) {
     .trim();
 }
 
+const CATEGORY_RULES: Array<{
+  category: ShoppingCategory;
+  terms: string[];
+}> = [
+  {
+    category: "Frozen",
+    terms: ["frozen", "congelado", "congelada"],
+  },
+  {
+    category: "Spices",
+    terms: [
+      "salt", "sal", "black pepper", "white pepper", "pimienta",
+      "paprika", "pimenton", "cayenne", "cayena", "oregano", "orégano",
+      "cumin", "comino", "cinnamon", "canela", "turmeric", "curcuma",
+      "curry", "tajin", "tajín", "chilli powder", "chili powder",
+      "garlic powder", "onion powder", "seasoning", "spice", "especia",
+      "gochugaru", "nutmeg", "nuez moscada", "bay leaf", "laurel",
+    ],
+  },
+  {
+    category: "Sauces & condiments",
+    terms: [
+      "soy sauce", "salsa de soja", "mayonnaise", "mayonesa", "mayo",
+      "mustard", "mostaza", "vinegar", "vinagre", "olive oil", "oil",
+      "aceite", "hoisin", "gochujang", "sriracha", "ketchup", "pesto",
+      "hot sauce", "fish sauce", "salsa", "dressing", "aderezo",
+      "tomato paste", "miso", "tahini",
+    ],
+  },
+  {
+    category: "Meat & fish",
+    terms: [
+      "chicken", "pollo", "beef", "ternera", "vacuno", "pork", "cerdo",
+      "lamb", "cordero", "turkey", "pavo", "ham", "jamon", "jamón",
+      "bacon", "sausage", "salchicha", "salmon", "salmón", "tuna",
+      "atun", "atún", "shrimp", "prawn", "gamba", "langostino", "fish",
+      "pescado", "cod", "bacalao", "anchovy", "anchoa", "mussels",
+      "mejillones", "squid", "calamar",
+    ],
+  },
+  {
+    category: "Dairy & eggs",
+    terms: [
+      "milk", "leche", "cream", "nata", "yogurt", "yoghurt", "yogur",
+      "cheese", "queso", "mozzarella", "parmesan", "parmesano", "feta",
+      "cottage", "ricotta", "butter", "mantequilla", "egg", "huevo",
+      "creme fraiche", "crème fraîche",
+    ],
+  },
+  {
+    category: "Bakery",
+    terms: [
+      "bread", "pan", "baguette", "bun", "roll", "tortilla", "wrap",
+      "pita", "naan", "croissant",
+    ],
+  },
+  {
+    category: "Pasta, rice & cereals",
+    terms: [
+      "pasta", "spaghetti", "macaroni", "macarron", "macarrón", "noodle",
+      "fideo", "rice", "arroz", "couscous", "cuscus", "cuscús", "quinoa",
+      "oats", "avena", "barley", "cebada", "bulgur", "polenta",
+    ],
+  },
+  {
+    category: "Fruit & vegetables",
+    terms: [
+      "onion", "cebolla", "garlic", "ajo", "tomato", "tomate", "pepper",
+      "pimiento", "chilli", "chili", "guindilla", "lime", "lima", "lemon",
+      "limon", "limón", "orange", "naranja", "apple", "manzana", "pear",
+      "pera", "berry", "berries", "frambues*", "arand*", "strawber*", "fresa",
+      "mango", "pineapple", "piña", "spinach", "espinaca", "lettuce",
+      "lechuga", "cabbage", "col", "eggplant", "aubergine", "berenjena",
+      "potato", "patata", "sweet potato", "boniato", "carrot", "zanahoria",
+      "cucumber", "pepino", "mushroom", "champi*", "scallion", "spring onion",
+      "cebolleta", "parsley", "perejil", "cilantro", "coriander", "albahaca",
+      "basil", "mint", "menta", "avocado", "aguacate", "celery", "apio",
+      "broccoli", "brocoli", "brócoli", "cauliflower", "coliflor", "zucchini",
+      "courgette", "calabacin", "calabacín", "pumpkin", "calabaza",
+    ],
+  },
+  {
+    category: "Pantry & preserves",
+    terms: [
+      "flour", "harina", "sugar", "azucar", "azúcar", "baking powder",
+      "levadura", "bean", "judia", "judía", "chickpea", "garbanzo", "lentil",
+      "lenteja", "corn", "maiz", "maíz", "pea", "guisante", "stock",
+      "broth", "caldo", "coconut milk", "leche de coco", "nut", "nuez",
+      "almond", "almendra", "pistach*", "seed", "semilla", "canned", "tinned",
+      "lata", "chocolate", "cocoa", "cacao", "honey", "miel", "maple syrup",
+    ],
+  },
+];
+
+function categoryTermMatches(text: string, rawTerm: string) {
+  const normalizedText = normalizeIngredientName(text)
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  const stem = rawTerm.endsWith("*");
+  const normalizedTerm = normalizeIngredientName(
+    stem ? rawTerm.slice(0, -1) : rawTerm,
+  );
+  if (!normalizedTerm) return false;
+
+  const textTokens = normalizedText.split(/\s+/).filter(Boolean);
+  const termTokens = normalizedTerm.split(/\s+/).filter(Boolean);
+  if (termTokens.length > 1) {
+    return ` ${normalizedText} `.includes(` ${normalizedTerm} `);
+  }
+
+  const term = termTokens[0];
+  return textTokens.some((token) => {
+    if (stem) return token.startsWith(term);
+    return (
+      token === term ||
+      token === `${term}s` ||
+      token === `${term}es` ||
+      (term.endsWith("y") && token === `${term.slice(0, -1)}ies`)
+    );
+  });
+}
+
+export function getShoppingCategory(text: string): ShoppingCategory {
+  for (const rule of CATEGORY_RULES) {
+    if (rule.terms.some((term) => categoryTermMatches(text, term))) {
+      return rule.category;
+    }
+  }
+  return "Other";
+}
+
 function parseIngredientLine(line: string): ParsedIngredient {
   const quantityMatch = STARTING_QUANTITY.exec(line);
   if (!quantityMatch) {
@@ -328,8 +475,8 @@ export function buildShoppingDraft(
           planItemId: planningItem.id,
           ingredientId: ingredient.id,
           sectionTitle: section.title,
-          originalLine: ingredient.originalLine,
-          scaledLine: scaleIngredientLine(ingredient.originalLine, factor),
+          originalLine: ingredientDisplayLine(ingredient) || ingredient.originalLine,
+          scaledLine: scaleIngredientLine(ingredientDisplayLine(ingredient) || ingredient.originalLine, factor),
           selected: true,
         });
       }
@@ -411,6 +558,69 @@ export function consolidateDraft(
   return [...merged, ...standalone].sort((a, b) =>
     a.text.localeCompare(b.text, "en", { sensitivity: "base" }),
   );
+}
+
+function sourceKey(source: ShoppingSource) {
+  return `${source.planItemId}:${source.ingredientId}`;
+}
+
+function itemIdentity(item: ShoppingItem) {
+  const parsed = parseIngredientLine(item.text);
+  if (parsed.ingredient) return `${parsed.unit ?? "line"}:${parsed.ingredient}`;
+  return normalizeIngredientName(item.text);
+}
+
+export async function regenerateShoppingWeekIfExists(
+  recipes: Recipe[],
+  weekStart: string,
+): Promise<ShoppingWeek | null> {
+  const normalized = getWeekStart(weekStart);
+  const existing = await getShoppingWeek(normalized);
+  if (!existing) return null;
+
+  const plan = await getPlanning();
+  const draft = buildShoppingDraft(recipes, plan, normalized);
+  const automaticExisting = existing.items.filter((item) => !item.manual);
+  const manualItems = existing.items.filter((item) => item.manual);
+
+  const existingSourceKeys = new Set(
+    automaticExisting.flatMap((item) => item.sources.map(sourceKey)),
+  );
+  const existingPlanIds = new Set(
+    automaticExisting.flatMap((item) => item.sources.map((source) => source.planItemId)),
+  );
+  const currentPlanIds = new Set(draft.map((item) => item.planItemId));
+  const newPlanIds = new Set(
+    Array.from(currentPlanIds).filter((planItemId) => !existingPlanIds.has(planItemId)),
+  );
+
+  const regenerated = consolidateDraft(
+    normalized,
+    draft.map((item) => ({
+      ...item,
+      selected:
+        newPlanIds.has(item.planItemId) ||
+        existingSourceKeys.has(`${item.planItemId}:${item.ingredientId}`),
+    })),
+  );
+
+  const checkedSourceKeys = new Set(
+    automaticExisting
+      .filter((item) => item.checked)
+      .flatMap((item) => item.sources.map(sourceKey)),
+  );
+  const checkedIdentities = new Set(
+    automaticExisting.filter((item) => item.checked).map(itemIdentity),
+  );
+
+  const withPreservedChecks = regenerated.map((item) => ({
+    ...item,
+    checked:
+      item.sources.some((source) => checkedSourceKeys.has(sourceKey(source))) ||
+      checkedIdentities.has(itemIdentity(item)),
+  }));
+
+  return saveShoppingWeek(normalized, [...withPreservedChecks, ...manualItems]);
 }
 
 
@@ -697,9 +907,23 @@ export function subscribeToShopping(callback: () => void) {
 }
 
 export function shoppingListText(items: ShoppingItem[]) {
-  return items
-    .filter((item) => !item.checked)
-    .map((item) => `☐ ${item.text}`)
-    .join("\n");
+  const remaining = items.filter((item) => !item.checked);
+  const groups = new Map<ShoppingCategory, ShoppingItem[]>();
+  for (const category of SHOPPING_CATEGORIES) groups.set(category, []);
+  for (const item of remaining) {
+    groups.get(getShoppingCategory(item.text))?.push(item);
+  }
+
+  return SHOPPING_CATEGORIES.flatMap((category) => {
+    const categoryItems = groups.get(category) ?? [];
+    if (!categoryItems.length) return [];
+    return [
+      category.toUpperCase(),
+      ...categoryItems.map((item) => `☐ ${item.text}`),
+      "",
+    ];
+  })
+    .join("\n")
+    .trim();
 }
 

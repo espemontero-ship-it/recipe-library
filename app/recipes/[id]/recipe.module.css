@@ -726,3 +726,14 @@
   background: #e6eee7;
   color: var(--green);
 }
+
+.nutritionStatus {
+  color: #6f6b63;
+  font-size: 0.78rem;
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.utilityActions a.quietButton {
+  text-decoration: none;
+}

@@ -748,3 +748,51 @@ input {
     padding: 0;
   }
 }
+
+.login-google-button {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--line) !important;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.login-google-button:hover {
+  border-color: var(--ink) !important;
+}
+
+.login-google-mark {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-family: Arial, sans-serif;
+  font-weight: 800;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.login-divider::before,
+.login-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+  content: "";
+}

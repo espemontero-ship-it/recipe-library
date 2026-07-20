@@ -420,3 +420,27 @@
     bottom: 8px;
   }
 }
+
+.categoryGroups {
+  display: grid;
+  gap: 28px;
+  margin-top: 24px;
+}
+
+.categoryGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.categoryGroup h2 {
+  margin: 0;
+  color: #2f5a41;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.categoryGroup .finalList {
+  margin-top: 0;
+}

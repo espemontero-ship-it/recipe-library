@@ -10,6 +10,7 @@ import {
   Clock3,
   ExternalLink,
   Heart,
+  Pencil,
   Share2,
   Star,
   Users,
@@ -23,12 +24,16 @@ import {
   savePersonalState,
   subscribeToPersonalState,
 } from "@/lib/personalRecipeState";
-import { getSupabaseRecipe } from "@/lib/supabaseRecipes";
+import { getSupabaseRecipe, getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   addRecipesToPlanning,
   getPlanning,
+  getWeekStart,
+  removePlanningItem,
   subscribeToPlanning,
 } from "@/lib/planning";
+import { regenerateShoppingWeekIfExists } from "@/lib/shoppingList";
+import { ingredientDisplayLine } from "@/lib/ingredientParser";
 import {
   formatRange,
   getRecipeIngredients,
@@ -54,7 +59,8 @@ export default function RecipePage() {
   const [privateNotesDraft, setPrivateNotesDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [inPlanning, setInPlanning] = useState(false);
+  const [thisWeekItemId, setThisWeekItemId] = useState<string | null>(null);
+  const [planningBusy, setPlanningBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -104,9 +110,13 @@ export default function RecipePage() {
     const refreshPlan = async () => {
       try {
         const items = await getPlanning();
-        if (active) setInPlanning(items.some((item) => item.recipeId === recipe?.id));
+        const thisWeekItem = items.find(
+          (item) =>
+            item.recipeId === recipe?.id && item.weekStart === getWeekStart(),
+        );
+        if (active) setThisWeekItemId(thisWeekItem?.id ?? null);
       } catch {
-        if (active) setInPlanning(false);
+        if (active) setThisWeekItemId(null);
       }
     };
     void refreshPlan();
@@ -164,13 +174,24 @@ export default function RecipePage() {
     }
   }
 
-  async function addToPlanning() {
-    if (!recipe || inPlanning) return;
+  async function toggleThisWeek() {
+    if (!recipe || planningBusy) return;
+    setPlanningBusy(true);
+    setSaveError("");
     try {
-      await addRecipesToPlanning([recipe]);
-      setInPlanning(true);
+      if (thisWeekItemId) {
+        await removePlanningItem(thisWeekItemId);
+      } else {
+        await addRecipesToPlanning([recipe], getWeekStart());
+      }
+      const recipes = await getSupabaseRecipes();
+      await regenerateShoppingWeekIfExists(recipes, getWeekStart());
     } catch (reason) {
-      setSaveError(reason instanceof Error ? reason.message : "Could not update Planning.");
+      setSaveError(
+        reason instanceof Error ? reason.message : "Could not update this week.",
+      );
+    } finally {
+      setPlanningBusy(false);
     }
   }
 
@@ -190,6 +211,13 @@ export default function RecipePage() {
 
   const ingredients = getRecipeIngredients(recipe);
   const steps = getRecipeSteps(recipe);
+  const hasNutrition = [
+    recipe.nutrition.calories.min,
+    recipe.nutrition.proteinG.min,
+    recipe.nutrition.carbohydratesG.min,
+    recipe.nutrition.fatG.min,
+    recipe.nutrition.fiberG.min,
+  ].some((value) => value !== null);
   const hasPublicState =
     recipe.personal.favorite ||
     recipe.personal.tested ||
@@ -204,23 +232,27 @@ export default function RecipePage() {
         </Link>
 
         <div className={styles.utilityActions}>
-          {inPlanning ? (
-            <Link
-              className={`${styles.quietButton} ${styles.weekButtonActive}`}
-              href="/planning"
-            >
+          <button
+            aria-pressed={Boolean(thisWeekItemId)}
+            className={`${styles.quietButton} ${
+              thisWeekItemId ? styles.weekButtonActive : ""
+            }`}
+            disabled={planningBusy}
+            onClick={() => void toggleThisWeek()}
+            type="button"
+          >
+            {thisWeekItemId ? (
               <CalendarDays aria-hidden="true" size={16} />
-              Open planning
-            </Link>
-          ) : (
-            <button
-              className={styles.quietButton}
-              onClick={() => void addToPlanning()}
-              type="button"
-            >
+            ) : (
               <CalendarPlus aria-hidden="true" size={16} />
-              Add to planning
-            </button>
+            )}
+            {thisWeekItemId ? "Remove from this week" : "Add to this week"}
+          </button>
+          {isAdmin && (
+            <Link className={styles.quietButton} href={`/recipes/${recipe.slug}/edit`}>
+              <Pencil aria-hidden="true" size={16} />
+              Edit recipe
+            </Link>
           )}
           <button type="button" className={styles.quietButton}>
             <Share2 aria-hidden="true" size={16} />
@@ -249,11 +281,13 @@ export default function RecipePage() {
 
             <h1>{recipe.title}</h1>
 
-            {(recipe.source.author || recipe.source.type) && (
+            {(recipe.source.author || recipe.source.publication || recipe.source.type) && (
               <p className={styles.byline}>
                 {recipe.source.author && <span>{recipe.source.author}</span>}
-                {recipe.source.author && recipe.source.type && <span aria-hidden="true">·</span>}
-                {recipe.source.type && <span>{recipe.source.type}</span>}
+                {recipe.source.author && (recipe.source.publication || recipe.source.type) && <span aria-hidden="true">·</span>}
+                {(recipe.source.publication || recipe.source.type) && (
+                  <span>{recipe.source.publication || recipe.source.type}</span>
+                )}
               </p>
             )}
 
@@ -332,12 +366,15 @@ export default function RecipePage() {
           </div>
         </header>
 
-        <section className={styles.nutrition} aria-label="Nutrition per serving">
-          <div><span>Calories</span><strong>{formatRange(recipe.nutrition.calories)}</strong></div>
+        <section className={styles.nutrition} aria-label="Macros per serving">
+          <div><span>Calories</span><strong>{formatRange(recipe.nutrition.calories, " kcal")}</strong></div>
           <div><span>Protein</span><strong>{formatRange(recipe.nutrition.proteinG, " g")}</strong></div>
           <div><span>Carbohydrates</span><strong>{formatRange(recipe.nutrition.carbohydratesG, " g")}</strong></div>
           <div><span>Fat</span><strong>{formatRange(recipe.nutrition.fatG, " g")}</strong></div>
           <div><span>Fiber</span><strong>{formatRange(recipe.nutrition.fiberG, " g")}</strong></div>
+          <p className={styles.nutritionStatus}>
+            {hasNutrition ? "Manual values per serving" : "Macros not added yet"}
+          </p>
         </section>
 
         <div className={styles.recipeBody}>
@@ -354,7 +391,7 @@ export default function RecipePage() {
                         <li key={item.id}>
                           <label>
                             <input type="checkbox" />
-                            <span>{item.originalLine}</span>
+                            <span>{ingredientDisplayLine(item) || item.originalLine}</span>
                           </label>
                         </li>
                       ))}

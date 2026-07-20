@@ -648,3 +648,11 @@
     height: 190px;
   }
 }
+
+.errorMessage {
+  background: #fff0ed;
+  border: 1px solid #e1aaa0;
+  color: #8f2e22;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+}

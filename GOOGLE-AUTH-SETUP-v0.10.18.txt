@@ -1,0 +1,50 @@
+ACTIVAR “CONTINUE WITH GOOGLE”
+
+El código ya está instalado. Solo falta configurar el proveedor una vez.
+
+A. SUPABASE — obtener callback
+1. Abre tu proyecto de Supabase.
+2. Ve a Authentication > Providers > Google.
+3. Copia la Callback URL que muestra esa pantalla.
+   Tendrá un formato parecido a:
+   https://TU-PROYECTO.supabase.co/auth/v1/callback
+
+B. GOOGLE CLOUD
+1. Abre Google Cloud Console > Google Auth Platform.
+2. Configura Branding/Audience si todavía no existe.
+3. En Data Access confirma los scopes básicos:
+   - openid
+   - email
+   - profile
+4. Ve a Clients > Create client.
+5. Tipo: Web application.
+6. Authorized JavaScript origins:
+   - http://localhost:3000
+   - el dominio de producción, si existe
+7. Authorized redirect URIs:
+   - pega EXACTAMENTE la Callback URL copiada de Supabase
+8. Guarda y copia Client ID y Client Secret.
+
+C. SUPABASE — activar Google
+1. Vuelve a Authentication > Providers > Google.
+2. Activa Google.
+3. Pega Client ID y Client Secret.
+4. Guarda.
+
+D. SUPABASE — URLs permitidas
+1. Ve a Authentication > URL Configuration.
+2. Añade a Redirect URLs:
+   - http://localhost:3000/login
+   - https://TU-DOMINIO/login (si existe producción)
+3. Comprueba que Site URL corresponde a tu URL principal.
+
+E. PRUEBA SEGURA
+1. Mantén abierta una sesión actual en otra pestaña.
+2. Abre una ventana privada y entra en http://localhost:3000/login.
+3. Pulsa Continue with Google.
+4. Usa el MISMO correo administrador que ya usas con el enlace por email.
+5. Comprueba que puedes editar y ver Planning/Shopping.
+
+IMPORTANTE
+- El acceso por email no se elimina.
+- Si Google entra pero muestra “No administrator permission”, cierra sesión y usa el acceso por email; revisa que el correo de Google sea exactamente el mismo que tu cuenta administradora.

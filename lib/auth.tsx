@@ -17,6 +17,7 @@ type AuthContextValue = {
   loading: boolean;
   isAdmin: boolean;
   sendMagicLink: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -96,6 +97,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error("Supabase environment variables are missing.");
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/login`,
+      },
+    });
+
+    if (error) throw error;
+  }, []);
+
   const signOut = useCallback(async () => {
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -104,8 +121,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, isAdmin, sendMagicLink, signOut }),
-    [user, loading, isAdmin, sendMagicLink, signOut],
+    () => ({
+      user,
+      loading,
+      isAdmin,
+      sendMagicLink,
+      signInWithGoogle,
+      signOut,
+    }),
+    [user, loading, isAdmin, sendMagicLink, signInWithGoogle, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

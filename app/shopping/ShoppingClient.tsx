@@ -12,20 +12,28 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { formatPlanningWeekLabel, getPlanning, getWeekStart } from "@/lib/planning";
+import {
+  formatPlanningWeekLabel,
+  getPlanning,
+  getWeekStart,
+  subscribeToPlanning,
+} from "@/lib/planning";
 import type { Recipe } from "@/lib/recipeModel";
 import {
   addManualShoppingItem,
   buildShoppingDraft,
   clearShoppingWeek,
   consolidateDraft,
+  getShoppingCategory,
   getShoppingWeek,
+  regenerateShoppingWeekIfExists,
   removeCheckedShoppingItems,
   removeShoppingItem,
   saveShoppingWeek,
   shoppingListText,
   subscribeToShopping,
   updateShoppingItem,
+  SHOPPING_CATEGORIES,
   type ShoppingDraftItem,
   type ShoppingItem,
 } from "@/lib/shoppingList";
@@ -123,6 +131,40 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
     };
   }, [weekStart]);
 
+  useEffect(() => {
+    let active = true;
+    const refreshFromPlanning = async () => {
+      try {
+        const loadedRecipes = await getSupabaseRecipes();
+        const regenerated = await regenerateShoppingWeekIfExists(
+          loadedRecipes,
+          weekStart,
+        );
+        if (!active) return;
+        setRecipes(loadedRecipes);
+        if (regenerated) {
+          setSavedItems(regenerated.items);
+          setMode("list");
+        }
+        const plan = await getPlanning();
+        if (active) setDraft(buildShoppingDraft(loadedRecipes, plan, weekStart));
+      } catch (reason) {
+        if (active) {
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Could not regenerate the shopping list.",
+          );
+        }
+      }
+    };
+    const unsubscribe = subscribeToPlanning(() => void refreshFromPlanning());
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [weekStart]);
+
   const recipeGroups = useMemo<RecipeDraftGroup[]>(() => {
     const groups = new Map<string, RecipeDraftGroup>();
     for (const item of draft) {
@@ -142,6 +184,16 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
 
   const selectedCount = draft.filter((item) => item.selected).length;
   const checkedCount = savedItems.filter((item) => item.checked).length;
+  const categorizedItems = useMemo(
+    () =>
+      SHOPPING_CATEGORIES.map((category) => ({
+        category,
+        items: savedItems.filter(
+          (item) => getShoppingCategory(item.text) === category,
+        ),
+      })).filter((group) => group.items.length > 0),
+    [savedItems],
+  );
   const recipeImageById = useMemo(
     () => new Map(recipes.map((recipe) => [recipe.id, recipe.media.heroImage])),
     [recipes],
@@ -357,55 +409,92 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
             </div>
           </section>
 
-          <section className={styles.finalList}>
-            {savedItems.map((item) => {
-              const sourceNames = Array.from(new Set(item.sources.map((source) => source.recipeTitle)));
-              return (
-                <article className={`${styles.finalItem} ${item.checked ? styles.finalItemChecked : ""}`} key={item.id}>
-                  <label>
-                    <input
-                      checked={item.checked}
-                      onChange={(event) =>
-                        void updateShoppingItem(weekStart, item.id, { checked: event.target.checked }).catch((reason: unknown) =>
-                          setError(reason instanceof Error ? reason.message : "Could not update the item."),
-                        )
-                      }
-                      type="checkbox"
-                    />
-                    <span className={styles.checkmark}>
-                      {item.checked && <Check aria-hidden="true" size={15} />}
-                    </span>
-                  </label>
-                  <div>
-                    <input
-                      aria-label={`Edit ${item.text}`}
-                      onBlur={(event) =>
-                        void updateShoppingItem(weekStart, item.id, { text: event.target.value.trim() || item.text }).catch((reason: unknown) =>
-                          setError(reason instanceof Error ? reason.message : "Could not update the item."),
-                        )
-                      }
-                      defaultValue={item.text}
-                      type="text"
-                    />
-                    <small>
-                      {item.manual
-                        ? "Added manually"
-                        : sourceNames.length
-                          ? sourceNames.join(" · ")
-                          : "From planning"}
-                    </small>
-                  </div>
-                  <button aria-label={`Remove ${item.text}`} onClick={() =>
-                    void removeShoppingItem(weekStart, item.id).catch((reason: unknown) =>
-                      setError(reason instanceof Error ? reason.message : "Could not remove the item."),
-                    )
-                  } type="button">
-                    <Trash2 aria-hidden="true" size={16} />
-                  </button>
-                </article>
-              );
-            })}
-          </section>
+          <div className={styles.categoryGroups}>
+            {categorizedItems.map((group) => (
+              <section className={styles.categoryGroup} key={group.category}>
+                <h2>{group.category}</h2>
+                <div className={styles.finalList}>
+                  {group.items.map((item) => {
+                    const sourceNames = Array.from(
+                      new Set(item.sources.map((source) => source.recipeTitle)),
+                    );
+                    return (
+                      <article
+                        className={`${styles.finalItem} ${
+                          item.checked ? styles.finalItemChecked : ""
+                        }`}
+                        key={item.id}
+                      >
+                        <label>
+                          <input
+                            checked={item.checked}
+                            onChange={(event) =>
+                              void updateShoppingItem(weekStart, item.id, {
+                                checked: event.target.checked,
+                              }).catch((reason: unknown) =>
+                                setError(
+                                  reason instanceof Error
+                                    ? reason.message
+                                    : "Could not update the item.",
+                                ),
+                              )
+                            }
+                            type="checkbox"
+                          />
+                          <span className={styles.checkmark}>
+                            {item.checked && (
+                              <Check aria-hidden="true" size={15} />
+                            )}
+                          </span>
+                        </label>
+                        <div>
+                          <input
+                            aria-label={`Edit ${item.text}`}
+                            defaultValue={item.text}
+                            onBlur={(event) =>
+                              void updateShoppingItem(weekStart, item.id, {
+                                text: event.target.value.trim() || item.text,
+                              }).catch((reason: unknown) =>
+                                setError(
+                                  reason instanceof Error
+                                    ? reason.message
+                                    : "Could not update the item.",
+                                ),
+                              )
+                            }
+                            type="text"
+                          />
+                          <small>
+                            {item.manual
+                              ? "Added manually"
+                              : sourceNames.length
+                                ? sourceNames.join(" · ")
+                                : "From planning"}
+                          </small>
+                        </div>
+                        <button
+                          aria-label={`Remove ${item.text}`}
+                          onClick={() =>
+                            void removeShoppingItem(weekStart, item.id).catch(
+                              (reason: unknown) =>
+                                setError(
+                                  reason instanceof Error
+                                    ? reason.message
+                                    : "Could not remove the item.",
+                                ),
+                            )
+                          }
+                          type="button"
+                        >
+                          <Trash2 aria-hidden="true" size={16} />
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
 
           <section className={styles.addManual}>
             <PencilLine aria-hidden="true" size={18} />

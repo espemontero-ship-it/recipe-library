@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ingredientDisplayLine } from "@/lib/ingredientParser";
 import {
   CalendarDays,
   CalendarPlus,
@@ -21,8 +22,12 @@ import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   addRecipesToPlanning,
   getPlanning,
+  getWeekStart,
+  removePlanningItem,
   subscribeToPlanning,
+  type PlanningItem,
 } from "@/lib/planning";
+import { regenerateShoppingWeekIfExists } from "@/lib/shoppingList";
 import {
   formatRange,
   getRecipeIngredients,
@@ -126,7 +131,8 @@ export default function BrowsePage() {
   const [view, setView] = useState<ViewValue>("grid");
   const [planningMode, setPlanningMode] = useState(false);
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
-  const [plannedRecipeIds, setPlannedRecipeIds] = useState<string[]>([]);
+  const [planningItems, setPlanningItems] = useState<PlanningItem[]>([]);
+  const [planningBusyRecipeIds, setPlanningBusyRecipeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -142,7 +148,7 @@ export default function BrowsePage() {
     const refreshPlan = async () => {
       try {
         const items = await getPlanning();
-        if (active) setPlannedRecipeIds(items.map((item) => item.recipeId));
+        if (active) setPlanningItems(items);
       } catch (reason) {
         if (active) {
           setError(reason instanceof Error ? reason.message : "Could not load Planning.");
@@ -198,6 +204,20 @@ export default function BrowsePage() {
     () => recipes.map(mergePersonalState),
     [recipes, personalVersion],
   );
+
+  const plannedRecipeIds = useMemo(
+    () => Array.from(new Set(planningItems.map((item) => item.recipeId))),
+    [planningItems],
+  );
+
+  const thisWeekItemsByRecipe = useMemo(() => {
+    const currentWeek = getWeekStart();
+    return new Map(
+      planningItems
+        .filter((item) => item.weekStart === currentWeek)
+        .map((item) => [item.recipeId, item]),
+    );
+  }, [planningItems]);
 
   const facetOptions = useMemo(() => {
     return {
@@ -261,7 +281,7 @@ export default function BrowsePage() {
             ...recipe.classification.mealTypes,
             ...recipe.classification.cuisines,
             ...recipe.classification.cookingMethods,
-            ...getRecipeIngredients(recipe).map((item) => item.originalLine),
+            ...getRecipeIngredients(recipe).map((item) => ingredientDisplayLine(item) || item.originalLine),
           ]
             .filter(Boolean)
             .join(" "),
@@ -419,11 +439,37 @@ export default function BrowsePage() {
     );
     try {
       await addRecipesToPlanning(selectedRecipes);
+      await regenerateShoppingWeekIfExists(personalisedRecipes, getWeekStart());
       setSelectedRecipeIds([]);
       setPlanningMode(false);
       window.location.href = "/planning";
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not update Planning.");
+    }
+  }
+
+  async function toggleThisWeek(recipe: Recipe) {
+    if (planningBusyRecipeIds.includes(recipe.id)) return;
+    setPlanningBusyRecipeIds((current) => [...current, recipe.id]);
+    setError("");
+    try {
+      const currentItem = thisWeekItemsByRecipe.get(recipe.id);
+      if (currentItem) {
+        await removePlanningItem(currentItem.id);
+      } else {
+        await addRecipesToPlanning([recipe], getWeekStart());
+      }
+      await regenerateShoppingWeekIfExists(personalisedRecipes, getWeekStart());
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Could not update this week.",
+      );
+    } finally {
+      setPlanningBusyRecipeIds((current) =>
+        current.filter((recipeId) => recipeId !== recipe.id),
+      );
     }
   }
 
@@ -698,15 +744,19 @@ export default function BrowsePage() {
           {filtered.map((recipe) => {
             const selected = selectedRecipeIds.includes(recipe.id);
             const alreadyPlanned = plannedRecipeIds.includes(recipe.id);
+            const inThisWeek = thisWeekItemsByRecipe.has(recipe.id);
 
             return (
               <BrowseRecipeCard
-                alreadyPlanned={alreadyPlanned}
+                alreadyPlanned={planningMode ? inThisWeek : alreadyPlanned}
+                inThisWeek={inThisWeek}
                 key={recipe.id}
                 onRecipeChange={updateRecipeInList}
                 onToggleSelection={() => {
-                  if (!alreadyPlanned) toggleRecipeSelection(recipe.id);
+                  if (!inThisWeek) toggleRecipeSelection(recipe.id);
                 }}
+                onToggleThisWeek={() => toggleThisWeek(recipe)}
+                planningBusy={planningBusyRecipeIds.includes(recipe.id)}
                 planningMode={planningMode}
                 recipe={recipe}
                 selected={selected}

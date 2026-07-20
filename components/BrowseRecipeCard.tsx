@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { getRecipeIngredients, type Recipe } from "@/lib/recipeModel";
+import { ingredientDisplayLine } from "@/lib/ingredientParser";
 import styles from "./BrowseRecipeCard.module.css";
 
 type Props = {
@@ -19,7 +20,10 @@ type Props = {
   planningMode: boolean;
   selected: boolean;
   alreadyPlanned: boolean;
+  inThisWeek: boolean;
   onToggleSelection: () => void;
+  onToggleThisWeek: () => void | Promise<void>;
+  planningBusy: boolean;
   onRecipeChange: (recipe: Recipe) => void;
 };
 
@@ -29,7 +33,10 @@ export function BrowseRecipeCard({
   planningMode,
   selected,
   alreadyPlanned,
+  inThisWeek,
   onToggleSelection,
+  onToggleThisWeek,
+  planningBusy,
   onRecipeChange,
 }: Props) {
   const ingredients = getRecipeIngredients(recipe);
@@ -40,7 +47,7 @@ export function BrowseRecipeCard({
     ingredients.length - visibleIngredients.length,
   );
   const ingredientPreview = visibleIngredients
-    .map((item) => item.originalLine.trim())
+    .map((item) => ingredientDisplayLine(item) || item.originalLine.trim())
     .filter(Boolean)
     .join(", ");
   const recipeHref = `/recipes/${recipe.slug}`;
@@ -138,9 +145,12 @@ export function BrowseRecipeCard({
         {!planningMode ? (
           <div className={styles.quickActions}>
             <RecipeQuickActions
+              inThisWeek={inThisWeek}
               onChange={onRecipeChange}
+              onToggleThisWeek={onToggleThisWeek}
+              planningBusy={planningBusy}
               recipe={recipe}
-              showCookedLabel={view === "list"}
+              showCookedLabel={false}
             />
           </div>
         ) : (

@@ -1,0 +1,328 @@
+.editor {
+  display: grid;
+  gap: 18px;
+}
+
+.summary {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.summary span {
+  color: #6f6b63;
+  font-size: 0.88rem;
+}
+
+.section {
+  border: 1px solid #dedbd3;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  align-items: center;
+  background: #f7f5ef;
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.sectionHeader input {
+  background: transparent;
+  border: 0;
+  flex: 1;
+  font-weight: 700;
+  min-width: 0;
+  outline: none;
+}
+
+.sectionHeader button,
+.dragButtons button,
+.deleteButton,
+.matchSummary button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #6f6b63;
+  display: inline-flex;
+  justify-content: center;
+  padding: 5px;
+}
+
+.rows {
+  display: grid;
+}
+
+.row + .row {
+  border-top: 1px solid #ece9e1;
+}
+
+.rowMain {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 28px 64px 80px minmax(150px, 1.35fr) minmax(130px, 1fr) 104px 132px 32px 32px;
+  padding: 10px;
+}
+
+.rowMain input {
+  border: 1px solid #d8d4ca;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 8px 9px;
+  width: 100%;
+}
+
+.dragButtons {
+  display: grid;
+}
+
+.dragButtons button:disabled {
+  opacity: 0.25;
+}
+
+.parseButton,
+.statusButton {
+  align-items: center;
+  border: 1px solid;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  gap: 5px;
+  justify-content: center;
+  padding: 7px 9px;
+  white-space: nowrap;
+}
+
+.resolved {
+  background: #eef4e9;
+  border-color: #b5c9a8;
+  color: #34552f;
+}
+
+.pending {
+  background: #fff7df;
+  border-color: #d8c77c;
+  color: #6b5313;
+}
+
+.details {
+  background: #fbfaf7;
+  border-top: 1px solid #ece9e1;
+  display: grid;
+  gap: 14px;
+  padding: 14px 18px 18px 46px;
+}
+
+.originalLine {
+  color: #625f58;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.flags label {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.parseDecision,
+.nutritionDecision {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.parseDecision span,
+.helper {
+  color: #625f58;
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.parseDecision > div {
+  display: grid;
+  gap: 2px;
+  max-width: 430px;
+}
+
+.parseDecision > button,
+.nutritionDecision > button,
+.searchBox button,
+.addIngredient,
+.addSection {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cbc6ba;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 6px;
+  padding: 9px 11px;
+}
+
+.nutritionDecision label,
+.searchBox label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+
+.choiceActive {
+  background: #edf2e8 !important;
+  border-color: #879f79 !important;
+}
+
+.gramsInput {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+}
+
+.gramsInput input {
+  border: 1px solid #d8d4ca;
+  border-radius: 8px;
+  padding: 9px;
+  width: 110px;
+}
+
+.matchSummary {
+  align-items: center;
+  background: #eef4e9;
+  border: 1px solid #c5d4bb;
+  border-radius: 10px;
+  display: grid;
+  gap: 3px 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 10px 12px;
+}
+
+.matchSummary div {
+  display: grid;
+}
+
+.matchSummary span {
+  color: #4e5d48;
+  font-size: 0.82rem;
+}
+
+.searchBox > div {
+  display: flex;
+  gap: 8px;
+}
+
+.searchBox input {
+  border: 1px solid #d8d4ca;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 9px;
+}
+
+.error {
+  color: #9b2f2f;
+  font-size: 0.82rem;
+  margin: 6px 0 0;
+}
+
+.results {
+  display: grid;
+  gap: 6px;
+  max-height: 310px;
+  overflow: auto;
+}
+
+.results button {
+  background: #fff;
+  border: 1px solid #dedbd3;
+  border-radius: 9px;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.results button:hover {
+  border-color: #7f9271;
+}
+
+.results span,
+.results small {
+  color: #6f6b63;
+}
+
+.addIngredient {
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid #ece9e1;
+  justify-content: center;
+  width: 100%;
+}
+
+.addSection {
+  justify-self: start;
+}
+
+@media (max-width: 900px) {
+  .rowMain {
+    grid-template-columns: 28px 62px 70px minmax(120px, 1fr) 98px 120px 32px 32px;
+  }
+
+  .note {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .rowMain {
+    align-items: start;
+    grid-template-columns: 28px 62px 70px minmax(0, 1fr) 32px 32px;
+  }
+
+  .parseButton {
+    grid-column: 2 / 4;
+    justify-self: start;
+  }
+
+  .statusButton {
+    grid-column: 4 / 5;
+    justify-self: start;
+  }
+
+  .details {
+    padding-left: 14px;
+  }
+
+  .matchSummary {
+    grid-template-columns: 1fr auto;
+  }
+
+  .matchSummary > span {
+    grid-column: 1 / -1;
+  }
+}
+
+.summary > div {
+  display: grid;
+  gap: 2px;
+}
+
+.summary > button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cbc6ba;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 7px;
+  padding: 8px 11px;
+}

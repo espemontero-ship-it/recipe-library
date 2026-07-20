@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Heart, Star } from "lucide-react";
+import { CalendarCheck2, CalendarPlus, CheckCircle2, Heart, Star } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { savePersonalState } from "@/lib/personalRecipeState";
@@ -11,12 +11,18 @@ type Props = {
   recipe: Recipe;
   onChange?: (recipe: Recipe) => void;
   showCookedLabel?: boolean;
+  inThisWeek?: boolean;
+  onToggleThisWeek?: () => void | Promise<void>;
+  planningBusy?: boolean;
 };
 
 export function RecipeQuickActions({
   recipe,
   onChange,
   showCookedLabel = true,
+  inThisWeek = false,
+  onToggleThisWeek,
+  planningBusy = false,
 }: Props) {
   const { loading: authLoading, isAdmin } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -48,6 +54,30 @@ export function RecipeQuickActions({
 
   return (
     <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
+      {onToggleThisWeek && (
+        <button
+          aria-label={
+            inThisWeek
+              ? `Remove ${recipe.title} from this week`
+              : `Add ${recipe.title} to this week`
+          }
+          aria-pressed={inThisWeek}
+          className={`${styles.iconButton} ${
+            inThisWeek ? styles.active : ""
+          }`}
+          disabled={!editable || busy || planningBusy}
+          onClick={() => void onToggleThisWeek()}
+          title={inThisWeek ? "In this week" : "Add to this week"}
+          type="button"
+        >
+          {inThisWeek ? (
+            <CalendarCheck2 aria-hidden="true" size={17} />
+          ) : (
+            <CalendarPlus aria-hidden="true" size={17} />
+          )}
+        </button>
+      )}
+
       <button
         aria-label={
           recipe.personal.favorite ? "Remove from favorites" : "Add to favorites"

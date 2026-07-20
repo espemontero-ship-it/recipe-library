@@ -1,0 +1,10 @@
+Recipe Library v0.11.3 QA
+
+Verified
+- npm run build passes.
+- /api/nutrition is no longer part of the production routes.
+- Ingredient editor contains no USDA/FoodData Central requests.
+- Recipe editor accepts manual per-serving calories, protein, carbohydrates, fat and fiber.
+- Manual macro values are read from and written to the existing Supabase columns.
+- Recipes can be saved with blank macros.
+- Existing recipes are not changed merely by opening them.

@@ -5,14 +5,21 @@ export type NutritionRange = {
 
 export type ParsedRecipe = {
   title: string;
+  summary: string;
   author: string;
   publication: string;
+  sourceType: string;
   sourceUrl: string;
   imageUrl: string;
   imageStatus: "found_clipboard" | "found_source" | "missing";
   imageWarning: string;
   servings: string;
   time: string;
+  prepMinutes: string;
+  cookMinutes: string;
+  restingMinutes: string;
+  marinatingMinutes: string;
+  totalMinutes: string;
   ingredients: string[];
   method: { title: string; body: string }[];
   calories: NutritionRange;
@@ -22,7 +29,13 @@ export type ParsedRecipe = {
   fiber: NutritionRange;
   servingSuggestion: string;
   mainIngredients: string[];
+  dish: string[];
+  formats: string[];
+  mealTypes: string[];
   methods: string[];
+  cuisines: string[];
+  collections: string[];
+  publicNotes: string;
 };
 
 export type PasteContext = {
@@ -166,6 +179,19 @@ export function sourceFromUrl(value: string) {
     if (host.endsWith("facebook.com")) return "Facebook";
     if (host.endsWith("youtube.com") || host === "youtu.be") return "YouTube";
     return host;
+  } catch {
+    return "";
+  }
+}
+
+export function sourceTypeFromUrl(value: string) {
+  if (!value) return "";
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    if (host.includes("instagram.com")) return "instagram";
+    if (host.includes("tiktok.com")) return "tiktok";
+    if (host.includes("facebook.com")) return "facebook";
+    return "web";
   } catch {
     return "";
   }
@@ -513,6 +539,20 @@ function extractTime(lines: string[]) {
   return "";
 }
 
+function durationMinutes(value: string) {
+  if (!value) return "";
+  const hours = value.match(/(\d+(?:[.,]\d+)?)\s*(?:hours?|hrs?|h|horas?)/i);
+  const minutes = value.match(/(\d+(?:[.,]\d+)?)\s*(?:minutes?|mins?|min|m|minutos?)/i);
+  const hourValue = hours ? Number.parseFloat(hours[1].replace(",", ".")) : 0;
+  const minuteValue = minutes ? Number.parseFloat(minutes[1].replace(",", ".")) : 0;
+  const total = Math.round(hourValue * 60 + minuteValue);
+  return total > 0 ? String(total) : "";
+}
+
+function timePart(lines: string[], headings: RegExp[]) {
+  return durationMinutes(lineAfterHeading(lines, headings));
+}
+
 function servingSuggestion(lines: string[]) {
   const start = findSectionStart(lines, SECTION_HEADINGS.serving);
   if (start < 0) return "";
@@ -541,14 +581,21 @@ export function parseRecipe(raw: string, context: PasteContext = {}): ParsedReci
 
   return {
     title,
+    summary: "",
     author: extractAuthor(lines),
     publication: publicationFromUrl || publicationFromText,
+    sourceType: sourceTypeFromUrl(sourceUrl),
     sourceUrl,
     imageUrl,
     imageStatus: imageUrl ? "found_clipboard" : "missing",
     imageWarning: "",
     servings: extractServings(lines),
     time: extractTime(lines),
+    prepMinutes: timePart(lines, [/^prep(?:aration)?\s+time\s*:?/i, /^tiempo\s+de\s+preparaci[oó]n\s*:?/i]),
+    cookMinutes: timePart(lines, [/^cook(?:ing)?\s+time\s*:?/i, /^tiempo\s+de\s+cocci[oó]n\s*:?/i]),
+    restingMinutes: timePart(lines, [/^rest(?:ing)?\s+time\s*:?/i, /^reposo\s*:?/i]),
+    marinatingMinutes: timePart(lines, [/^marinat(?:ing|ion)\s+time\s*:?/i, /^marinado\s*:?/i]),
+    totalMinutes: durationMinutes(extractTime(lines)),
     ingredients: finalIngredients,
     method: parseMethod(lines),
     calories: extractRange(normalized, ["Calories", "Calorías"]),
@@ -558,7 +605,13 @@ export function parseRecipe(raw: string, context: PasteContext = {}): ParsedReci
     fiber: extractRange(normalized, ["Fiber", "Fibre", "Fibra"]),
     servingSuggestion: servingSuggestion(lines),
     mainIngredients: inferMainIngredients(title, finalIngredients),
+    dish: [],
+    formats: [],
+    mealTypes: [],
     methods: inferMethods(normalized),
+    cuisines: [],
+    collections: [],
+    publicNotes: "",
   };
 }
 

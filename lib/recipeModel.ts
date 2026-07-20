@@ -1,11 +1,7 @@
-export const RECIPE_SCHEMA_VERSION = 3 as const;
+export const RECIPE_SCHEMA_VERSION = 7 as const;
 
 export type RecipeStatus =
-  | "to_try"
-  | "this_weekend"
-  | "tested"
-  | "favorite"
-  | "discarded";
+  "to_try" | "this_weekend" | "tested" | "favorite" | "discarded";
 
 export type RecipeVisibility = "private" | "unlisted" | "public";
 
@@ -19,7 +15,7 @@ export type NumericRange = {
 export type RecipeSource = {
   author: string | null;
   type: string | null;
-  publication: string | null; // Legacy import field; source.type is canonical.
+  publication: string | null;
   originalUrl: string | null;
 };
 
@@ -34,9 +30,32 @@ export type RecipeYield = {
   totalMinutes: number | null;
 };
 
+export type NutritionPer100g = {
+  calories: number;
+  proteinG: number;
+  carbohydratesG: number;
+  fatG: number;
+  fiberG: number;
+};
+
+export type IngredientParseStatus = "confirmed" | "review";
+
+export type IngredientNutritionStatus = "pending" | "matched" | "excluded";
+
+export type IngredientNutrition = {
+  status: IngredientNutritionStatus;
+  fdcId: number | null;
+  foodName: string | null;
+  brandName: string | null;
+  grams: number | null;
+  per100g: NutritionPer100g | null;
+  note: string | null;
+};
+
 export type RecipeIngredient = {
   id: string;
   originalLine: string;
+  parseStatus: IngredientParseStatus;
   canonicalIngredient: string | null;
   quantity: NumericRange;
   unit: string | null;
@@ -44,6 +63,7 @@ export type RecipeIngredient = {
   optional: boolean;
   garnish: boolean;
   servingAccompaniment: boolean;
+  nutrition: IngredientNutrition;
 };
 
 export type RecipeIngredientSection = {
@@ -85,6 +105,7 @@ export type RecipeClassification = {
   cookingMethods: string[];
   cuisines: string[];
   collections: string[];
+  tags: string[];
   // Legacy aliases retained while the paste importer is migrated.
   mainIngredients: string[];
   dishTypes: string[];
@@ -115,6 +136,9 @@ export type Recipe = {
   methodSections: RecipeMethodSection[];
   servingSuggestion: string | null;
   publicNotes: string | null;
+  storageNotes: string | null;
+  reheatingNotes: string | null;
+  nutritionNotes: string | null;
   nutrition: RecipeNutrition;
   classification: RecipeClassification;
   personal: RecipePersonal;
@@ -127,24 +151,41 @@ export type Recipe = {
 
 export type RecipeInput = {
   title: string;
+  summary?: string;
   author?: string;
   publication?: string;
+  sourceType?: string;
   originalUrl?: string;
   servings?: string;
   time?: string;
+  prepMinutes?: number | null;
+  cookMinutes?: number | null;
+  restingMinutes?: number | null;
+  marinatingMinutes?: number | null;
+  totalMinutes?: number | null;
   ingredients?: string[];
+  ingredientSections?: RecipeIngredientSection[];
   method?: { title: string; body: string }[];
+  methodSections?: RecipeMethodSection[];
   calories?: { min: string; max: string };
   protein?: { min: string; max: string };
   carbs?: { min: string; max: string };
   fat?: { min: string; max: string };
   fiber?: { min: string; max: string };
   servingSuggestion?: string;
+  publicNotes?: string;
+  storageNotes?: string;
+  reheatingNotes?: string;
+  nutritionNotes?: string;
   mainIngredients?: string[];
+  dish?: string[];
+  formats?: string[];
+  mealTypes?: string[];
   dishTypes?: string[];
   methods?: string[];
   cuisines?: string[];
   collections?: string[];
+  tags?: string[];
   tested?: boolean;
   favorite?: boolean;
   thisWeekend?: boolean;
@@ -217,10 +258,10 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
     id,
     slug: `${slugBase}-${id.slice(-8)}`,
     title,
-    summary: null,
+    summary: input.summary?.trim() || null,
     source: {
       author: input.author?.trim() || null,
-      type: input.publication?.trim() || null,
+      type: input.sourceType?.trim() || null,
       publication: input.publication?.trim() || null,
       originalUrl: input.originalUrl?.trim() || null,
     },
@@ -228,19 +269,20 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
       servings: parseServings(input.servings),
       servingsDisplay: input.servings?.trim() || null,
       timeDisplay: input.time?.trim() || null,
-      prepMinutes: null,
-      cookMinutes: null,
-      restingMinutes: null,
-      marinatingMinutes: null,
-      totalMinutes: null,
+      prepMinutes: input.prepMinutes ?? null,
+      cookMinutes: input.cookMinutes ?? null,
+      restingMinutes: input.restingMinutes ?? null,
+      marinatingMinutes: input.marinatingMinutes ?? null,
+      totalMinutes: input.totalMinutes ?? null,
     },
-    ingredientSections: [
+    ingredientSections: input.ingredientSections ?? [
       {
         id: createEntityId("ingredient_section"),
         title: null,
         items: (input.ingredients ?? []).map((originalLine) => ({
           id: createEntityId("ingredient"),
           originalLine: originalLine.trim(),
+          parseStatus: "review",
           canonicalIngredient: null,
           quantity: { min: null, max: null },
           unit: null,
@@ -248,10 +290,19 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
           optional: false,
           garnish: false,
           servingAccompaniment: false,
+          nutrition: {
+            status: "pending",
+            fdcId: null,
+            foodName: null,
+            brandName: null,
+            grams: null,
+            per100g: null,
+            note: null,
+          },
         })),
       },
     ],
-    methodSections: [
+    methodSections: input.methodSections ?? [
       {
         id: createEntityId("method_section"),
         title: null,
@@ -265,7 +316,10 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
       },
     ],
     servingSuggestion: input.servingSuggestion?.trim() || null,
-    publicNotes: null,
+    publicNotes: input.publicNotes?.trim() || null,
+    storageNotes: input.storageNotes?.trim() || null,
+    reheatingNotes: input.reheatingNotes?.trim() || null,
+    nutritionNotes: input.nutritionNotes?.trim() || null,
     nutrition: {
       scope: "per_serving",
       calories: toNumericRange(input.calories),
@@ -274,18 +328,22 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
       fatG: toNumericRange(input.fat),
       fiberG: toNumericRange(input.fiber),
       includesSides: null,
-      note: null,
+      note: "Manual values per serving.",
     },
     classification: {
       ingredientsIndex: unique(input.mainIngredients ?? []),
-      dish: [],
-      formats: unique(input.dishTypes ?? []),
-      mealTypes: [],
+      dish: unique(input.dish ?? []),
+      formats: unique(input.formats ?? input.dishTypes ?? []),
+      mealTypes: unique(input.mealTypes ?? []),
       mainIngredients: unique(input.mainIngredients ?? []),
-      dishTypes: unique(input.dishTypes ?? []),
+      dishTypes: unique([
+        ...(input.dish ?? []),
+        ...(input.formats ?? input.dishTypes ?? []),
+      ]),
       cookingMethods: unique(input.methods ?? []),
       cuisines: unique(input.cuisines ?? []),
       collections: unique(input.collections ?? []),
+      tags: unique(input.tags ?? []),
     },
     personal: {
       status: input.thisWeekend
@@ -339,12 +397,6 @@ export function validateRecipe(recipe: Recipe): RecipeValidation {
   if (!recipe.source.type) warnings.push("Source type not provided.");
   if (!recipe.yield.servingsDisplay) warnings.push("Servings not provided.");
   if (!recipe.yield.timeDisplay) warnings.push("Time not provided.");
-  if (recipe.nutrition.calories.min === null) {
-    warnings.push("Calories not provided.");
-  }
-  if (recipe.nutrition.fiberG.min === null) {
-    warnings.push("Fiber not provided.");
-  }
   if (
     recipe.personal.rating !== null &&
     (recipe.personal.rating < 1 || recipe.personal.rating > 5)
@@ -359,11 +411,7 @@ export function validateRecipe(recipe: Recipe): RecipeValidation {
   };
 }
 
-export function formatRange(
-  range: NumericRange,
-  suffix = "",
-  fallback = "—",
-) {
+export function formatRange(range: NumericRange, suffix = "", fallback = "—") {
   if (range.min === null) return fallback;
   if (range.max !== null && range.max !== range.min) {
     return `${range.min}–${range.max}${suffix}`;

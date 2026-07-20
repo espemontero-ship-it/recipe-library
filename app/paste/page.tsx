@@ -1,199 +1,122 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   ArrowLeft,
-  Check,
   ClipboardPaste,
-  FileText,
-  ImageIcon,
-  Link2,
   Loader2,
-  RefreshCw,
-  Save,
   Sparkles,
-  TriangleAlert,
 } from "lucide-react";
-import styles from "./paste.module.css";
-import { createSupabaseRecipe } from "@/lib/supabaseRecipes";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { AdminGate } from "@/components/AdminGate";
+import { RecipeEditor } from "@/components/RecipeEditor";
+import { parseIngredientLine } from "@/lib/ingredientParser";
+import {
+  createRecipeFromInput,
+  slugifyRecipeTitle,
+  type Recipe,
+} from "@/lib/recipeModel";
 import {
   extractPasteContextFromHtml,
   normalizeSourceUrl,
   parseRecipe,
-  sourceFromUrl,
-  type NutritionRange,
-  type ParsedRecipe,
   type PasteContext,
 } from "@/lib/recipePasteParser";
+import { createSupabaseRecipeFromRecipe } from "@/lib/supabaseRecipes";
+import styles from "./paste.module.css";
 
-type Confidence = "confirmed" | "review" | "missing";
+const SAMPLE_RECIPE = `Lemon yoghurt chicken
+By Example Cook
+4 servings
+45 minutes
 
-type ReviewField = {
-  label: string;
-  confidence: Confidence;
-};
+Ingredients
+600 g chicken breast, diced
+200 g Greek yoghurt 0%
+1 tbsp olive oil
+1 lemon, zest and juice
+2 garlic cloves, grated
+Salt and black pepper, to taste
 
-const SAMPLE_RECIPE = `# Salmon with Lemon-Herb Marinade
+Preparation
+Step 1
+Mix the yoghurt, lemon, garlic, salt and pepper. Coat the chicken and rest for 20 minutes.
 
-**Original recipe:** Moira Hodgson, *The New York Times*
-**Servings:** 6
-**Time:** 20 minutes, plus at least 1 hour marinating
+Step 2
+Cook the chicken until golden and fully cooked. Serve immediately.`;
 
-## Ingredients
-
-* 1 whole salmon fillet, approximately **1.36 kg**
-* 1 garlic clove, finely minced
-* **25 g** dark brown sugar
-* **30 ml** soy sauce
-* **6 g** finely grated lemon zest
-* **8 g** fresh parsley, finely chopped
-* **4 g** fresh thyme leaves
-* **3 g** fresh rosemary leaves, finely chopped
-* **15 ml** fresh lemon juice
-* **30 ml** sesame oil
-* **60 ml** extra-virgin olive oil
-* Coarse salt and freshly ground black pepper, to taste
-* 1 lemon, cut into 6 wedges
-* Fresh rosemary sprigs, for garnish
-
-## Method
-
-### 1. Prepare the marinade
-
-Pat the salmon dry with kitchen paper.
-
-In a small bowl, combine the garlic, brown sugar, soy sauce, lemon zest, parsley, thyme, rosemary, lemon juice, sesame oil and olive oil. Season with salt and black pepper.
-
-### 2. Marinate the salmon
-
-Place the salmon in a large dish and pour the marinade over it, making sure the fish is well coated on both sides.
-
-Cover and refrigerate for at least **1 hour**.
-
-### 3. Cook
-
-Preheat the oven grill or an outdoor grill.
-
-Cook the salmon for approximately **5–6 minutes per side**, turning it once. The centre should remain moist and slightly pink.
-
-### 4. Serve
-
-Transfer the salmon to a serving platter and garnish with the lemon wedges and fresh rosemary sprigs.
-
-## Approximate Nutrition
-
-Per serving, based on 6 servings and assuming that some of the marinade remains in the dish:
-
-* **Calories:** approximately 540–565 kcal
-* **Protein:** approximately 47 g
-* **Carbohydrates:** approximately 4–5 g
-* **Fat:** approximately 36–39 g
-* **Fibre:** approximately 0.3 g
-
-## Serving Suggestion
-
-Serve with green salad, grilled asparagus, roasted vegetables or a sharp potato salad with yoghurt and horseradish dressing.`;
-
-function confidence(value: string | unknown[]): Confidence {
-  if (Array.isArray(value)) return value.length ? "confirmed" : "missing";
-  return value.trim() ? "confirmed" : "missing";
+function numeric(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number.parseFloat(value.replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
-function StatusBadge({ value }: { value: Confidence }) {
-  const labels = {
-    confirmed: "Confirmed",
-    review: "Review",
-    missing: "Missing",
+function draftFromParser(raw: string, parsed: ReturnType<typeof parseRecipe>): Recipe {
+  const now = new Date().toISOString();
+  const recipe = createRecipeFromInput({
+    title: parsed.title,
+    summary: parsed.summary,
+    author: parsed.author,
+    publication: parsed.publication,
+    sourceType: parsed.sourceType,
+    originalUrl: parsed.sourceUrl,
+    servings: parsed.servings,
+    time: parsed.time,
+    prepMinutes: numeric(parsed.prepMinutes),
+    cookMinutes: numeric(parsed.cookMinutes),
+    restingMinutes: numeric(parsed.restingMinutes),
+    marinatingMinutes: numeric(parsed.marinatingMinutes),
+    totalMinutes: numeric(parsed.totalMinutes),
+    ingredientSections: [
+      {
+        id: `ingredient_section_${crypto.randomUUID()}`,
+        title: null,
+        items: parsed.ingredients.map(parseIngredientLine),
+      },
+    ],
+    methodSections: [
+      {
+        id: `method_section_${crypto.randomUUID()}`,
+        title: null,
+        steps: parsed.method.map((step) => ({
+          id: `step_${crypto.randomUUID()}`,
+          title: step.title || null,
+          body: step.body,
+          durationMinutes: null,
+          temperatureC: null,
+        })),
+      },
+    ],
+    servingSuggestion: parsed.servingSuggestion,
+    publicNotes: parsed.publicNotes,
+    mainIngredients: parsed.mainIngredients,
+    dish: parsed.dish,
+    formats: parsed.formats,
+    mealTypes: parsed.mealTypes,
+    methods: parsed.methods,
+    cuisines: parsed.cuisines,
+    collections: parsed.collections,
+    rawSourceText: raw,
+    image: parsed.imageUrl,
+  });
+
+  return {
+    ...recipe,
+    id: crypto.randomUUID(),
+    slug: slugifyRecipeTitle(parsed.title) || `recipe-${Date.now()}`,
+    createdAt: now,
+    updatedAt: now,
   };
-
-  return (
-    <span className={`${styles.status} ${styles[`status_${value}`]}`}>
-      {value === "confirmed" ? (
-        <Check aria-hidden="true" size={13} />
-      ) : (
-        <TriangleAlert aria-hidden="true" size={13} />
-      )}
-      {labels[value]}
-    </span>
-  );
-}
-
-function RangeInputs({
-  label,
-  value,
-  onChange,
-  unit,
-}: {
-  label: string;
-  value: NutritionRange;
-  onChange: (value: NutritionRange) => void;
-  unit: string;
-}) {
-  return (
-    <div className={styles.rangeField}>
-      <div className={styles.fieldLabel}>
-        <label>{label}</label>
-        <StatusBadge value={value.min ? "confirmed" : "missing"} />
-      </div>
-      <div className={styles.rangeInputs}>
-        <input
-          aria-label={`${label} minimum`}
-          inputMode="decimal"
-          onChange={(event) => onChange({ ...value, min: event.target.value })}
-          placeholder="Min"
-          value={value.min}
-        />
-        <span>to</span>
-        <input
-          aria-label={`${label} maximum`}
-          inputMode="decimal"
-          onChange={(event) => onChange({ ...value, max: event.target.value })}
-          placeholder="Max"
-          value={value.max}
-        />
-        <span>{unit}</span>
-      </div>
-    </div>
-  );
 }
 
 function PasteRecipePageContent() {
+  const router = useRouter();
   const [raw, setRaw] = useState("");
   const [pasteContext, setPasteContext] = useState<PasteContext>({});
-  const [parsed, setParsed] = useState<ParsedRecipe | null>(null);
-  const [isParsing, setIsParsing] = useState(false);
-  const [isFetchingSource, setIsFetchingSource] = useState(false);
-  const router = useRouter();
-  const [isSaving, setIsSaving] = useState(false);
-
-  const reviewFields: ReviewField[] = useMemo(() => {
-    if (!parsed) return [];
-    return [
-      { label: "Title", confidence: confidence(parsed.title) },
-      { label: "Author", confidence: confidence(parsed.author) },
-      { label: "Publication", confidence: confidence(parsed.publication) },
-      { label: "Source URL", confidence: confidence(parsed.sourceUrl) },
-      { label: "Cover image", confidence: confidence(parsed.imageUrl) },
-      { label: "Servings", confidence: confidence(parsed.servings) },
-      { label: "Time", confidence: confidence(parsed.time) },
-      { label: "Ingredients", confidence: confidence(parsed.ingredients) },
-      { label: "Method", confidence: confidence(parsed.method) },
-      {
-        label: "Nutrition",
-        confidence: parsed.calories.min && parsed.protein.min ? "confirmed" : "review",
-      },
-      {
-        label: "Classification",
-        confidence:
-          parsed.mainIngredients.length && parsed.methods.length
-            ? "confirmed"
-            : "review",
-      },
-    ];
-  }, [parsed]);
+  const [draft, setDraft] = useState<Recipe | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [error, setError] = useState("");
 
   function handlePaste(event: React.ClipboardEvent<HTMLTextAreaElement>) {
     const html = event.clipboardData.getData("text/html");
@@ -212,585 +135,135 @@ function PasteRecipePageContent() {
     }));
   }
 
-  async function readSourceMetadata(sourceUrl: string) {
-    setIsFetchingSource(true);
+  async function parsePastedRecipe() {
+    if (!raw.trim()) {
+      setError("Paste the recipe text first.");
+      return;
+    }
+
+    setParsing(true);
+    setError("");
     try {
-      const response = await fetch("/api/source-metadata", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: sourceUrl }),
-      });
-      const metadata = (await response.json()) as {
-        sourceUrl?: string | null;
-        title?: string | null;
-        siteName?: string | null;
-        author?: string | null;
-        imageUrl?: string | null;
-        warning?: string | null;
-      };
-      return metadata;
-    } catch {
-      return {
-        sourceUrl,
-        imageUrl: null,
-        warning: "The source page could not be inspected.",
-      };
+      let parsed = parseRecipe(raw, pasteContext);
+
+      if (parsed.sourceUrl) {
+        try {
+          const response = await fetch("/api/source-metadata", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ url: parsed.sourceUrl }),
+          });
+          const metadata = (await response.json()) as {
+            sourceUrl?: string | null;
+            author?: string | null;
+            siteName?: string | null;
+            imageUrl?: string | null;
+          };
+          parsed = {
+            ...parsed,
+            sourceUrl: metadata.sourceUrl || parsed.sourceUrl,
+            author: parsed.author || metadata.author || "",
+            publication: parsed.publication || metadata.siteName || "",
+            imageUrl: parsed.imageUrl || metadata.imageUrl || "",
+            imageStatus: parsed.imageUrl || metadata.imageUrl ? "found_source" : "missing",
+          };
+        } catch {
+          // The recipe remains fully editable if the source blocks metadata lookup.
+        }
+      }
+
+      setDraft(draftFromParser(raw, parsed));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "The recipe could not be parsed.");
     } finally {
-      setIsFetchingSource(false);
+      setParsing(false);
     }
   }
 
-  async function enrichFromSource(recipe: ParsedRecipe, forceImage = false) {
-    if (!recipe.sourceUrl) return;
-    const metadata = await readSourceMetadata(recipe.sourceUrl);
-    setParsed((current) => {
-      if (!current || current.sourceUrl !== recipe.sourceUrl) return current;
-      const imageUrl = forceImage
-        ? metadata.imageUrl?.trim() || ""
-        : current.imageUrl || metadata.imageUrl?.trim() || "";
-      return {
-        ...current,
-        title: current.title || metadata.title?.trim() || "",
-        author: current.author || metadata.author?.trim() || "",
-        publication: current.publication || metadata.siteName?.trim() || "",
-        sourceUrl: metadata.sourceUrl?.trim() || current.sourceUrl,
-        imageUrl,
-        imageStatus: imageUrl
-          ? current.imageUrl
-            ? current.imageStatus
-            : "found_source"
-          : "missing",
-        imageWarning: metadata.warning?.trim() || "",
-      };
-    });
-  }
-
-  async function handleExtract() {
-    if (!raw.trim()) return;
-    setIsParsing(true);
-    const nextRecipe = parseRecipe(raw, pasteContext);
-    setParsed(nextRecipe);
-    setIsParsing(false);
-    void enrichFromSource(nextRecipe);
-  }
-
-  async function handleFindSourceImage() {
-    if (!parsed?.sourceUrl.trim()) return;
-    await enrichFromSource(parsed, true);
-  }
-
-  function updateParsed<K extends keyof ParsedRecipe>(
-    key: K,
-    value: ParsedRecipe[K],
-  ) {
-    setParsed((current) => (current ? { ...current, [key]: value } : current));
-  }
-
-  async function handleSave() {
-    if (!parsed) return;
-
-    setIsSaving(true);
-
-    try {
-      const recipe = await createSupabaseRecipe({
-        title: parsed.title,
-        author: parsed.author,
-        publication: parsed.publication,
-        originalUrl: parsed.sourceUrl,
-        image: parsed.imageUrl,
-        servings: parsed.servings,
-        time: parsed.time,
-        ingredients: parsed.ingredients,
-        method: parsed.method,
-        calories: parsed.calories,
-        protein: parsed.protein,
-        carbs: parsed.carbs,
-        fat: parsed.fat,
-        fiber: parsed.fiber,
-        servingSuggestion: parsed.servingSuggestion,
-        mainIngredients: parsed.mainIngredients,
-        methods: parsed.methods,
-        rawSourceText: raw,
-      });
-
-      router.push(`/recipes/${recipe.slug}`);
-      router.refresh();
-    } catch (error) {
-      setIsSaving(false);
-      window.alert(
-        error instanceof Error ? error.message : "The recipe could not be saved.",
-      );
-    }
+  if (draft) {
+    return (
+      <RecipeEditor
+        initialRecipe={draft}
+        mode="review"
+        onCancel={() => setDraft(null)}
+        onSave={async (recipe) => {
+          const saved = await createSupabaseRecipeFromRecipe(recipe);
+          router.push(`/recipes/${saved.slug}`);
+          router.refresh();
+        }}
+      />
+    );
   }
 
   return (
     <main className={styles.page}>
-      <header className={styles.topBar}>
-        <Link href="/" className={styles.backLink}>
-          <ArrowLeft aria-hidden="true" size={17} />
-          Back to library
+      <div className={styles.topBar}>
+        <Link className={styles.backLink} href="/browse">
+          <ArrowLeft aria-hidden="true" size={16} /> Back to recipes
         </Link>
-        <span className={styles.version}>Importer · v0.9.1.10</span>
-      </header>
+        <span className={styles.version}>Import and review</span>
+      </div>
 
       <section className={styles.intro}>
-        <p className={styles.eyebrow}>Paste Recipe</p>
-        <h1>Turn copied text into a recipe.</h1>
+        <p className={styles.eyebrow}>Add recipe</p>
+        <h1>Paste first. Correct everything before saving.</h1>
         <p>
-          Paste a recipe from a website, social post, document or chat. Review
-          what was extracted before saving it.
+          The parser extracts the recipe, then opens the same complete editor used later from the recipe page.
+          Recipe ingredients are parsed for editing and shopping. Add manual macros per serving when you have them.
         </p>
       </section>
 
-      {!parsed ? (
-        <section className={styles.pasteLayout}>
-          <div className={styles.pastePanel}>
-            <div className={styles.panelHeading}>
-              <div>
-                <p className={styles.stepLabel}>Step 1</p>
-                <h2>Paste the complete recipe</h2>
-              </div>
-              <ClipboardPaste aria-hidden="true" size={24} />
+      <div className={styles.pasteLayout}>
+        <section className={styles.pastePanel}>
+          <div className={styles.panelHeading}>
+            <div>
+              <span className={styles.stepLabel}>Step 1</span>
+              <h2>Paste the complete recipe</h2>
             </div>
-
-            <textarea
-              aria-label="Recipe text"
-              onChange={(event) => setRaw(event.target.value)}
-              onPaste={handlePaste}
-              placeholder="Paste recipe text here..."
-              value={raw}
-            />
-
-            <div className={styles.pasteActions}>
-              <button
-                className={styles.sampleButton}
-                onClick={() => setRaw(SAMPLE_RECIPE)}
-                type="button"
-              >
-                Load salmon example
-              </button>
-
-              <button
-                className={styles.primaryButton}
-                disabled={!raw.trim() || isParsing}
-                onClick={handleExtract}
-                type="button"
-              >
-                {isParsing ? (
-                  <Loader2 aria-hidden="true" className={styles.spin} size={17} />
-                ) : (
-                  <Sparkles aria-hidden="true" size={17} />
-                )}
-                {isParsing ? "Reading recipe..." : "Extract recipe"}
-              </button>
-            </div>
+            <ClipboardPaste aria-hidden="true" size={26} />
           </div>
 
-          <aside className={styles.helpPanel}>
-            <FileText aria-hidden="true" size={26} />
-            <h2>Best results</h2>
-            <p>Include the full title, ingredient list and method.</p>
-            <ul>
-              <li>Markdown is supported.</li>
-              <li>English and Spanish are supported.</li>
-              <li>Nutrition ranges are preserved.</li>
-              <li>Nothing is silently discarded.</li>
-            </ul>
-          </aside>
-        </section>
-      ) : (
-        <>
-          <section className={styles.reviewSummary}>
-            <div>
-              <p className={styles.stepLabel}>Step 2</p>
-              <h2>Review the extraction</h2>
-            </div>
-            <div className={styles.reviewChips}>
-              {reviewFields.map((field) => (
-                <span key={field.label}>
-                  {field.label}
-                  <StatusBadge value={field.confidence} />
-                </span>
-              ))}
-            </div>
-          </section>
+          <textarea
+            onChange={(event) => setRaw(event.target.value)}
+            onPaste={handlePaste}
+            placeholder="Paste the recipe text and its URL here…"
+            value={raw}
+          />
 
-          <section className={styles.reviewLayout}>
-            <aside className={styles.originalPanel}>
-              <div className={styles.panelHeading}>
-                <div>
-                  <p className={styles.stepLabel}>Original</p>
-                  <h2>Pasted text</h2>
-                </div>
-                <button
-                  className={styles.textButton}
-                  onClick={() => setParsed(null)}
-                  type="button"
-                >
-                  Edit original
-                </button>
-              </div>
-              <pre>{raw}</pre>
-            </aside>
+          {error && <p className={styles.errorMessage}>{error}</p>}
 
-            <form
-              className={styles.extractedPanel}
-              onSubmit={(event) => {
-                event.preventDefault();
-                void handleSave();
-              }}
+          <div className={styles.pasteActions}>
+            <button className={styles.sampleButton} onClick={() => setRaw(SAMPLE_RECIPE)} type="button">
+              Use sample
+            </button>
+            <button
+              className={styles.primaryButton}
+              disabled={parsing || !raw.trim()}
+              onClick={() => void parsePastedRecipe()}
+              type="button"
             >
-              <div className={styles.formSection}>
-                <p className={styles.sectionNumber}>01</p>
-                <h2>Basics</h2>
+              {parsing ? <Loader2 aria-hidden="true" size={17} /> : <Sparkles aria-hidden="true" size={17} />}
+              {parsing ? "Parsing…" : "Parse and review"}
+            </button>
+          </div>
+        </section>
 
-                <div className={styles.field}>
-                  <div className={styles.fieldLabel}>
-                    <label htmlFor="title">Title</label>
-                    <StatusBadge value={confidence(parsed.title)} />
-                  </div>
-                  <input
-                    id="title"
-                    onChange={(event) => updateParsed("title", event.target.value)}
-                    value={parsed.title}
-                  />
-                </div>
-
-                <div className={styles.twoColumns}>
-                  <div className={styles.field}>
-                    <div className={styles.fieldLabel}>
-                      <label htmlFor="author">Author</label>
-                      <StatusBadge value={confidence(parsed.author)} />
-                    </div>
-                    <input
-                      id="author"
-                      onChange={(event) =>
-                        updateParsed("author", event.target.value)
-                      }
-                      value={parsed.author}
-                    />
-                  </div>
-
-                  <div className={styles.field}>
-                    <div className={styles.fieldLabel}>
-                      <label htmlFor="publication">Publication</label>
-                      <StatusBadge value={confidence(parsed.publication)} />
-                    </div>
-                    <input
-                      id="publication"
-                      onChange={(event) =>
-                        updateParsed("publication", event.target.value)
-                      }
-                      value={parsed.publication}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.field}>
-                  <div className={styles.fieldLabel}>
-                    <label htmlFor="sourceUrl">Source URL</label>
-                    <StatusBadge value={confidence(parsed.sourceUrl)} />
-                  </div>
-                  <div className={styles.sourceInputRow}>
-                    <div className={styles.inputWithIcon}>
-                      <Link2 aria-hidden="true" size={17} />
-                      <input
-                        id="sourceUrl"
-                        inputMode="url"
-                        onChange={(event) => {
-                          const sourceUrl = event.target.value;
-                          setParsed((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  sourceUrl,
-                                  publication:
-                                    current.publication || sourceFromUrl(sourceUrl),
-                                }
-                              : current,
-                          );
-                        }}
-                        placeholder="https://…"
-                        value={parsed.sourceUrl}
-                      />
-                    </div>
-                    <button
-                      className={styles.secondaryButton}
-                      disabled={!parsed.sourceUrl.trim() || isFetchingSource}
-                      onClick={() => void handleFindSourceImage()}
-                      type="button"
-                    >
-                      <RefreshCw
-                        aria-hidden="true"
-                        className={isFetchingSource ? styles.spin : undefined}
-                        size={16}
-                      />
-                      {isFetchingSource ? "Checking…" : "Find image"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={styles.imageField}>
-                  <div className={styles.field}>
-                    <div className={styles.fieldLabel}>
-                      <label htmlFor="imageUrl">Cover image URL</label>
-                      <StatusBadge value={confidence(parsed.imageUrl)} />
-                    </div>
-                    <div className={styles.inputWithIcon}>
-                      <ImageIcon aria-hidden="true" size={17} />
-                      <input
-                        id="imageUrl"
-                        inputMode="url"
-                        onChange={(event) =>
-                          updateParsed("imageUrl", event.target.value)
-                        }
-                        placeholder="Image not found yet"
-                        value={parsed.imageUrl}
-                      />
-                    </div>
-                    <p className={styles.imageStatus}>
-                      {parsed.imageUrl
-                        ? parsed.imageStatus === "found_clipboard"
-                          ? "Image found in the copied page."
-                          : "Image found from the source page."
-                        : parsed.imageWarning || "No image found. You can paste an image URL manually."}
-                    </p>
-                  </div>
-                  <div className={styles.imagePreview}>
-                    {parsed.imageUrl ? (
-                      <img
-                        alt={`Preview for ${parsed.title || "recipe"}`}
-                        onError={() => {
-                          setParsed((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  imageUrl: "",
-                                  imageStatus: "missing",
-                                  imageWarning: "The image URL could not be loaded.",
-                                }
-                              : current,
-                          );
-                        }}
-                        src={parsed.imageUrl}
-                      />
-                    ) : (
-                      <div>
-                        <ImageIcon aria-hidden="true" size={26} />
-                        <span>No preview</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className={styles.twoColumns}>
-                  <div className={styles.field}>
-                    <div className={styles.fieldLabel}>
-                      <label htmlFor="servings">Servings</label>
-                      <StatusBadge value={confidence(parsed.servings)} />
-                    </div>
-                    <input
-                      id="servings"
-                      onChange={(event) =>
-                        updateParsed("servings", event.target.value)
-                      }
-                      value={parsed.servings}
-                    />
-                  </div>
-
-                  <div className={styles.field}>
-                    <div className={styles.fieldLabel}>
-                      <label htmlFor="time">Time</label>
-                      <StatusBadge value={confidence(parsed.time)} />
-                    </div>
-                    <input
-                      id="time"
-                      onChange={(event) => updateParsed("time", event.target.value)}
-                      value={parsed.time}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.formSection}>
-                <p className={styles.sectionNumber}>02</p>
-                <h2>Classification</h2>
-
-                <div className={styles.twoColumns}>
-                  <div className={styles.field}>
-                    <div className={styles.fieldLabel}>
-                      <label htmlFor="mainIngredients">Main ingredients</label>
-                      <StatusBadge
-                        value={confidence(parsed.mainIngredients)}
-                      />
-                    </div>
-                    <input
-                      id="mainIngredients"
-                      onChange={(event) =>
-                        updateParsed(
-                          "mainIngredients",
-                          event.target.value
-                            .split(",")
-                            .map((item) => item.trim())
-                            .filter(Boolean),
-                        )
-                      }
-                      value={parsed.mainIngredients.join(", ")}
-                    />
-                  </div>
-
-                  <div className={styles.field}>
-                    <div className={styles.fieldLabel}>
-                      <label htmlFor="methods">Methods</label>
-                      <StatusBadge value={confidence(parsed.methods)} />
-                    </div>
-                    <input
-                      id="methods"
-                      onChange={(event) =>
-                        updateParsed(
-                          "methods",
-                          event.target.value
-                            .split(",")
-                            .map((item) => item.trim())
-                            .filter(Boolean),
-                        )
-                      }
-                      value={parsed.methods.join(", ")}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.formSection}>
-                <p className={styles.sectionNumber}>03</p>
-                <h2>Ingredients</h2>
-                <div className={styles.fieldLabel}>
-                  <span>{parsed.ingredients.length} lines extracted</span>
-                  <StatusBadge value={confidence(parsed.ingredients)} />
-                </div>
-                <textarea
-                  className={styles.ingredientsTextarea}
-                  onChange={(event) =>
-                    updateParsed(
-                      "ingredients",
-                      event.target.value
-                        .split("\n")
-                        .map((line) => line.trim())
-                        .filter(Boolean),
-                    )
-                  }
-                  value={parsed.ingredients.join("\n")}
-                />
-              </div>
-
-              <div className={styles.formSection}>
-                <p className={styles.sectionNumber}>04</p>
-                <h2>Method</h2>
-                <div className={styles.methodEditor}>
-                  {!parsed.method.length && (
-                    <p className={styles.emptyState}>No preparation steps were detected.</p>
-                  )}
-                  {parsed.method.map((step, index) => (
-                    <div className={styles.methodStep} key={`${step.title}-${index}`}>
-                      <span>{String(index + 1).padStart(2, "0")}</span>
-                      <div>
-                        <input
-                          aria-label={`Step ${index + 1} title`}
-                          onChange={(event) => {
-                            const next = [...parsed.method];
-                            next[index] = { ...step, title: event.target.value };
-                            updateParsed("method", next);
-                          }}
-                          value={step.title}
-                        />
-                        <textarea
-                          aria-label={`Step ${index + 1} instructions`}
-                          onChange={(event) => {
-                            const next = [...parsed.method];
-                            next[index] = { ...step, body: event.target.value };
-                            updateParsed("method", next);
-                          }}
-                          value={step.body}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.formSection}>
-                <p className={styles.sectionNumber}>05</p>
-                <h2>Nutrition per serving</h2>
-                <div className={styles.nutritionGrid}>
-                  <RangeInputs
-                    label="Calories"
-                    onChange={(value) => updateParsed("calories", value)}
-                    unit="kcal"
-                    value={parsed.calories}
-                  />
-                  <RangeInputs
-                    label="Protein"
-                    onChange={(value) => updateParsed("protein", value)}
-                    unit="g"
-                    value={parsed.protein}
-                  />
-                  <RangeInputs
-                    label="Carbohydrates"
-                    onChange={(value) => updateParsed("carbs", value)}
-                    unit="g"
-                    value={parsed.carbs}
-                  />
-                  <RangeInputs
-                    label="Fat"
-                    onChange={(value) => updateParsed("fat", value)}
-                    unit="g"
-                    value={parsed.fat}
-                  />
-                  <RangeInputs
-                    label="Fiber"
-                    onChange={(value) => updateParsed("fiber", value)}
-                    unit="g"
-                    value={parsed.fiber}
-                  />
-                </div>
-              </div>
-
-              <div className={styles.formSection}>
-                <p className={styles.sectionNumber}>06</p>
-                <h2>Serving suggestion</h2>
-                <textarea
-                  onChange={(event) =>
-                    updateParsed("servingSuggestion", event.target.value)
-                  }
-                  value={parsed.servingSuggestion}
-                />
-              </div>
-
-              <div className={styles.saveBar}>
-                <div>
-                  <p>Missing fields are allowed. You can edit the recipe later.</p>
-                </div>
-                <button
-                  className={styles.primaryButton}
-                  disabled={isSaving}
-                  type="submit"
-                >
-                  {isSaving ? (
-                    <Loader2 aria-hidden="true" className={styles.spin} size={17} />
-                  ) : (
-                    <Save aria-hidden="true" size={17} />
-                  )}
-                  {isSaving ? "Saving..." : "Save recipe"}
-                </button>
-              </div>
-            </form>
-          </section>
-        </>
-      )}
+        <aside className={styles.helpPanel}>
+          <span className={styles.stepLabel}>Step 2</span>
+          <h2>Review every field</h2>
+          <p>The review screen lets you correct:</p>
+          <ul>
+            <li>title, source, times, image and classifications;</li>
+            <li>ingredient quantity, unit, food and notes;</li>
+            <li>manual calories, protein, carbohydrates, fat and fiber per serving;</li>
+            <li>method sections and individual steps.</li>
+          </ul>
+          <p>You can save without macros and add them later from Edit recipe.</p>
+        </aside>
+      </div>
     </main>
   );
 }
-
 
 export default function PasteRecipePage() {
   return (
