@@ -3,28 +3,29 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const {
-    user,
-    loading,
-    isAdmin,
-    sendMagicLink,
-    signInWithGoogle,
-    signOut,
-  } = useAuth();
+  const { user, loading, isAdmin, signInWithPassword, signOut } = useAuth();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!loading && isAdmin) router.replace("/");
   }, [loading, isAdmin, router]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("password") === "updated") {
+      setMessage("Password updated. Sign in with your new password.");
+      window.history.replaceState({}, "", "/login");
+    }
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,28 +34,16 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      await sendMagicLink(email.trim());
-      setMessage("Check your email and open the sign-in link.");
+      await signInWithPassword(email.trim(), password);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not send the sign-in link.");
+      const detail = reason instanceof Error ? reason.message : "";
+      setError(
+        detail.toLowerCase().includes("invalid login credentials")
+          ? "Incorrect email or password."
+          : detail || "Could not sign in.",
+      );
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function handleGoogleSignIn() {
-    setGoogleSubmitting(true);
-    setError("");
-    setMessage("");
-    try {
-      await signInWithGoogle();
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Could not start Google sign-in.",
-      );
-      setGoogleSubmitting(false);
     }
   }
 
@@ -67,8 +56,13 @@ export default function LoginPage() {
       <main className="login-page">
         <section className="login-card">
           <p className="eyebrow">No administrator permission</p>
-          <h1>This account can view recipes but cannot edit the library.</h1>
-          <button className="button button--dark" onClick={() => void signOut()} type="button">
+          <h1>Access denied</h1>
+          <p>This account can view recipes but cannot edit the library.</p>
+          <button
+            className="button button--dark"
+            onClick={() => void signOut()}
+            type="button"
+          >
             Sign out
           </button>
         </section>
@@ -81,19 +75,7 @@ export default function LoginPage() {
       <section className="login-card">
         <p className="eyebrow">Recipe Library administration</p>
         <h1>Sign in</h1>
-        <p>Your friends can browse without an account. Sign in with Google or use the administrator email link.</p>
-
-        <button
-          className="login-google-button"
-          disabled={googleSubmitting || submitting}
-          onClick={() => void handleGoogleSignIn()}
-          type="button"
-        >
-          <span aria-hidden="true" className="login-google-mark">G</span>
-          {googleSubmitting ? "Opening Google…" : "Continue with Google"}
-        </button>
-
-        <div className="login-divider"><span>or</span></div>
+        <p>Use your administrator email and password.</p>
 
         <form onSubmit={handleSubmit}>
           <label>
@@ -107,12 +89,27 @@ export default function LoginPage() {
             />
           </label>
 
+          <label>
+            Password
+            <input
+              autoComplete="current-password"
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              type="password"
+              value={password}
+            />
+          </label>
+
+          <div className="login-inline-action">
+            <Link href="/forgot-password">Forgot your password?</Link>
+          </div>
+
           {error && <p className="login-error">{error}</p>}
-          {message && <p role="status">{message}</p>}
+          {message && <p className="login-success" role="status">{message}</p>}
 
           <button className="button button--dark" disabled={submitting} type="submit">
-            <Mail aria-hidden="true" size={17} />
-            {submitting ? "Sending…" : "Send sign-in link"}
+            <LogIn aria-hidden="true" size={17} />
+            {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
 

@@ -9,10 +9,11 @@ import {
 } from "@/lib/recipeModel";
 import { ingredientDisplayLine, parseIngredientLine } from "@/lib/ingredientParser";
 import { getSupabaseClient } from "@/lib/supabase";
+import { splitIngredientSections, type CompleteRepairPlanItem } from "@/lib/recipeRepairBatch";
 
 const RECIPE_TABLE = "recipes_clean_v14_final";
 
-type RecipeRow = {
+export type RecipeRow = {
   id: string;
   slug: string | null;
   title: string;
@@ -56,6 +57,8 @@ type RecipeRow = {
   raw_source_text: string | null;
   created_at: string | null;
   updated_at: string | null;
+  phase1_status?: string | null;
+  source_limitations?: unknown;
 };
 
 function asStringArray(value: unknown): string[] {
@@ -841,4 +844,134 @@ export async function createSupabaseRecipe(input: RecipeInput): Promise<Recipe> 
     throw error;
   }
   return mapRecipeRow(data as RecipeRow);
+}
+
+
+export type RecipeRepairBackupRow = {
+  id: string;
+  slug: string | null;
+  title: string;
+  source_author: string | null;
+  source_url: string | null;
+  servings: number | null;
+  servings_display: string | null;
+  ingredients_raw: unknown;
+  ingredient_sections: unknown;
+  method: unknown;
+  phase1_status: string | null;
+  source_limitations: unknown;
+  updated_at: string | null;
+};
+
+const REPAIR_BACKUP_COLUMNS = [
+  "id",
+  "slug",
+  "title",
+  "source_author",
+  "source_url",
+  "servings",
+  "servings_display",
+  "ingredients_raw",
+  "ingredient_sections",
+  "method",
+  "phase1_status",
+  "source_limitations",
+  "updated_at",
+].join(",");
+
+function repairRow(item: CompleteRepairPlanItem) {
+  const sections = splitIngredientSections(item.selected.ingredients).map((section, sectionIndex) => ({
+    id: `${item.recipeId}_repair_ingredient_section_${sectionIndex}`,
+    title: section.title,
+    items: section.items.map((line, itemIndex) => ({
+      ...parseIngredientLine(line),
+      id: `${item.recipeId}_repair_ingredient_${sectionIndex}_${itemIndex}`,
+    })),
+  }));
+  const ingredientLines = sections.flatMap((section) =>
+    section.items.map((ingredient) => ingredientDisplayLine(ingredient) || ingredient.originalLine),
+  );
+  const steps = item.selected.method
+    .map((step, index) => ({
+      id: `${item.recipeId}_repair_step_${index}`,
+      title: step.title.trim() || `Step ${index + 1}`,
+      body: step.body.trim(),
+      durationMinutes: null,
+      temperatureC: null,
+    }))
+    .filter((step) => step.body);
+  const method = steps.length
+    ? [{ id: `${item.recipeId}_repair_method`, title: null, steps }]
+    : [];
+  const sourceLimitations: string[] = [];
+  if (!ingredientLines.length) sourceLimitations.push("No ingredient list was recovered.");
+  if (!steps.length) sourceLimitations.push("No preparation method was recovered.");
+
+  return {
+    title: item.selected.title.trim(),
+    source_author: item.selected.author.trim() || null,
+    source_url: item.selected.sourceUrl.trim() || null,
+    servings: parseFirstNumber(item.selected.servings),
+    servings_display: item.selected.servings.trim() || null,
+    ingredients_raw: ingredientLines,
+    ingredient_sections: sections,
+    method,
+    phase1_status:
+      ingredientLines.length && steps.length ? "complete" : "partial_from_source",
+    source_limitations: sourceLimitations,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export async function getRecipeRepairBackup(
+  recipeIds: string[],
+): Promise<RecipeRepairBackupRow[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+
+  const rows: RecipeRepairBackupRow[] = [];
+  for (let index = 0; index < recipeIds.length; index += 50) {
+    const chunk = recipeIds.slice(index, index + 50);
+    const { data, error } = await supabase
+      .from(RECIPE_TABLE)
+      .select(REPAIR_BACKUP_COLUMNS)
+      .in("id", chunk);
+    if (error) throw error;
+    rows.push(...((data ?? []) as unknown as RecipeRepairBackupRow[]));
+  }
+  return rows;
+}
+
+export async function applySupabaseRecipeRepair(
+  item: CompleteRepairPlanItem,
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  if (item.status !== "ready" || !item.changedFields.length) return;
+
+  const { error } = await supabase
+    .from(RECIPE_TABLE)
+    .update(repairRow(item))
+    .eq("id", item.recipeId);
+  if (error) throw error;
+}
+
+export async function restoreSupabaseRecipeRepairBackup(
+  rows: RecipeRepairBackupRow[],
+  onProgress?: (completed: number, total: number) => void,
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+
+  let completed = 0;
+  for (const row of rows) {
+    const { id, slug: _slug, ...restore } = row;
+    const { error } = await supabase
+      .from(RECIPE_TABLE)
+      .update(restore)
+      .eq("id", id);
+    if (error) throw error;
+    completed += 1;
+    onProgress?.(completed, rows.length);
+  }
 }

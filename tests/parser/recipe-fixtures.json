@@ -586,5 +586,122 @@
         "Top the crispy chicken bites with chopped coriander and chilli crisp, then serve with the dipping sauce."
       ]
     }
+  },
+  {
+    "id": "legacy-emoji-no-ingredients-heading",
+    "name": "Legacy social recipe with emoji ingredients and no Ingredients heading",
+    "source": "Social",
+    "raw": "🍉🍓 Watermelon & Strawberry Sorbet\n\nAdam Hoad\nRecipe (1 serving)\n\n🍉 130g watermelon, frozen\n🍓 130g strawberries, frozen\n🍯 5g honey\n🍋 1 small lemon or 1/2 medium squeezed\n🧂 Pinch of salt\n\nMethod:\n1. Freeze the fruit.\n2. Blend until smooth.",
+    "expected": {
+      "title": "🍉🍓 Watermelon & Strawberry Sorbet",
+      "author": "Adam Hoad",
+      "servings": "1",
+      "ingredients": [
+        "130g watermelon, frozen",
+        "130g strawberries, frozen",
+        "5g honey",
+        "1 small lemon or 1/2 medium squeezed",
+        "Pinch of salt"
+      ],
+      "methodBodies": [
+        "Freeze the fruit.",
+        "Blend until smooth."
+      ]
+    }
+  },
+  {
+    "id": "decorated-headings-and-step-titles",
+    "name": "Decorated headings, ingredient sections and numbered step titles",
+    "source": "Social",
+    "raw": "🔥 CHICKEN BACON BUFFALO HOT POCKETS 🔥\nMakes 11 servings\n🛒 INGREDIENTS\n• 3 lb chicken breast\nBuffalo Sauce (blended):\n• 400 g fat free cottage cheese\nDough:\n• 280 g self rising flour\n⸻\n👨‍🍳 INSTRUCTIONS (clean + tight)\n1. Cook + season chicken\nSeason the chicken and shred.\n2. Blend buffalo sauce\nBlend until smooth.\n📊 MACROS (per serving)\n536 calories\n67g protein",
+    "expected": {
+      "title": "🔥 CHICKEN BACON BUFFALO HOT POCKETS 🔥",
+      "servings": "11",
+      "ingredients": [
+        "3 lb chicken breast",
+        "Buffalo Sauce (blended):",
+        "400 g fat free cottage cheese",
+        "Dough:",
+        "280 g self rising flour"
+      ],
+      "methodBodies": [
+        "Cook + season chicken Season the chicken and shred.",
+        "Blend buffalo sauce Blend until smooth."
+      ]
+    }
+  },
+  {
+    "id": "bullet-method-without-heading",
+    "name": "Bullet-only method without a method heading",
+    "source": "Social",
+    "raw": "HIGH PROTEIN BUFFALO CHICKEN DIP\n- mix cottage cheese and buffalo sauce\n- mix in cooked shredded chicken\n- top with cheese\n- bake at 350°F for 20 minutes\nMACROS: 54g protein, 8g carbs, 11g fat",
+    "expected": {
+      "title": "HIGH PROTEIN BUFFALO CHICKEN DIP",
+      "ingredients": [],
+      "methodBodies": [
+        "mix cottage cheese and buffalo sauce",
+        "mix in cooked shredded chicken",
+        "top with cheese",
+        "bake at 350°F for 20 minutes"
+      ]
+    }
+  },
+  {
+    "id": "unicode-line-separators",
+    "name": "Unicode line separators from social clipboard",
+    "source": "Instagram",
+    "context": {
+      "sourceUrl": "https://www.instagram.com/p/example/"
+    },
+    "raw": "COLD SPICY NOODLES FOR THE SAUCE 300g Silken Tofu 1 Tbsp Tahini FOR THE NOODLES 120g Noodles Method Add everything to a blender and blend.",
+    "expected": {
+      "title": "COLD SPICY NOODLES",
+      "ingredients": [
+        "FOR THE SAUCE:",
+        "300g Silken Tofu",
+        "1 Tbsp Tahini",
+        "FOR THE NOODLES:",
+        "120g Noodles"
+      ],
+      "methodBodies": [
+        "Add everything to a blender and blend."
+      ]
+    }
+  },
+  {
+    "id": "spanish-para-personas-and-un",
+    "name": "Spanish servings line and word-number ingredient",
+    "source": "Web",
+    "raw": "Tortilla de marisco\nIngredientes\nPara 2 personas\nPara la tortilla\n60 g de harina de arroz\nUn calamar grande\n6-8 gambas\nInstrucciones\n1. Mezcla los ingredientes.\n2. Cocina hasta dorar.",
+    "expected": {
+      "title": "Tortilla de marisco",
+      "servings": "2",
+      "ingredients": [
+        "Para la tortilla:",
+        "60 g de harina de arroz",
+        "Un calamar grande",
+        "6-8 gambas"
+      ],
+      "methodBodies": [
+        "Mezcla los ingredientes.",
+        "Cocina hasta dorar."
+      ]
+    }
+  },
+  {
+    "id": "ingredients-comma-serving-and-ingredient-first",
+    "name": "Ingredients heading with comma serving metadata and ingredient-first measurements",
+    "source": "Social",
+    "raw": "2 Minute Protein Brownie\nF*CK or SUCK\n👨‍🍳 Ingredients, 1 serve\n✅ Whole Egg, 1\n✅ High Protein Greek Yoghurt, 100g, 3.5oz\n👉 Method\nAdd everything to a bowl and microwave.",
+    "expected": {
+      "title": "2 Minute Protein Brownie",
+      "ingredients": [
+        "Whole Egg, 1",
+        "High Protein Greek Yoghurt, 100g, 3.5oz"
+      ],
+      "methodBodies": [
+        "Add everything to a bowl and microwave."
+      ]
+    }
   }
 ]

@@ -16,12 +16,21 @@ type AuthContextValue = {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
-  sendMagicLink: (email: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function requireSupabase() {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error("Supabase environment variables are missing.");
+  }
+  return supabase;
+}
 
 async function checkAdmin(user: User | null) {
   if (!user) return false;
@@ -79,37 +88,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refreshUser]);
 
-  const sendMagicLink = useCallback(async (email: string) => {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      throw new Error("Supabase environment variables are missing.");
-    }
+  const signInWithPassword = useCallback(
+    async (email: string, password: string) => {
+      const supabase = requireSupabase();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const emailRedirectTo = `${window.location.origin}/login`;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo,
-        shouldCreateUser: false,
-      },
+      if (error) throw error;
+    },
+    [],
+  );
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const supabase = requireSupabase();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) throw error;
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      throw new Error("Supabase environment variables are missing.");
-    }
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/login`,
-      },
-    });
-
+  const updatePassword = useCallback(async (password: string) => {
+    const supabase = requireSupabase();
+    const { error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
   }, []);
 
@@ -125,11 +128,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       loading,
       isAdmin,
-      sendMagicLink,
-      signInWithGoogle,
+      signInWithPassword,
+      requestPasswordReset,
+      updatePassword,
       signOut,
     }),
-    [user, loading, isAdmin, sendMagicLink, signInWithGoogle, signOut],
+    [
+      user,
+      loading,
+      isAdmin,
+      signInWithPassword,
+      requestPasswordReset,
+      updatePassword,
+      signOut,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

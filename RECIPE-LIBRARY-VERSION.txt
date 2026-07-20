@@ -1,3 +1,3 @@
-Recipe Library v0.12.2
-Compact single-line social paste parsing fix
-Installed: 2026-07-20T08:21:14.013Z
+Recipe Library v0.16.0
+Password sign-in and standard password recovery
+Installed: 2026-07-20T14:41:16.025Z

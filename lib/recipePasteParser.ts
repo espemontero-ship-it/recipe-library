@@ -60,9 +60,9 @@ const TRACKING_PARAMETERS = new Set([
 ]);
 
 const SECTION_HEADINGS = {
-  ingredients: /^(?:ingredients?|ingredientes?)\s*:?$/i,
-  method: /^(?:preparation|method|directions?|instructions?|steps?|preparaci[oó]n|m[eé]todo|elaboraci[oó]n|instrucciones?)\s*:?$/i,
-  nutrition: /^(?:approximate\s+)?(?:nutrition(?:al\s+information)?|nutrici[oó]n|informaci[oó]n\s+nutricional|macros?)\s*:?$/i,
+  ingredients: /^(?:ingredients?|ingredientes?)(?:\s*[,–—-]?\s*(?!are\b).{1,90})?\s*:?$/i,
+  method: /^(?:preparation|method|directions?|instructions?|steps?|how\s+to\s+make(?:\s+it)?|here(?:'s| is)\s+how\s+(?:i\s+)?(?:made|make)\s+it|preparaci[oó]n|m[eé]todo|elaboraci[oó]n|instrucciones?)(?:\s*\([^)]*\)|\s*[-–—:].*)?\s*:?$/i,
+  nutrition: /^(?:approximate\s+)?(?:nutrition(?:al\s+information)?|nutrici[oó]n|informaci[oó]n\s+nutricional|macros?)(?:\s*\([^)]*\)|\s*[-–—:].*)?\s*:?$/i,
   serving: /^(?:serving suggestion|to serve|sugerencia de servicio)\s*:?$/i,
 };
 
@@ -75,7 +75,7 @@ const SOCIAL_NETWORK_TYPES = new Set(["facebook", "instagram", "tiktok"]);
 const SOCIAL_PROFILE_ACTION_LINE = /^(?:follow|following|seguir|siguiendo)$/i;
 const SOCIAL_SEPARATOR_LINE = /^(?:[·•|]\s*)+$/;
 const SOCIAL_AUDIO_LINE = /^.{1,80}\s+·\s+.{1,80}$/;
-const MACRO_LINE = /^(?:(?:per\s+(?:serving|bowl|portion)\s*:?\s*)?\d+(?:[.,]\d+)?\s*(?:k?cal(?:ories)?|calories?)|(?:\d+(?:[.,]\d+)?\s*[gG]?\s*(?:P|C|F)(?:\s*[|·/]\s*)?){2,})/i;
+const MACRO_LINE = /^(?:(?:calories?|calor[ií]as|protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*:|(?:~?\d+(?:[.,]\d+)?\s*g?\s*(?:protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*$)|(?:(?:per\s+(?:serving|bowl|portion)|each\s+serving|recipe\s+complete|receta\s+completa|\d+\/\d+\s+receta)\s*:?\s*)?.*\b(?:k?cal(?:ories)?|calor[ií]as)\b.*(?:protein|prote[ií]na|carbs?|hidratos|fat|grasa)?|(?:\d+(?:[.,]\d+)?\s*[gG]?\s*(?:P|C|F)(?:\s*[|·/]\s*)?){2,})/i;
 
 export const emptyRange = (): NutritionRange => ({ min: "", max: "" });
 
@@ -99,9 +99,14 @@ function decodeBasicEntities(value: string) {
 export function normalizeText(value: string) {
   return decodeBasicEntities(value)
     .replace(/\r\n?/g, "\n")
+    .replace(/[\u2028\u2029]+/g, "\n")
+    .replace(/\uFFFD+/g, "\n")
     .replace(/[\u00a0\u2007\u202f]/g, " ")
     .replace(/[\u200b-\u200d\ufeff]/g, "")
+    .replace(/\u2044/g, "/")
     .replace(/[ \t]+$/gm, "")
+    .replace(/\s+(?=(?:Ingredients?|Ingredientes?|Method|Instructions?|Directions?|Preparation|Preparaci[oó]n)\s*[:：]?\s*(?:[•▪✅✔▢]|\d|[¼½¾⅓⅔⅛⅜⅝⅞]))/gi, "\n")
+    .replace(/((?:Ingredients?|Ingredientes?|Method|Instructions?|Directions?|Preparation|Preparaci[oó]n)\s*[:：]?)\s*(?=(?:[•▪✅✔▢]|\d|[¼½¾⅓⅔⅛⅜⅝⅞]))/gi, "$1\n")
     .replace(/\n{4,}/g, "\n\n\n")
     .trim();
 }
@@ -223,6 +228,43 @@ export function cleanLine(value: string) {
     .trim();
 }
 
+function stripLeadingDecorators(value: string) {
+  return value
+    .replace(
+      /^\s*(?:(?:[-*•‣▪◦✅✔☑✳❇🛒👉📌📝]\uFE0F?)|(?:[\p{Extended_Pictographic}]\uFE0F?))+\s*/u,
+      "",
+    )
+    .trim();
+}
+
+function cleanContentLine(value: string) {
+  return stripLeadingDecorators(cleanLine(value))
+    .replace(/^\s*[—–-]+\s*/, "")
+    .trim();
+}
+
+function normalizedHeadingLine(value: string) {
+  return cleanContentLine(value)
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .trim();
+}
+
+function isMacroLine(value: string) {
+  const line = cleanContentLine(value);
+  if (!line) return false;
+  if (MACRO_LINE.test(line)) return true;
+  const nutrientValues = line.match(/\d+(?:[.,]\d+)?\s*g?\s*(?:protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra)|calories?|calor[ií]as|kcal)\b/gi) ?? [];
+  if (nutrientValues.length >= 2) return true;
+  return /^(?:each\s+serving|per\s+serving|macros?\s+per|total\s+with\s+toppings|cantidad\s+kcal)\b/i.test(line);
+}
+
+const ACTION_START = /^(?:add|arrange|bake|beat|blend|boil|brush|chill|combine|cook|cover|cut|divide|drizzle|fill|fold|freeze|fry|grill|heat|hydrate|insert|knead|marinate|microwave|mix|place|pour|preheat|process|remove|rest|roll|season|serve|shape|slice|spoon|spray|stir|top|toss|whisk|air\s+fry|a[ñn]ade|agrega|bate|calienta|cocina|coloca|combina|corta|deja|divide|dora|escurr|fr[ií]e|hornea|hidrata|mezcla|precalienta|rellena|retira|sirve|saltea|tritura)\b/i;
+
+function looksLikeActionLine(value: string) {
+  const line = cleanContentLine(value);
+  return ACTION_START.test(line) || (line.length > 55 && /[.!?]$/.test(line));
+}
+
 function cleanTitle(value: string) {
   return stripMarkdown(value)
     .replace(/^\s*[-–—|:]+\s*/, "")
@@ -321,7 +363,7 @@ function isJunkLine(value: string) {
 }
 
 function isHeading(value: string, pattern: RegExp) {
-  return pattern.test(cleanLine(value));
+  return pattern.test(normalizedHeadingLine(value));
 }
 
 function findSectionStart(lines: string[], pattern: RegExp) {
@@ -329,9 +371,9 @@ function findSectionStart(lines: string[], pattern: RegExp) {
 }
 
 function isServingsLine(value: string) {
-  return /^(?:(?:yield|servings?|serves|makes|raciones?)\s*:?\s*(?:about\s*)?\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?\s+(?:servings?|raciones?))$/i.test(
-    cleanLine(value),
-  );
+  const line = cleanContentLine(value);
+  return /^(?:para\s+\d+(?:[.,]\d+)?\s+personas?|(?:(?:recipe\s*)?\(?\s*(?:yield|servings?|serves|makes|raciones?|porciones?)?\s*:?\s*(?:about\s*)?\d+(?:[.,]\d+)?(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:servings?|raciones?|porciones?)?\s*\)?\s*:?))$/i.test(line) ||
+    /^(?:recipe\s*)?\(\s*\d+(?:[.,]\d+)?\s+(?:servings?|raciones?|porciones?)\s*\)\s*:?$/i.test(line);
 }
 
 function findIngredientsSectionStart(lines: string[]) {
@@ -394,53 +436,102 @@ function lineAfterHeading(lines: string[], patterns: RegExp[]) {
 }
 
 function isIngredientLikeLine(value: string) {
-  const line = cleanLine(value);
-  if (!line || isJunkLine(line) || URL_LINE.test(line)) return false;
+  const line = cleanContentLine(value);
+  if (!line || isJunkLine(line) || URL_LINE.test(line) || isMacroLine(line)) return false;
   if (/^(?:yield|servings?|serves|makes|time|total time|prep time|cook time|recipe by|by|original recipe)\b/i.test(line)) {
     return false;
   }
+  if (/\b(?:prep|cook(?:ing)?|total)\s*(?:time)?\b/i.test(line) && /\b(?:min|mins?|minutes?|hours?|hrs?)\b/i.test(line)) return false;
+  if (/^\d+(?:[.,]\d+)?\s*(?:min|mins?|minutes?|hours?|hrs?)\b/i.test(line)) return false;
+  if (looksLikeActionLine(line)) return false;
 
-  return /^(?:\(?\d+(?:[.,]\d+)?(?:\s*[¼½¾⅓⅔⅛⅜⅝⅞])?|[¼½¾⅓⅔⅛⅜⅝⅞]|one\b|two\b|three\b|four\b|five\b|six\b|a\s+(?:pinch|dash|handful)\b|pinch\b|dash\b|salt\b|pepper\b|cooking spray\b)/i.test(line);
+  const quantityLed = /^(?:\(?\d+(?:[.,]\d+)?(?:\s+\d+\s*\/\s*\d+|\s*[¼½¾⅓⅔⅛⅜⅝⅞])?|\d+\s*\/\s*\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|one\b|two\b|three\b|four\b|five\b|six\b|seven\b|eight\b|nine\b|ten\b|un\b|una\b|uno\b|dos\b|tres\b|cuatro\b|cinco\b|seis\b|half\b|media?\b|unas?\s+\d)/i.test(line);
+  const qualitative = /^(?:a\s+(?:pinch|dash|handful|splash)\b|pinch\b|dash\b|handful\b|splash\b|salt\b|pepper\b|oil spray\b|cooking spray\b|juice\s+(?:and\s+zest\s+)?of\b|zest\s+(?:and\s+juice\s+)?of\b|jugo\s+de\b|ralladura\s+y\s+zumo\b)/i.test(line);
+  const ingredientFirst = /^[^,]{2,80},\s*(?:about\s*)?(?:\d+(?:[.,]\d+)?(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?|\d+\s*\/\s*\d+|[¼½¾⅓⅔⅛⅜⅝⅞])(?:\s*(?:g|gr|kg|ml|l|oz|fl\s*oz|lb|lbs|cup|cups|tbsp|tsp)\b|\s*(?:,|$))/i.test(line);
+  const trailingMeasure = /^[^,\d]{2,80}\s+(?:\d+(?:[.,]\d+)?(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?|\d+\s*\/\s*\d+|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:g|gr|kg|ml|l|oz|lb|lbs)\b/i.test(line);
+  return quantityLed || qualitative || ingredientFirst || trailingMeasure;
 }
 
 function looksLikeIngredientSubheading(value: string) {
-  const line = cleanLine(value);
-  if (!line || isJunkLine(line) || isIngredientLikeLine(line) || MACRO_LINE.test(line)) return false;
+  const line = cleanContentLine(value);
+  if (!line || isJunkLine(line) || isIngredientLikeLine(line) || isMacroLine(line)) return false;
   if (line.length > 60 || /[.!?]$/.test(line)) return false;
   return /^(?:for\b|para\b|to serve\b|for serving\b|optional\b|garnish\b|sauce\b|marinade\b)/i.test(line) ||
     /(?:salsa|sauce|dressing|marinade|glaze|topping|relleno|cobertura)$/i.test(line) ||
     /:$/.test(line);
 }
 
-function findImplicitMethodStart(lines: string[], start: number) {
-  for (let index = start + 1; index < lines.length; index += 1) {
-    if (methodMarker(lines[index])) return index;
+function looksLikeStepBody(value: string) {
+  const line = cleanContentLine(value);
+  return looksLikeActionLine(line) || /^(?:in|into|using|once|meanwhile|when|after|then|meanwhile|with)\b/i.test(line);
+}
+
+function isReliableMethodMarker(value: string) {
+  const marker = methodMarker(value);
+  if (!marker) return false;
+  if (/^\s*(?:step|paso)\s*\d+/i.test(value) || /^\s*[1-9](?:\uFE0F?\u20E3)/u.test(value)) return true;
+  return Boolean(marker.inlineBody && looksLikeStepBody(marker.inlineBody));
+}
+
+function findImplicitMethodStart(lines: string[], start = -1) {
+  let ingredientLikeSeen = 0;
+  for (let index = Math.max(0, start + 1); index < lines.length; index += 1) {
+    const line = cleanContentLine(lines[index]);
+    if (!line) continue;
+    if (isIngredientLikeLine(line)) {
+      ingredientLikeSeen += 1;
+      continue;
+    }
+    if (isReliableMethodMarker(lines[index])) return index;
+    if (ingredientLikeSeen >= 2 && looksLikeStepBody(line) && !looksLikeIngredientSubheading(line)) return index;
   }
   return -1;
 }
 
-function parseIngredients(lines: string[]) {
-  const start = findIngredientsSectionStart(lines);
-  if (start < 0) return [];
+function ingredientHeadingSuffix(value: string) {
+  const line = normalizedHeadingLine(value).replace(/:\s*$/, "");
+  const match = line.match(/^(?:ingredients?|ingredientes?)\s*[,–—-]?\s+(.+)$/i);
+  if (!match) return "";
+  const suffix = match[1].trim();
+  if (/^(?:for|para)?\s*\d+(?:[.,]\d+)?\s*(?:servings?|serves?|raciones?|porciones?)?\)?$/i.test(suffix)) return "";
+  if (/^\([^)]*(?:servings?|raciones?|porciones?)[^)]*\)$/i.test(suffix)) return "";
+  if (!/[\p{L}]/u.test(suffix)) return "";
+  return suffix.replace(/^for\s+/i, "").trim();
+}
+
+function pushIngredientHeading(ingredients: string[], value: string) {
+  const heading = cleanContentLine(value).replace(/:\s*$/, "").trim();
+  if (!heading || ingredients[ingredients.length - 1] === `${heading}:`) return;
+  ingredients.push(`${heading}:`);
+}
+
+function parseExplicitIngredients(lines: string[], start: number) {
   const explicitEnd = findSectionEnd(lines, start, [SECTION_HEADINGS.method, SECTION_HEADINGS.nutrition]);
   const implicitMethodStart = findImplicitMethodStart(lines, start);
   const end = implicitMethodStart >= 0 ? Math.min(explicitEnd, implicitMethodStart) : explicitEnd;
-  const section = lines.slice(start + 1, end);
   const ingredients: string[] = [];
+  const initialSuffix = ingredientHeadingSuffix(lines[start]);
+  if (initialSuffix) pushIngredientHeading(ingredients, initialSuffix);
 
-  for (const rawLine of section) {
-    const line = cleanLine(rawLine);
-    if (!line || isJunkLine(line) || URL_LINE.test(line) || MACRO_LINE.test(line)) continue;
-    if (SECTION_HEADINGS.ingredients.test(line) || SECTION_HEADINGS.method.test(line) || SECTION_HEADINGS.nutrition.test(line)) continue;
-    if (isServingsLine(line) || /^(?:yield|servings?|serves|makes)\s*:?/i.test(line)) continue;
+  for (let index = start + 1; index < end; index += 1) {
+    const rawLine = lines[index];
+    const line = cleanContentLine(rawLine);
+    if (!line || isJunkLine(line) || URL_LINE.test(line) || isMacroLine(line) || isDecorativeSeparator(line)) continue;
+    if (isHeading(rawLine, SECTION_HEADINGS.method) || isHeading(rawLine, SECTION_HEADINGS.nutrition)) break;
+    if (isHeading(rawLine, SECTION_HEADINGS.ingredients)) {
+      const suffix = ingredientHeadingSuffix(rawLine);
+      if (suffix) pushIngredientHeading(ingredients, suffix);
+      continue;
+    }
+    if (isServingsLine(line) || /^(?:yield|servings?|serves|makes|recipe\s*\(|raciones?|porciones?)\s*:?/i.test(line)) continue;
     if (/^(?:ingredient checklist|ingredient substitution guide)$/i.test(line)) continue;
 
     if (looksLikeIngredientSubheading(line)) {
-      ingredients.push(line.replace(/:$/, "") + ":");
+      pushIngredientHeading(ingredients, line);
       continue;
     }
 
-    if (isIngredientLikeLine(line) || (line.length <= 220 && !/[.!?]$/.test(line))) {
+    if (isIngredientLikeLine(line) || (line.length <= 220 && !/[.!?]$/.test(line) && !looksLikeActionLine(line))) {
       ingredients.push(line);
     }
   }
@@ -448,25 +539,24 @@ function parseIngredients(lines: string[]) {
   return ingredients;
 }
 
-function parseSocialIngredients(lines: string[], recipeTitle: string) {
+function parseImplicitIngredients(lines: string[], recipeTitle: string, recipeAuthor = "") {
+  const methodHeading = findSectionStart(lines, SECTION_HEADINGS.method);
+  const implicitMethod = findImplicitMethodStart(lines, -1);
+  const nutritionStart = findSectionStart(lines, SECTION_HEADINGS.nutrition);
+  const boundaries = [methodHeading, implicitMethod, nutritionStart].filter((value) => value >= 0);
+  const end = boundaries.length ? Math.min(...boundaries) : lines.length;
   const ingredients: string[] = [];
   let started = false;
 
-  for (let index = 0; index < lines.length; index += 1) {
+  for (let index = 0; index < end; index += 1) {
     const rawLine = lines[index];
     const rawTrimmed = rawLine.trim();
-    const line = cleanLine(rawLine);
-    if (!line) continue;
-    if (SECTION_HEADINGS.method.test(line) || SECTION_HEADINGS.nutrition.test(line)) {
-      if (started) break;
-      continue;
-    }
-    if (/^#\w/.test(rawTrimmed) || SOCIAL_FOOTER_LINE.test(line) || /^(?:see less|ver menos)$/i.test(line)) {
-      if (started) break;
-      continue;
-    }
-    if (MACRO_LINE.test(line)) continue;
-    if (!started && recipeTitle && line === recipeTitle) continue;
+    const line = cleanContentLine(rawLine);
+    if (!line || URL_LINE.test(line) || isJunkLine(line) || isMacroLine(line)) continue;
+    if (recipeTitle && cleanTitle(rawLine) === recipeTitle) continue;
+    if (recipeAuthor && cleanContentLine(rawLine).replace(/^@/, "") === recipeAuthor.replace(/^@/, "")) continue;
+    if (isServingsLine(line) || /^(?:recipe\s*\(|yield|servings?|serves|makes|raciones?|porciones?)\b/i.test(line)) continue;
+    if (/^#\w/.test(rawTrimmed) || SOCIAL_FOOTER_LINE.test(line)) break;
 
     if (isIngredientLikeLine(line)) {
       started = true;
@@ -474,22 +564,37 @@ function parseSocialIngredients(lines: string[], recipeTitle: string) {
       continue;
     }
 
-    if (looksLikeIngredientSubheading(line)) {
-      const nextUseful = lines
-        .slice(index + 1, index + 4)
-        .map(cleanLine)
-        .find((candidate) => candidate && !MACRO_LINE.test(candidate));
-      if (started || (nextUseful && isIngredientLikeLine(nextUseful))) {
-        started = true;
-        ingredients.push(line.replace(/:$/, "") + ":");
-        continue;
-      }
+    const nextUseful = lines
+      .slice(index + 1, Math.min(end, index + 5))
+      .map(cleanContentLine)
+      .find((candidate) => candidate && !isMacroLine(candidate) && !isServingsLine(candidate));
+    const wordCount = line.split(/\s+/).filter(Boolean).length;
+    const shortHeadingBeforeIngredient = line.length <= 60 && !/[.!?]$/.test(line) &&
+      (/:\s*$/.test(rawLine.trim()) || looksLikeIngredientSubheading(line) || wordCount >= 2) &&
+      Boolean(nextUseful && isIngredientLikeLine(nextUseful));
+
+    if ((started && looksLikeIngredientSubheading(line)) || shortHeadingBeforeIngredient) {
+      started = true;
+      pushIngredientHeading(ingredients, line);
+      continue;
     }
 
-    if (started) break;
+    if (started && line.length <= 90 && !/[.!?]$/.test(line) && !looksLikeActionLine(line) && !isDecorativeSeparator(line)) {
+      ingredients.push(line);
+    }
   }
 
+  while (ingredients.length && /^(?:what you need|recipe|ingredients?)\s*:?$/i.test(ingredients[0])) ingredients.shift();
   return ingredients;
+}
+
+function parseIngredients(lines: string[], recipeTitle = "", recipeAuthor = "") {
+  const start = findIngredientsSectionStart(lines);
+  return start >= 0 ? parseExplicitIngredients(lines, start) : parseImplicitIngredients(lines, recipeTitle, recipeAuthor);
+}
+
+function parseSocialIngredients(lines: string[], recipeTitle: string, recipeAuthor = "") {
+  return parseImplicitIngredients(lines, recipeTitle, recipeAuthor);
 }
 
 function cleanMethodLine(value: string) {
@@ -498,25 +603,34 @@ function cleanMethodLine(value: string) {
     .trim();
 }
 
+function isDecorativeSeparator(value: string) {
+  const line = value.trim();
+  return Boolean(line && !/[\p{L}\p{N}]/u.test(line));
+}
+
 function methodSectionLines(lines: string[]) {
   const explicitStart = findSectionStart(lines, SECTION_HEADINGS.method);
-  const ingredientsStart = findIngredientsSectionStart(lines);
-  const implicitStart = explicitStart < 0 && ingredientsStart >= 0
-    ? findImplicitMethodStart(lines, ingredientsStart)
-    : -1;
+  const implicitStart = explicitStart < 0 ? findImplicitMethodStart(lines, -1) : -1;
   const start = explicitStart >= 0 ? explicitStart + 1 : implicitStart;
   if (start < 0) return [];
-  const sectionAnchor = explicitStart >= 0 ? explicitStart : start - 1;
-  const end = findSectionEnd(lines, sectionAnchor, [SECTION_HEADINGS.nutrition]);
   const kept: string[] = [];
 
-  for (const rawLine of lines.slice(start, end)) {
+  for (let index = start; index < lines.length; index += 1) {
+    const rawLine = lines[index];
     const rawTrimmed = rawLine.trim();
+    const headingLine = normalizedHeadingLine(rawLine);
+    if (isHeading(rawLine, SECTION_HEADINGS.nutrition) || isMacroLine(rawLine)) break;
     if (/^#\w/.test(rawTrimmed)) break;
     const line = cleanMethodLine(rawLine);
-    if (URL_LINE.test(line) || SOCIAL_FOOTER_LINE.test(line)) break;
+    if (URL_LINE.test(line) || SOCIAL_FOOTER_LINE.test(cleanContentLine(line))) break;
     if (CREDIT_LINE.test(line) || UI_OR_JUNK_LINE.test(line)) continue;
-    if (/^(?:did you make this|recipe tags?|ratings?|comments?)\b/i.test(line)) break;
+    if (/^(?:did you make this|recipe tags?|ratings?|comments?|free\s+.+guide|comment\s+.+(?:link|recipe)|if you make it|cu[eé]ntame)\b/i.test(cleanContentLine(line))) break;
+    if (isDecorativeSeparator(line)) {
+      if (kept.some(Boolean)) break;
+      continue;
+    }
+    if (isHeading(rawLine, SECTION_HEADINGS.ingredients) && kept.some(Boolean)) break;
+    if (headingLine && /^(?:notes?|notas?|storage|conservaci[oó]n|trucos?|tips?)\s*:?$/i.test(headingLine) && kept.some(Boolean)) break;
     kept.push(line);
   }
 
@@ -533,10 +647,15 @@ function methodMarker(value: string): MethodMarker {
   const numbered = value.match(/^\s*(\d{1,2})[.)]\s*(.*)$/);
   if (numbered) return { number: numbered[1], inlineBody: numbered[2].trim() };
 
+  const spacedNumber = value.match(/^\s*(\d{1,2})\s+(.+)$/);
+  if (spacedNumber && looksLikeStepBody(spacedNumber[2])) {
+    return { number: spacedNumber[1], inlineBody: spacedNumber[2].trim() };
+  }
+
   const keycap = value.match(/^\s*([1-9])(?:\uFE0F?\u20E3)\s*(.*)$/);
   if (keycap) return { number: keycap[1], inlineBody: keycap[2].trim() };
 
-  const bullet = value.match(/^\s*[-*•‣▪◦]\s+(.+)$/);
+  const bullet = value.match(/^\s*[-*•‣▪◦]\s*(.+)$/);
   if (bullet) return { number: null, inlineBody: bullet[1].trim() };
 
   return null;
@@ -700,7 +819,7 @@ function extractTitle(lines: string[], sourceType = "", socialAuthor = "") {
     if (socialAuthor && line === socialAuthor) continue;
     if (SECTION_HEADINGS.ingredients.test(line) || SECTION_HEADINGS.method.test(line)) continue;
     if (/^(?:by\b|recipe by\b|original recipe\b|yield\b|servings?\b|serves\b|total time\b|prep time\b|cook time\b|time\b|published\b|updated\b|rating\b)/i.test(line)) continue;
-    if (/^(?:\d+(?:\.\d+)?\s*(?:stars?|ratings?)|\d+\s+minutes?|\d+\s+hours?)/i.test(line)) continue;
+    if (/^(?:\d+(?:\.\d+)?\s*(?:stars?|ratings?)|\d+\s+(?:minutes?|hours?)(?:\s+total)?)\s*$/i.test(line)) continue;
     if (line.length < 3 || line.length > 180) continue;
     return line;
   }
@@ -722,28 +841,43 @@ function extractAuthor(lines: string[]) {
   return "";
 }
 
-function extractServings(lines: string[]) {
-  const normalized = normalizeText(lines.join("\n"));
-  const numberFirst = normalized.match(/(?:^|\n)\s*(\d+(?:[.,]\d+)?)\s+(?:servings?|raciones?)\s*(?:\n|$)/i);
-  if (numberFirst) return numberFirst[1].replace(",", ".");
+function extractContextualAuthor(lines: string[], title: string) {
+  const useful = lines
+    .slice(0, 30)
+    .map((raw, index) => ({ raw, line: cleanContentLine(raw), index }))
+    .filter((item) => item.line && !URL_LINE.test(item.line) && !isJunkLine(item.line));
 
-  const direct = normalized.match(
-    /(?:^|\n)\s*(?:Yield|Servings?|Serves|Makes|Raciones?)\s*:?\s*(?:about\s*)?(\d+(?:[.,]\d+)?)\s*(?:servings?|raciones?)?\s*(?:\n|$)/i,
-  );
-  if (direct) return direct[1].replace(",", ".");
-
-  const ingredientsStart = findIngredientsSectionStart(lines);
-  if (ingredientsStart >= 0) {
-    for (const rawLine of lines.slice(ingredientsStart + 1, ingredientsStart + 6)) {
-      const line = cleanLine(rawLine);
-      const match = line.match(/^(\d+(?:[.,]\d+)?)\s+(?:servings?|raciones?)$/i);
-      if (match) return match[1].replace(",", ".");
-    }
+  for (let position = 0; position < useful.length; position += 1) {
+    const candidate = useful[position].line;
+    if (!candidate || candidate === title || /\d/.test(candidate) || candidate.length > 70) continue;
+    if (SECTION_HEADINGS.ingredients.test(candidate) || SECTION_HEADINGS.method.test(candidate)) continue;
+    const next = useful[position + 1]?.line ?? "";
+    const looksLikeRecipeMeta = /^(?:recipe\s*)?\(\s*\d+(?:[.,]\d+)?\s+(?:servings?|raciones?|porciones?)\s*\)\s*:?$/i.test(next) ||
+      /^recipe\s*\(.*(?:servings?|raciones?|porciones?).*\)\s*:?$/i.test(next);
+    const handle = /^@?[a-z0-9_.]{3,40}$/i.test(candidate);
+    const name = /^[\p{L}'’.-]+(?:\s+[\p{L}'’.-]+){1,4}$/u.test(candidate);
+    if (looksLikeRecipeMeta && (handle || name)) return candidate.replace(/^@/, "");
   }
 
-  const after = lineAfterHeading(lines, [/^(?:yield|servings?|serves|makes|raciones?)\s*:?/i]);
-  const number = after.match(/\d+(?:[.,]\d+)?/);
-  return number?.[0]?.replace(",", ".") ?? "";
+  return "";
+}
+
+function extractServings(lines: string[]) {
+  const normalized = normalizeText(lines.join("\n"));
+  const patterns = [
+    /(?:^|\n|\b)recipe\s*\(\s*(\d+(?:[.,]\d+)?)\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:servings?|raciones?|porciones?)\s*\)\s*:?/i,
+    /(?:^|\n|\b)ingredients?\s+(?:for\s+)?(?:about\s+)?(\d+(?:[.,]\d+)?)\s*(?:servings?|raciones?|porciones?)\b/i,
+    /(?:^|\n|\b)(?:yield|servings?|serves|makes|raciones?|porciones?)\s*:?\s*x?\s*(?:about\s*)?(\d+(?:[.,]\d+)?)(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?/i,
+    /(?:^|\n)\s*(\d+(?:[.,]\d+)?)\s*(?:servings?|raciones?|porciones?)\b/i,
+    /\b(\d+(?:[.,]\d+)?)\s*(?:raciones|porciones)\b/i,
+    /(?:^|\n)\s*para\s+(\d+(?:[.,]\d+)?)\s+personas?\b/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    if (match) return match[1].replace(",", ".");
+  }
+  return "";
 }
 
 function extractTime(lines: string[]) {
@@ -802,14 +936,15 @@ export function parseRecipe(raw: string, context: PasteContext = {}): ParsedReci
       : "";
   const socialAuthor = extractSocialAuthor(lines, sourceType);
   const title = extractTitle(lines, sourceType, socialAuthor);
-  const ingredients = parseIngredients(lines);
-  const finalIngredients = ingredients.length ? ingredients : parseSocialIngredients(lines, title);
+  const author = extractAuthor(lines) || socialAuthor || extractContextualAuthor(lines, title);
+  const ingredients = parseIngredients(lines, title, author);
+  const finalIngredients = ingredients.length ? ingredients : parseSocialIngredients(lines, title, author);
   const imageUrl = context.imageUrl?.trim() || "";
 
   return {
     title,
     summary: "",
-    author: extractAuthor(lines) || socialAuthor,
+    author,
     publication: publicationFromUrl || publicationFromText,
     sourceType,
     sourceUrl,

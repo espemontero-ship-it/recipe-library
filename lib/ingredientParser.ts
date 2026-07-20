@@ -39,6 +39,7 @@ const WORD_NUMBERS: Record<string, number> = {
   ten: 10,
   eleven: 11,
   twelve: 12,
+  half: 0.5,
   un: 1,
   una: 1,
   uno: 1,
@@ -53,6 +54,8 @@ const WORD_NUMBERS: Record<string, number> = {
   diez: 10,
   once: 11,
   doce: 12,
+  medio: 0.5,
+  media: 0.5,
 };
 
 const UNIT_ALIASES: Record<string, string> = {
@@ -127,6 +130,20 @@ const UNIT_ALIASES: Record<string, string> = {
   tins: "can",
   lata: "can",
   latas: "can",
+  bag: "package",
+  bags: "package",
+  bolsa: "package",
+  bolsas: "package",
+  tub: "package",
+  tubs: "package",
+  bote: "package",
+  botes: "package",
+  scoop: "scoop",
+  scoops: "scoop",
+  cacito: "scoop",
+  cacitos: "scoop",
+  wrapper: "piece",
+  wrappers: "piece",
   package: "package",
   packages: "package",
   packet: "package",
@@ -186,7 +203,7 @@ const WEIGHT_UNIT_PATTERN = Object.keys(WEIGHT_UNIT_ALIASES)
   .map(escapeRegex)
   .join("|");
 const PACKAGE_UNIT_PATTERN = "cans?|tins?|latas?|packages?|packets?|paquetes?|sobres?";
-const MODIFIER_PATTERN = "packed|heaped|level|rounded|colmadas?|rasas?|generosas?";
+const MODIFIER_PATTERN = "packed|heaped|level|rounded|big|small|medium|large|colmadas?|rasas?|generosas?|grandes?|pequeñas?|pequenos?|medianas?";
 
 function parseSimpleNumber(value: string) {
   const normalized = value.trim().toLowerCase().replace(",", ".");
@@ -261,7 +278,23 @@ function normalizeWeight(value: string, rawUnit: string) {
 }
 
 function stripIngredientConnector(value: string) {
-  return value.replace(/^\s*(?:de(?:l)?|of)\s+/i, "").trim();
+  return value
+    .replace(/^\s*(?:de(?:l)?|of)\s+/i, "")
+    .replace(/^\s*[-–—]\s*/, "")
+    .trim();
+}
+
+function splitTopLevelComma(value: string) {
+  let depth = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === "(") depth += 1;
+    if (character === ")") depth = Math.max(0, depth - 1);
+    if (character === "," && depth === 0) {
+      return [value.slice(0, index), value.slice(index + 1)] as const;
+    }
+  }
+  return [value, ""] as const;
 }
 
 function parsePackageWeightPrefix(value: string) {
@@ -310,10 +343,48 @@ function joinNotes(...values: Array<string | null | undefined>) {
 
 export function parseIngredientLine(originalLine: string): RecipeIngredient {
   const clean = originalLine
-    .replace(/^\s*(?:[-*•‣▪◦]|\d+[.)])\s*/, "")
+    .replace(/^\s*(?:(?:[-*•‣▪◦✅✔☑✳❇]\uFE0F?)|(?:[\p{Extended_Pictographic}]\uFE0F?))+\s*/u, "")
+    .replace(/^\s*\d+[.)]\s+/, "")
     .replace(/[\u00a0\u202f]/g, " ")
+    .replace(/\u2044/g, "/")
+    .replace(/^(\d+\s*\/\s*\d+)(?:st|nd|rd|th)\b/i, "$1")
+    .replace(/^(?:unas?|unos?|about|approximately)\s+(?=\d|[¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])/i, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  const firstComma = clean.indexOf(",");
+  if (firstComma > 0 && !/^\d+$/.test(clean.slice(0, firstComma).trim())) {
+    const ingredientName = clean.slice(0, firstComma).trim();
+    const measurementText = clean.slice(firstComma + 1).trim();
+    const trailingQuantity = extractLeadingQuantity(measurementText);
+    if (trailingQuantity.min !== null) {
+      const trailingUnit = extractUnit(trailingQuantity.rest);
+      if (trailingUnit.unit || !trailingUnit.rest || /^,/.test(trailingUnit.rest)) {
+        const note = trailingUnit.rest.replace(/^,\s*/, "").trim() || null;
+        return {
+          id: createEntityId("ingredient"),
+          originalLine: clean,
+          parseStatus: ingredientName ? "confirmed" : "review",
+          canonicalIngredient: ingredientName || null,
+          quantity: { min: trailingQuantity.min, max: trailingQuantity.max },
+          unit: trailingUnit.unit,
+          preparationNote: note,
+          optional: /\boptional\b|\bopcional\b/i.test(clean),
+          garnish: /\bfor garnish\b|\bpara decorar\b/i.test(clean),
+          servingAccompaniment: /\bto serve\b|\bpara servir\b/i.test(clean),
+          nutrition: {
+            status: "pending",
+            fdcId: null,
+            foodName: null,
+            brandName: null,
+            grams: null,
+            per100g: null,
+            note: null,
+          },
+        };
+      }
+    }
+  }
 
   const quantity = extractLeadingQuantity(clean);
   let rest = quantity.rest;
@@ -345,9 +416,9 @@ export function parseIngredientLine(originalLine: string): RecipeIngredient {
   }
 
   rest = stripIngredientConnector(rest);
-  const [ingredientPart, ...commaNoteParts] = rest.split(",");
+  const [ingredientPart, commaNote] = splitTopLevelComma(rest);
   const canonicalIngredient = ingredientPart.trim() || rest.trim() || null;
-  const preparationNote = joinNotes(structuralNote, modifierNote, commaNoteParts.join(","));
+  const preparationNote = joinNotes(structuralNote, modifierNote, commaNote);
 
   return {
     id: createEntityId("ingredient"),

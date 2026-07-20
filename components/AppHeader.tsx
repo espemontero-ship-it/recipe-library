@@ -18,7 +18,13 @@ export function AppHeader() {
   const [open, setOpen] = useState(false);
   const { loading, isAdmin, signOut } = useAuth();
   const navigationLinks = isAdmin
-    ? [...links, { href: "/paste", label: "Add recipe" }]
+    ? [
+        ...links,
+        { href: "/paste", label: "Add recipe" },
+        { href: "/recipe-audit", label: "Audit" },
+        { href: "/recipe-repair-batch", label: "Repair batch" },
+        { href: "/recipe-repair", label: "Review details" },
+      ]
     : links;
 
   return (

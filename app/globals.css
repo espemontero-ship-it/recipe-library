@@ -749,50 +749,43 @@ input {
   }
 }
 
-.login-google-button {
+
+.login-inline-action {
   display: flex;
-  width: 100%;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border: 1px solid var(--line) !important;
-  background: white;
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.86rem;
-  font-weight: 800;
+  justify-content: flex-end;
+  margin-top: -6px;
+  font-size: 0.82rem;
 }
 
-.login-google-button:hover {
-  border-color: var(--ink) !important;
+.login-inline-action a,
+.login-card > a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.login-google-mark {
+.login-success {
+  margin: 0 !important;
+  color: #2f6b43 !important;
+  font-size: 0.85rem;
+}
+
+.login-confirmation {
   display: grid;
-  width: 25px;
-  height: 25px;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  font-family: Arial, sans-serif;
-  font-weight: 800;
+  gap: 8px;
+  margin: 28px 0 22px;
+  border-left: 3px solid var(--ink);
+  padding: 16px 18px;
+  background: white;
 }
 
-.login-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 22px 0 0;
+.login-confirmation p {
+  margin: 0;
   color: var(--muted);
-  font-size: 0.72rem;
-  text-transform: uppercase;
+  line-height: 1.55;
 }
 
-.login-divider::before,
-.login-divider::after {
-  height: 1px;
-  flex: 1;
-  background: var(--line);
-  content: "";
+.login-password-hint {
+  margin: -8px 0 0 !important;
+  color: var(--muted) !important;
+  font-size: 0.78rem;
 }
