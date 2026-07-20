@@ -25,6 +25,8 @@ const FRACTIONS: Record<string, number> = {
 };
 
 const WORD_NUMBERS: Record<string, number> = {
+  a: 1,
+  an: 1,
   one: 1,
   two: 2,
   three: 3,
@@ -152,10 +154,39 @@ const UNIT_ALIASES: Record<string, string> = {
 };
 
 const UNIT_KEYS = Object.keys(UNIT_ALIASES).sort((a, b) => b.length - a.length);
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const UNIT_PATTERN = UNIT_KEYS
-  .map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"))
+  .map((value) => escapeRegex(value).replace(/\s+/g, "\\s+"))
   .join("|");
 const UNIT_REGEX = new RegExp(`^(${UNIT_PATTERN})(?:\\.)?(?=\\s|[,;:()\\-–—/]|$)\\s*`, "iu");
+
+const WEIGHT_UNIT_ALIASES: Record<string, string> = {
+  g: "g",
+  gr: "g",
+  gram: "g",
+  grams: "g",
+  gramo: "g",
+  gramos: "g",
+  kg: "kg",
+  kilogram: "kg",
+  kilograms: "kg",
+  oz: "oz",
+  ounce: "oz",
+  ounces: "oz",
+  onza: "oz",
+  onzas: "oz",
+  lb: "lb",
+  pound: "lb",
+  pounds: "lb",
+  ml: "ml",
+  l: "l",
+};
+const WEIGHT_UNIT_PATTERN = Object.keys(WEIGHT_UNIT_ALIASES)
+  .sort((a, b) => b.length - a.length)
+  .map(escapeRegex)
+  .join("|");
+const PACKAGE_UNIT_PATTERN = "cans?|tins?|latas?|packages?|packets?|paquetes?|sobres?";
+const MODIFIER_PATTERN = "packed|heaped|level|rounded|colmadas?|rasas?|generosas?";
 
 function parseSimpleNumber(value: string) {
   const normalized = value.trim().toLowerCase().replace(",", ".");
@@ -165,14 +196,10 @@ function parseSimpleNumber(value: string) {
   if (FRACTIONS[normalized] !== undefined) return FRACTIONS[normalized];
 
   const mixedUnicode = normalized.match(/^(\d+)\s*([¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])$/);
-  if (mixedUnicode) {
-    return Number(mixedUnicode[1]) + FRACTIONS[mixedUnicode[2]];
-  }
+  if (mixedUnicode) return Number(mixedUnicode[1]) + FRACTIONS[mixedUnicode[2]];
 
   const fraction = normalized.match(/^(\d+)\s*\/\s*(\d+)$/);
-  if (fraction && Number(fraction[2])) {
-    return Number(fraction[1]) / Number(fraction[2]);
-  }
+  if (fraction && Number(fraction[2])) return Number(fraction[1]) / Number(fraction[2]);
 
   const mixed = normalized.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
   if (mixed && Number(mixed[3])) {
@@ -186,6 +213,7 @@ function parseSimpleNumber(value: string) {
 const UNICODE_FRACTIONS = "¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞";
 const WORD_NUMBER_PATTERN = Object.keys(WORD_NUMBERS)
   .sort((a, b) => b.length - a.length)
+  .map(escapeRegex)
   .join("|");
 const QUANTITY_TOKEN = [
   `\\d+\\s+\\d+\\s*\\/\\s*\\d+`,
@@ -193,7 +221,7 @@ const QUANTITY_TOKEN = [
   `\\d+\\s*\\/\\s*\\d+`,
   `\\d+(?:[.,]\\d+)?`,
   `[${UNICODE_FRACTIONS}]`,
-  WORD_NUMBER_PATTERN,
+  `(?:${WORD_NUMBER_PATTERN})\\b`,
 ].join("|");
 const LEADING_QUANTITY_REGEX = new RegExp(
   `^\\s*(${QUANTITY_TOKEN})(?:\\s*(?:-|–|—|to|a)\\s*(${QUANTITY_TOKEN}))?`,
@@ -213,28 +241,113 @@ function extractLeadingQuantity(value: string) {
   };
 }
 
+function normalizeUnitToken(value: string) {
+  return value.toLowerCase().replace(/\s+/g, " ").replace(/\.$/, "");
+}
+
 function extractUnit(value: string) {
   const match = value.match(UNIT_REGEX);
   if (!match) return { unit: null, rest: value.trim() };
-  const normalized = match[1]
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .replace(/\.$/, "");
-  const unit = UNIT_ALIASES[normalized] ?? null;
+  const unit = UNIT_ALIASES[normalizeUnitToken(match[1])] ?? null;
   return unit
     ? { unit, rest: value.slice(match[0].length).trim() }
     : { unit: null, rest: value.trim() };
 }
 
+function normalizeWeight(value: string, rawUnit: string) {
+  const amount = value.replace(",", ".");
+  const unit = WEIGHT_UNIT_ALIASES[normalizeUnitToken(rawUnit)] ?? normalizeUnitToken(rawUnit);
+  return `${amount} ${unit}`;
+}
+
+function stripIngredientConnector(value: string) {
+  return value.replace(/^\s*(?:de(?:l)?|of)\s+/i, "").trim();
+}
+
+function parsePackageWeightPrefix(value: string) {
+  const xWeight = value.match(
+    new RegExp(`^x\\s*(\\d+(?:[.,]\\d+)?)\\s*(${WEIGHT_UNIT_PATTERN})\\s+(${PACKAGE_UNIT_PATTERN})\\b\\s*`, "iu"),
+  );
+  if (xWeight) {
+    const packageUnit = UNIT_ALIASES[normalizeUnitToken(xWeight[3])] ?? "package";
+    return {
+      unit: packageUnit,
+      note: `${normalizeWeight(xWeight[1], xWeight[2])} each`,
+      rest: value.slice(xWeight[0].length).trim(),
+    };
+  }
+
+  const hyphenWeight = value.match(
+    new RegExp(`^(\\d+(?:[.,]\\d+)?)\\s*[-–—]\\s*(${WEIGHT_UNIT_PATTERN})\\s+(${PACKAGE_UNIT_PATTERN})\\b\\s*`, "iu"),
+  );
+  if (hyphenWeight) {
+    const packageUnit = UNIT_ALIASES[normalizeUnitToken(hyphenWeight[3])] ?? "package";
+    return {
+      unit: packageUnit,
+      note: normalizeWeight(hyphenWeight[1], hyphenWeight[2]),
+      rest: value.slice(hyphenWeight[0].length).trim(),
+    };
+  }
+
+  return null;
+}
+
+function extractParentheticalWeight(value: string, appendEach: boolean) {
+  const match = value.match(
+    new RegExp(`^\\(\\s*(\\d+(?:[.,]\\d+)?)\\s*(${WEIGHT_UNIT_PATTERN})\\s*\\)\\s*`, "iu"),
+  );
+  if (!match) return null;
+  return {
+    note: `${normalizeWeight(match[1], match[2])}${appendEach ? " each" : ""}`,
+    rest: value.slice(match[0].length).trim(),
+  };
+}
+
+function joinNotes(...values: Array<string | null | undefined>) {
+  const notes = values.map((value) => value?.trim()).filter(Boolean) as string[];
+  return notes.length ? notes.join(", ") : null;
+}
+
 export function parseIngredientLine(originalLine: string): RecipeIngredient {
   const clean = originalLine
     .replace(/^\s*(?:[-*•‣▪◦]|\d+[.)])\s*/, "")
+    .replace(/[\u00a0\u202f]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
+
   const quantity = extractLeadingQuantity(clean);
-  const unit = extractUnit(quantity.rest);
-  const [ingredientPart, ...noteParts] = unit.rest.split(",");
-  const canonicalIngredient = ingredientPart.trim() || unit.rest.trim() || null;
-  const preparationNote = noteParts.join(",").trim() || null;
+  let rest = quantity.rest;
+  let unit: string | null = null;
+  let structuralNote: string | null = null;
+  let modifierNote: string | null = null;
+
+  const packageWeight = parsePackageWeightPrefix(rest);
+  if (packageWeight) {
+    unit = packageWeight.unit;
+    structuralNote = packageWeight.note;
+    rest = packageWeight.rest;
+  } else {
+    const modifier = rest.match(new RegExp(`^(${MODIFIER_PATTERN})\\s+`, "iu"));
+    if (modifier) {
+      modifierNote = modifier[1].toLowerCase();
+      rest = rest.slice(modifier[0].length).trim();
+    }
+
+    const extractedUnit = extractUnit(rest);
+    unit = extractedUnit.unit;
+    rest = extractedUnit.rest;
+
+    const parenthetical = extractParentheticalWeight(rest, unit === null);
+    if (parenthetical) {
+      structuralNote = parenthetical.note;
+      rest = parenthetical.rest;
+    }
+  }
+
+  rest = stripIngredientConnector(rest);
+  const [ingredientPart, ...commaNoteParts] = rest.split(",");
+  const canonicalIngredient = ingredientPart.trim() || rest.trim() || null;
+  const preparationNote = joinNotes(structuralNote, modifierNote, commaNoteParts.join(","));
 
   return {
     id: createEntityId("ingredient"),
@@ -242,12 +355,11 @@ export function parseIngredientLine(originalLine: string): RecipeIngredient {
     parseStatus: canonicalIngredient ? "confirmed" : "review",
     canonicalIngredient,
     quantity: { min: quantity.min, max: quantity.max },
-    unit: unit.unit,
+    unit,
     preparationNote,
     optional: /\boptional\b|\bopcional\b/i.test(clean),
     garnish: /\bfor garnish\b|\bpara decorar\b/i.test(clean),
     servingAccompaniment: /\bto serve\b|\bpara servir\b/i.test(clean),
-    // Kept only for backward-compatible recipe JSON. Automatic nutrition matching is disabled.
     nutrition: {
       status: "pending",
       fdcId: null,

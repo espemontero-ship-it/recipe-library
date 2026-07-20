@@ -1,0 +1,8 @@
+Recipe Library v0.11.4 QA
+
+Verified:
+- npm run test:parser completes and reports the current baseline without changing files.
+- npm run build completes successfully.
+- /parser-lab is generated as an admin-only route.
+- Fixtures cover NYT, social captions, web/blog recipes, Spanish and English, servings, times, URLs, ingredient sections, numbered steps, fractions, weights, tablespoons, packages and notes.
+- No parser functions, recipes or Supabase schema are modified.

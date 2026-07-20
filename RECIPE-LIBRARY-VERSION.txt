@@ -1,3 +1,3 @@
-Recipe Library v0.11.3
-Manual macros per serving; automatic nutrition parser removed
-Installed: 2026-07-20T06:46:21.856Z
+Recipe Library v0.12.2
+Compact single-line social paste parsing fix
+Installed: 2026-07-20T08:21:14.013Z

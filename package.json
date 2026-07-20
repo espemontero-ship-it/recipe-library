@@ -1,11 +1,13 @@
 {
   "name": "recipe-library",
-  "version": "0.9.1",
+  "version": "0.12.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:parser": "node scripts/parser-baseline.mjs",
+    "test:parser:strict": "node scripts/parser-baseline.mjs --strict"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

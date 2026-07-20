@@ -1,0 +1,12 @@
+Recipe Library v0.12.1 QA
+
+Verified:
+- Exact Facebook Reel sample parses author, title, 20 ingredient rows and 7 method steps correctly.
+- "Dipping Sauce" and "To Serve" are retained as ingredient subsections.
+- Numbered methods work without a Method/Preparation heading.
+- npm run test:parser:strict: 60/60 fixtures pass.
+- 27/27 complete recipe fixtures pass.
+- 33/33 ingredient-line fixtures pass.
+- npm run build completes successfully.
+- No Supabase migration or bulk update is included.
+- Automatic nutrition parsing remains disabled.

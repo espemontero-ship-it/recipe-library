@@ -1,0 +1,10 @@
+Recipe Library v0.12.0 QA
+
+Verified:
+- npm run test:parser:strict: 59/59 fixtures pass.
+- 26/26 complete recipe fixtures pass.
+- 33/33 ingredient-line fixtures pass.
+- npm run build completes successfully.
+- Parser lab remains read-only and does not save recipes.
+- No Supabase migration or bulk update is included.
+- Automatic nutrition parsing remains disabled.

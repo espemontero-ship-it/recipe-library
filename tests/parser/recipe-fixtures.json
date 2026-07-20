@@ -1,0 +1,590 @@
+[
+  {
+    "id": "nyt-tajin-full-copy",
+    "name": "NYT full-page copy with navigation and duplicate Ingredients",
+    "source": "NYT Cooking",
+    "context": {
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1026792-slow-cooker-tajin-chicken-and-peppers?campaign_id=90&emc=edit_fwd_20260719&user_id=abc"
+    },
+    "raw": "Occasions\nArticles\nAbout\nSlow Cooker Tajín Chicken and Peppers\nBy Sarah DiGregorio\nPublished April 24, 2025\nMedia 1 of 1\nTotal Time\nAbout 4 hours\nPrep Time\n5 minutes\nCook Time\n4 hours\n5\n(1,457)\nRead 199 comments\nGive\nIngredients\n4 servings\nIngredients\n2 pounds boneless, skinless chicken thighs\n2 red bell peppers, sliced\n1 yellow onion, sliced\n2 tablespoons Tajín\n1 teaspoon kosher salt\nAdd ingredients to Grocery List\nNutritional Information\nPreparation\nStep 1\nAdd the chicken, peppers, onion, Tajín and salt to a slow cooker.\nStep 2\nCover and cook on low until the chicken is tender, about 4 hours.\nFood Stylist: Barrett Washburne.\nhttps://cooking.nytimes.com/recipes/1026792-slow-cooker-tajin-chicken-and-peppers?campaign_id=90",
+    "expected": {
+      "title": "Slow Cooker Tajín Chicken and Peppers",
+      "author": "Sarah DiGregorio",
+      "publication": "NYT Cooking",
+      "sourceType": "web",
+      "sourceUrl": "https://cooking.nytimes.com/recipes/1026792-slow-cooker-tajin-chicken-and-peppers",
+      "servings": "4",
+      "time": "About 4 hours",
+      "prepMinutes": "5",
+      "cookMinutes": "240",
+      "ingredients": [
+        "2 pounds boneless, skinless chicken thighs",
+        "2 red bell peppers, sliced",
+        "1 yellow onion, sliced",
+        "2 tablespoons Tajín",
+        "1 teaspoon kosher salt"
+      ],
+      "methodBodies": [
+        "Add the chicken, peppers, onion, Tajín and salt to a slow cooker.",
+        "Cover and cook on low until the chicken is tender, about 4 hours."
+      ]
+    }
+  },
+  {
+    "id": "nyt-credit-lines",
+    "name": "NYT credits and editorial footer excluded",
+    "source": "NYT Cooking",
+    "raw": "Crispy Rice Salad\nBy Sue Li\nIngredients\n4 servings\n2 cups cooked rice\n1 cucumber, sliced\n2 tablespoons rice vinegar\nAdd ingredients to Grocery List\nNutritional Information\nPreparation\nStep 1\nBake the rice until crisp.\nStep 2\nToss with cucumber and vinegar.\nPhoto by Christopher Testani. Food Stylist: Simon Andrews.",
+    "context": {
+      "sourceUrl": "https://cooking.nytimes.com/recipes/123456-crispy-rice-salad"
+    },
+    "expected": {
+      "title": "Crispy Rice Salad",
+      "author": "Sue Li",
+      "publication": "NYT Cooking",
+      "servings": "4",
+      "ingredients": [
+        "2 cups cooked rice",
+        "1 cucumber, sliced",
+        "2 tablespoons rice vinegar"
+      ],
+      "methodBodies": [
+        "Bake the rice until crisp.",
+        "Toss with cucumber and vinegar."
+      ]
+    }
+  },
+  {
+    "id": "spanish-blog-basic",
+    "name": "Spanish blog with standard sections",
+    "source": "Web",
+    "raw": "Pollo al limón al horno\nReceta de María López\nRaciones: 4\nTiempo total: 50 minutos\nIngredientes\n800 g de contramuslos de pollo\n2 limones\n3 dientes de ajo\n1 cucharada de aceite de oliva\nPreparación\nPaso 1\nPrecalienta el horno a 200 °C.\nPaso 2\nHornea el pollo durante 40 minutos.",
+    "context": {
+      "sourceUrl": "https://ejemplo.es/recetas/pollo-limon"
+    },
+    "expected": {
+      "title": "Pollo al limón al horno",
+      "author": "María López",
+      "publication": "ejemplo.es",
+      "sourceType": "web",
+      "servings": "4",
+      "time": "50 minutos",
+      "totalMinutes": "50",
+      "ingredients": [
+        "800 g de contramuslos de pollo",
+        "2 limones",
+        "3 dientes de ajo",
+        "1 cucharada de aceite de oliva"
+      ],
+      "methodBodies": [
+        "Precalienta el horno a 200 °C.",
+        "Hornea el pollo durante 40 minutos."
+      ]
+    }
+  },
+  {
+    "id": "markdown-recipe",
+    "name": "Markdown recipe headings and bullets",
+    "source": "Manual paste",
+    "raw": "# Garlic Butter Salmon\nBy Jane Cook\nServes 2\n## Ingredients\n- 2 salmon fillets\n- 1 tbsp butter\n- 2 cloves garlic\n## Instructions\n1. Melt the butter.\n2. Cook the salmon for 4 minutes per side.",
+    "expected": {
+      "title": "Garlic Butter Salmon",
+      "author": "Jane Cook",
+      "servings": "2",
+      "ingredients": [
+        "2 salmon fillets",
+        "1 tbsp butter",
+        "2 cloves garlic"
+      ],
+      "methodBodies": [
+        "Melt the butter.",
+        "Cook the salmon for 4 minutes per side."
+      ]
+    }
+  },
+  {
+    "id": "instagram-caption",
+    "name": "Instagram caption with ingredients, method and hashtags",
+    "source": "Instagram",
+    "raw": "High Protein Chilli Lime Shrimp Bowls!\nPer Bowl: 582 calories\n50g P | 70g C | 13g F\nFor the Shrimp\n700g raw shrimp/prawns\n1 tsp garlic powder\n1 tsp smoked paprika\nMango Pineapple Salsa\n150g diced pineapple\n150g diced mango\nMethod\nStep 1\nSeason and cook the shrimp.\nStep 2\nMix the salsa and serve.\n#recipes #highprotein\nLink in bio",
+    "context": {
+      "sourceUrl": "https://www.instagram.com/p/ABC123/?utm_source=ig_web_copy_link"
+    },
+    "expected": {
+      "title": "High Protein Chilli Lime Shrimp Bowls!",
+      "publication": "Instagram",
+      "sourceType": "instagram",
+      "sourceUrl": "https://www.instagram.com/p/ABC123/",
+      "ingredients": [
+        "For the Shrimp:",
+        "700g raw shrimp/prawns",
+        "1 tsp garlic powder",
+        "1 tsp smoked paprika",
+        "Mango Pineapple Salsa:",
+        "150g diced pineapple",
+        "150g diced mango"
+      ],
+      "methodBodies": [
+        "Season and cook the shrimp.",
+        "Mix the salsa and serve."
+      ]
+    }
+  },
+  {
+    "id": "tiktok-caption",
+    "name": "TikTok caption with concise method",
+    "source": "TikTok",
+    "raw": "Creamy chicken pasta\nIngredients:\n300 g pasta\n500 g chicken breast\n200 ml cream\nDirections:\n1. Cook the pasta.\n2. Brown the chicken and add cream.\n#easyrecipe",
+    "context": {
+      "sourceUrl": "https://www.tiktok.com/@cook/video/123?utm_source=share"
+    },
+    "expected": {
+      "title": "Creamy chicken pasta",
+      "publication": "TikTok",
+      "sourceType": "tiktok",
+      "ingredients": [
+        "300 g pasta",
+        "500 g chicken breast",
+        "200 ml cream"
+      ],
+      "methodBodies": [
+        "Cook the pasta.",
+        "Brown the chicken and add cream."
+      ]
+    }
+  },
+  {
+    "id": "facebook-caption",
+    "name": "Facebook recipe caption",
+    "source": "Facebook",
+    "raw": "Berenjenas con tomate y queso\nIngredientes\n2 berenjenas\n200 g tomate triturado\n80 g mozzarella\nElaboración\nPaso 1: Asa la berenjena.\nPaso 2: Añade tomate y queso y gratina.",
+    "context": {
+      "sourceUrl": "https://www.facebook.com/example/posts/123"
+    },
+    "expected": {
+      "title": "Berenjenas con tomate y queso",
+      "publication": "Facebook",
+      "sourceType": "facebook",
+      "ingredients": [
+        "2 berenjenas",
+        "200 g tomate triturado",
+        "80 g mozzarella"
+      ],
+      "methodBodies": [
+        "Asa la berenjena.",
+        "Añade tomate y queso y gratina."
+      ]
+    }
+  },
+  {
+    "id": "numbered-method",
+    "name": "Numbered method without Step labels",
+    "source": "Web",
+    "raw": "Tomato Soup\nIngredients\n1 kg tomatoes\n1 onion\n500 ml stock\nInstructions\n1. Roast the tomatoes and onion.\n2. Blend with the stock.\n3. Simmer for 10 minutes.",
+    "expected": {
+      "title": "Tomato Soup",
+      "ingredients": [
+        "1 kg tomatoes",
+        "1 onion",
+        "500 ml stock"
+      ],
+      "methodBodies": [
+        "Roast the tomatoes and onion.",
+        "Blend with the stock.",
+        "Simmer for 10 minutes."
+      ]
+    }
+  },
+  {
+    "id": "spanish-pasos-inline",
+    "name": "Spanish inline Paso markers",
+    "source": "Manual paste",
+    "raw": "Patatas al ajillo\nIngredientes\n500 g patatas\n2 dientes de ajo\nMétodo\nPaso 1: Cuece las patatas.\nPaso 2: Saltéalas con el ajo.",
+    "expected": {
+      "title": "Patatas al ajillo",
+      "ingredients": [
+        "500 g patatas",
+        "2 dientes de ajo"
+      ],
+      "methodBodies": [
+        "Cuece las patatas.",
+        "Saltéalas con el ajo."
+      ]
+    }
+  },
+  {
+    "id": "ingredient-subsections",
+    "name": "Ingredient subsections retained",
+    "source": "Web",
+    "raw": "Chicken wraps\nServes 4\nIngredients\nFor the chicken:\n500 g chicken breast\n1 tsp paprika\nFor the sauce:\n100 g Greek yogurt\n1 lime\nMethod\nStep 1\nCook the chicken.\nStep 2\nMix the sauce and assemble.",
+    "expected": {
+      "title": "Chicken wraps",
+      "servings": "4",
+      "ingredients": [
+        "For the chicken:",
+        "500 g chicken breast",
+        "1 tsp paprika",
+        "For the sauce:",
+        "100 g Greek yogurt",
+        "1 lime"
+      ],
+      "methodBodies": [
+        "Cook the chicken.",
+        "Mix the sauce and assemble."
+      ]
+    }
+  },
+  {
+    "id": "social-no-heading",
+    "name": "Social caption without Ingredients heading",
+    "source": "Social",
+    "raw": "Easy mango salsa\n1 mango, diced\n1/2 red onion, diced\n1 lime, juiced\nSalt to taste\nMix everything in a bowl.\n#summerfood",
+    "expected": {
+      "title": "Easy mango salsa",
+      "ingredients": [
+        "1 mango, diced",
+        "1/2 red onion, diced",
+        "1 lime, juiced",
+        "Salt to taste"
+      ]
+    }
+  },
+  {
+    "id": "book-manual",
+    "name": "Book recipe pasted manually",
+    "source": "Book",
+    "raw": "Roasted aubergine with tahini\nBy Yotam Ottolenghi\nMakes 4\nIngredients\n2 aubergines\n3 tbsp tahini\n1 lemon\nMethod\nRoast the aubergines until soft.\nMix the tahini with lemon and spoon over.",
+    "expected": {
+      "title": "Roasted aubergine with tahini",
+      "author": "Yotam Ottolenghi",
+      "servings": "4",
+      "ingredients": [
+        "2 aubergines",
+        "3 tbsp tahini",
+        "1 lemon"
+      ],
+      "methodBodies": [
+        "Roast the aubergines until soft. Mix the tahini with lemon and spoon over."
+      ]
+    }
+  },
+  {
+    "id": "url-before-title",
+    "name": "URL before title is never used as title",
+    "source": "Web",
+    "raw": "https://example.com/recipes/chicken-bowl\nChicken Bowl\nIngredients\n300 g chicken\n100 g rice\nMethod\nStep 1\nCook everything.",
+    "expected": {
+      "title": "Chicken Bowl",
+      "sourceUrl": "https://example.com/recipes/chicken-bowl",
+      "ingredients": [
+        "300 g chicken",
+        "100 g rice"
+      ],
+      "methodBodies": [
+        "Cook everything."
+      ]
+    }
+  },
+  {
+    "id": "url-after-method",
+    "name": "URL after method is not included in steps",
+    "source": "Web",
+    "raw": "Lemon Pasta\nIngredients\n200 g pasta\n1 lemon\nMethod\nStep 1\nCook pasta and toss with lemon.\nhttps://example.com/recipes/lemon-pasta",
+    "expected": {
+      "title": "Lemon Pasta",
+      "sourceUrl": "https://example.com/recipes/lemon-pasta",
+      "ingredients": [
+        "200 g pasta",
+        "1 lemon"
+      ],
+      "methodBodies": [
+        "Cook pasta and toss with lemon."
+      ]
+    }
+  },
+  {
+    "id": "multiple-urls",
+    "name": "Recipe URL preferred over generic links",
+    "source": "Web",
+    "raw": "https://example.com/about\nhttps://example.com/recipes/beef-stew?utm_source=newsletter\nBeef Stew\nIngredients\n500 g beef\n2 carrots\nMethod\nStep 1\nSimmer until tender.",
+    "expected": {
+      "title": "Beef Stew",
+      "sourceUrl": "https://example.com/recipes/beef-stew",
+      "ingredients": [
+        "500 g beef",
+        "2 carrots"
+      ]
+    }
+  },
+  {
+    "id": "servings-number-first",
+    "name": "Number-first servings format",
+    "source": "Web",
+    "raw": "Prawn Curry\nIngredients\n4 servings\n600 g prawns\n400 ml coconut milk\nPreparation\nStep 1\nSimmer for 15 minutes.",
+    "expected": {
+      "title": "Prawn Curry",
+      "servings": "4",
+      "ingredients": [
+        "600 g prawns",
+        "400 ml coconut milk"
+      ]
+    }
+  },
+  {
+    "id": "makes-servings",
+    "name": "Makes format used as servings",
+    "source": "Web",
+    "raw": "Protein muffins\nMakes 10\nIngredients\n2 eggs\n200 g yogurt\n100 g oats\nInstructions\n1. Mix.\n2. Bake.",
+    "expected": {
+      "title": "Protein muffins",
+      "servings": "10",
+      "ingredients": [
+        "2 eggs",
+        "200 g yogurt",
+        "100 g oats"
+      ],
+      "methodBodies": [
+        "Mix.",
+        "Bake."
+      ]
+    }
+  },
+  {
+    "id": "separate-times",
+    "name": "Prep, cook and total time fields",
+    "source": "Web",
+    "raw": "Roast Chicken\nPrep Time\n15 minutes\nCook Time\n1 hour 20 minutes\nTotal Time\n1 hour 35 minutes\nIngredients\n1 whole chicken\n1 tbsp oil\nPreparation\nStep 1\nRoast until cooked.",
+    "expected": {
+      "title": "Roast Chicken",
+      "time": "1 hour 35 minutes",
+      "prepMinutes": "15",
+      "cookMinutes": "80",
+      "totalMinutes": "95",
+      "ingredients": [
+        "1 whole chicken",
+        "1 tbsp oil"
+      ]
+    }
+  },
+  {
+    "id": "unicode-fractions",
+    "name": "Unicode fractions remain intact in ingredient text",
+    "source": "Web",
+    "raw": "Yogurt Oats\nIngredients\n½ cup Greek yogurt\n1½ cups oats\n¾ cup milk\nMethod\nStep 1\nMix and chill.",
+    "expected": {
+      "title": "Yogurt Oats",
+      "ingredients": [
+        "½ cup Greek yogurt",
+        "1½ cups oats",
+        "¾ cup milk"
+      ]
+    }
+  },
+  {
+    "id": "markdown-title-cleaning",
+    "name": "Markdown title is cleaned",
+    "source": "Manual paste",
+    "raw": "## **Spicy Tuna Salad**\nIngredients\n2 cans tuna\n125 g cooked quinoa\nInstructions\n1. Mix all ingredients.",
+    "expected": {
+      "title": "Spicy Tuna Salad",
+      "ingredients": [
+        "2 cans tuna",
+        "125 g cooked quinoa"
+      ],
+      "methodBodies": [
+        "Mix all ingredients."
+      ]
+    }
+  },
+  {
+    "id": "junk-and-advertising",
+    "name": "UI and advertising lines are ignored",
+    "source": "Web",
+    "raw": "Save\nPrint\nAdvertisement\nSesame Noodles\nShare\nIngredients\n200 g noodles\n1 tbsp sesame oil\nIngredient substitution guide\nInstructions\nStep 1\nCook and toss.\nComments",
+    "expected": {
+      "title": "Sesame Noodles",
+      "ingredients": [
+        "200 g noodles",
+        "1 tbsp sesame oil"
+      ],
+      "methodBodies": [
+        "Cook and toss."
+      ]
+    }
+  },
+  {
+    "id": "nutrition-before-preparation",
+    "name": "Nutrition footer does not enter ingredients",
+    "source": "Web",
+    "raw": "Berry Smoothie\nIngredients\n150 g berries\n250 ml milk\nNutritional Information\nCalories 220\nProtein 18 g\nPreparation\nStep 1\nBlend until smooth.",
+    "expected": {
+      "title": "Berry Smoothie",
+      "ingredients": [
+        "150 g berries",
+        "250 ml milk"
+      ],
+      "methodBodies": [
+        "Blend until smooth."
+      ]
+    }
+  },
+  {
+    "id": "paragraph-method",
+    "name": "Method paragraphs become separate steps",
+    "source": "Web",
+    "raw": "Baked Feta Pasta\nIngredients\n200 g feta\n300 g pasta\nMethod\nBake the feta until soft.\n\nCook the pasta and combine with the feta.",
+    "expected": {
+      "title": "Baked Feta Pasta",
+      "ingredients": [
+        "200 g feta",
+        "300 g pasta"
+      ],
+      "methodBodies": [
+        "Bake the feta until soft.",
+        "Cook the pasta and combine with the feta."
+      ]
+    }
+  },
+  {
+    "id": "hashtags-stop-social",
+    "name": "Hashtags stop social ingredient scan",
+    "source": "Instagram",
+    "raw": "Quick cucumber salad\n2 cucumbers\n1 tbsp soy sauce\n1 tsp sesame oil\n#salad #easy\nFollow for more recipes",
+    "context": {
+      "sourceUrl": "https://instagram.com/p/XYZ"
+    },
+    "expected": {
+      "title": "Quick cucumber salad",
+      "ingredients": [
+        "2 cucumbers",
+        "1 tbsp soy sauce",
+        "1 tsp sesame oil"
+      ]
+    }
+  },
+  {
+    "id": "rest-and-marinate-times",
+    "name": "Resting and marinating times",
+    "source": "Web",
+    "raw": "Marinated tofu\nMarinating Time\n2 hours\nResting Time\n10 minutes\nTotal Time\n2 hours 30 minutes\nIngredients\n400 g tofu\n2 tbsp soy sauce\nMethod\nStep 1\nMarinate, cook and rest.",
+    "expected": {
+      "title": "Marinated tofu",
+      "marinatingMinutes": "120",
+      "restingMinutes": "10",
+      "totalMinutes": "150",
+      "ingredients": [
+        "400 g tofu",
+        "2 tbsp soy sauce"
+      ]
+    }
+  },
+  {
+    "id": "spanish-subheading",
+    "name": "Spanish ingredient subsection",
+    "source": "Manual paste",
+    "raw": "Tacos de pollo\nIngredientes\nPara el pollo:\n600 g de pollo\n1 cucharadita de pimentón\nPara la salsa:\n100 g de yogur\n1 lima\nPreparación\nPaso 1\nCocina el pollo.\nPaso 2\nMezcla la salsa.",
+    "expected": {
+      "title": "Tacos de pollo",
+      "ingredients": [
+        "Para el pollo:",
+        "600 g de pollo",
+        "1 cucharadita de pimentón",
+        "Para la salsa:",
+        "100 g de yogur",
+        "1 lima"
+      ],
+      "methodBodies": [
+        "Cocina el pollo.",
+        "Mezcla la salsa."
+      ]
+    }
+  },
+  {
+    "id": "facebook-reel-profile-and-numbered-method",
+    "name": "Facebook reel copy starts with profile name and has numbered method without heading",
+    "source": "Facebook",
+    "raw": "https://www.facebook.com/reel/1587189429597979\nCoconut and Bliss\n\n ·\nFollow\n﻿origins · sweet love\nCrispy red curry chicken bites - they’re basically little rice paper dumplings, cooked in the air fryer until crispy \nIngredients\n500g chicken mince\n2 tbsp red curry paste\n1 tbsp soy sauce\n1 tbsp honey\n1/2 lime, juiced\n1/2 tbsp grated ginger\n1 garlic clove, grated\n2 tbsp chives, finely chopped\n8 rice paper wrappers\nOil spray\nDipping Sauce\n1/3 cup Kewpie mayonnaise\n1 tbsp red curry paste\n1 tbsp lime juice\n1 tsp honey\n1 tsp soy sauce\n1 tsp rice wine vinegar\nTo Serve\nChopped coriander\nChilli crisp\n1. In a bowl, combine the chicken mince, red curry paste, soy sauce, honey, lime juice, ginger, garlic, chives  until well mixed.\n2. Fill a shallow bowl with warm water. Dip one rice paper wrapper into the water until just softened.\n3. Spoon a log of the chicken mixture along the bottom third of the wrapper. Fold in the sides and roll tightly into a sausage shape.\n4. Using kitchen scissors, snip the roll into bite-sized pieces.\n5. Arrange the pieces in a single layer in an air fryer basket. Spray generously with oil and air fry at 200°C for 12–15 minutes, turning halfway, until the chicken is cooked through and the rice paper is golden and crispy.\n6. Meanwhile, whisk together the Kewpie mayonnaise, red curry paste, lime juice, honey, soy sauce and rice wine vinegar until smooth.\n7. Top the crispy chicken bites with chopped coriander and chilli crisp, then serve with the dipping sauce. See less",
+    "expected": {
+      "title": "Crispy red curry chicken bites - they’re basically little rice paper dumplings, cooked in the air fryer until crispy",
+      "author": "Coconut and Bliss",
+      "publication": "Facebook",
+      "sourceType": "facebook",
+      "sourceUrl": "https://www.facebook.com/reel/1587189429597979",
+      "ingredients": [
+        "500g chicken mince",
+        "2 tbsp red curry paste",
+        "1 tbsp soy sauce",
+        "1 tbsp honey",
+        "1/2 lime, juiced",
+        "1/2 tbsp grated ginger",
+        "1 garlic clove, grated",
+        "2 tbsp chives, finely chopped",
+        "8 rice paper wrappers",
+        "Oil spray",
+        "Dipping Sauce:",
+        "1/3 cup Kewpie mayonnaise",
+        "1 tbsp red curry paste",
+        "1 tbsp lime juice",
+        "1 tsp honey",
+        "1 tsp soy sauce",
+        "1 tsp rice wine vinegar",
+        "To Serve:",
+        "Chopped coriander",
+        "Chilli crisp"
+      ],
+      "methodBodies": [
+        "In a bowl, combine the chicken mince, red curry paste, soy sauce, honey, lime juice, ginger, garlic, chives until well mixed.",
+        "Fill a shallow bowl with warm water. Dip one rice paper wrapper into the water until just softened.",
+        "Spoon a log of the chicken mixture along the bottom third of the wrapper. Fold in the sides and roll tightly into a sausage shape.",
+        "Using kitchen scissors, snip the roll into bite-sized pieces.",
+        "Arrange the pieces in a single layer in an air fryer basket. Spray generously with oil and air fry at 200°C for 12–15 minutes, turning halfway, until the chicken is cooked through and the rice paper is golden and crispy.",
+        "Meanwhile, whisk together the Kewpie mayonnaise, red curry paste, lime juice, honey, soy sauce and rice wine vinegar until smooth.",
+        "Top the crispy chicken bites with chopped coriander and chilli crisp, then serve with the dipping sauce."
+      ]
+    }
+  },
+  {
+    "id": "facebook-reel-single-line-clipboard",
+    "name": "Facebook reel copied as one continuous line",
+    "source": "Facebook",
+    "raw": "https://www.facebook.com/reel/1587189429597979 Coconut and Bliss · Follow ﻿origins · sweet love Crispy red curry chicken bites - they’re basically little rice paper dumplings, cooked in the air fryer until crispy Ingredients 500g chicken mince 2 tbsp red curry paste 1 tbsp soy sauce 1 tbsp honey 1/2 lime, juiced 1/2 tbsp grated ginger 1 garlic clove, grated 2 tbsp chives, finely chopped 8 rice paper wrappers Oil spray Dipping Sauce 1/3 cup Kewpie mayonnaise 1 tbsp red curry paste 1 tbsp lime juice 1 tsp honey 1 tsp soy sauce 1 tsp rice wine vinegar To Serve Chopped coriander Chilli crisp 1. In a bowl, combine the chicken mince, red curry paste, soy sauce, honey, lime juice, ginger, garlic, chives until well mixed. 2. Fill a shallow bowl with warm water. Dip one rice paper wrapper into the water until just softened. 3. Spoon a log of the chicken mixture along the bottom third of the wrapper. Fold in the sides and roll tightly into a sausage shape. 4. Using kitchen scissors, snip the roll into bite-sized pieces. 5. Arrange the pieces in a single layer in an air fryer basket. Spray generously with oil and air fry at 200°C for 12–15 minutes, turning halfway, until the chicken is cooked through and the rice paper is golden and crispy. 6. Meanwhile, whisk together the Kewpie mayonnaise, red curry paste, lime juice, honey, soy sauce and rice wine vinegar until smooth. 7. Top the crispy chicken bites with chopped coriander and chilli crisp, then serve with the dipping sauce. See less",
+    "expected": {
+      "title": "Crispy red curry chicken bites - they’re basically little rice paper dumplings, cooked in the air fryer until crispy",
+      "author": "Coconut and Bliss",
+      "publication": "Facebook",
+      "sourceType": "facebook",
+      "sourceUrl": "https://www.facebook.com/reel/1587189429597979",
+      "ingredients": [
+        "500g chicken mince",
+        "2 tbsp red curry paste",
+        "1 tbsp soy sauce",
+        "1 tbsp honey",
+        "1/2 lime, juiced",
+        "1/2 tbsp grated ginger",
+        "1 garlic clove, grated",
+        "2 tbsp chives, finely chopped",
+        "8 rice paper wrappers",
+        "Oil spray",
+        "Dipping Sauce:",
+        "1/3 cup Kewpie mayonnaise",
+        "1 tbsp red curry paste",
+        "1 tbsp lime juice",
+        "1 tsp honey",
+        "1 tsp soy sauce",
+        "1 tsp rice wine vinegar",
+        "To Serve:",
+        "Chopped coriander",
+        "Chilli crisp"
+      ],
+      "methodBodies": [
+        "In a bowl, combine the chicken mince, red curry paste, soy sauce, honey, lime juice, ginger, garlic, chives until well mixed.",
+        "Fill a shallow bowl with warm water. Dip one rice paper wrapper into the water until just softened.",
+        "Spoon a log of the chicken mixture along the bottom third of the wrapper. Fold in the sides and roll tightly into a sausage shape.",
+        "Using kitchen scissors, snip the roll into bite-sized pieces.",
+        "Arrange the pieces in a single layer in an air fryer basket. Spray generously with oil and air fry at 200°C for 12–15 minutes, turning halfway, until the chicken is cooked through and the rice paper is golden and crispy.",
+        "Meanwhile, whisk together the Kewpie mayonnaise, red curry paste, lime juice, honey, soy sauce and rice wine vinegar until smooth.",
+        "Top the crispy chicken bites with chopped coriander and chilli crisp, then serve with the dipping sauce."
+      ]
+    }
+  }
+]
