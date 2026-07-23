@@ -8,6 +8,10 @@
 - No se asume NADA sin preguntar específicamente.
 - Se hacen preguntas para todo.
 - Las maquetas SIEMPRE se enseñan como página completa, nunca como fragmento aislado — Esperanza solo puede juzgar un cambio en el contexto real de toda la página.
+- No mostramos imágenes no completas.
+- No se pide evaluar decisiones estéticas sin mostrar imágenes.
+- No hacemos propuestas de UX sin hacer análisis de UX.
+- Antes de introducir cambios estéticos, revisar la guía de diseño memorizada (este documento) y asegurarse de que sea acorde con lo ya acordado.
 
 ## Regla general para todo lo que sigue
 Cualquier rediseño visual (tipografía, ficha de receta, filtros de Browse, Home) debe:
@@ -121,11 +125,20 @@ Tras muchas rondas de prueba y error (incluyendo errores míos de asumir prefere
 - Títulos de sección ("Recently added", "Browse the library") en una serif distinta al hero (ej. Noto Serif u otra serif editorial), en negro.
 - Nav con línea inferior roja bajo el enlace activo.
 - Botones y bordes de esquina recta (sin border-radius), estética editorial/prensa.
+
+#### Sistema de iconos aprobado (no inventar otros)
+Solo estos 4 iconos están aprobados y deben reutilizarse en cualquier pantalla que los necesite — nunca inventar iconos nuevos para categorías o conceptos sin aprobación explícita:
+- **Corazón** (`heart`) — favorito.
+- **Check en círculo** (`check-circle`) — marcada como hecha.
+- **Calendario+** (`calendar-plus`) — añadir/quitar de esta semana (Planning).
+- **Estrella** (`star`) — valoración.
+
+Mismo tamaño (~13-16px según contexto), mismo grosor de trazo en los 4, color gris cuando inactivo y rojo (el acento único) cuando activo. Si una pantalla necesita representar un concepto sin icono aprobado (ej. Method, Type, Cuisine, Ingredients en los filtros de Browse), se usa solo texto — no se inventa un icono nuevo sin preguntar primero.
 - Bandas de "Plan your week" y "Find your way in" pasan de bloque de color sólido a bandas delimitadas por líneas finas negras arriba/abajo, sin relleno de color — mucho más "aire" y look de prensa.
 - Botón "Filters" junto al buscador de Home → lleva a `/browse?filters=1` (ya decidido).
 - "Find your way in" con conteos reales dinámicos: `recipe.source.author` (o el campo equivalente en el modelo) para la segunda columna, en vez de `recipe.source.publication` — decisión revisada, se prefiere buscar por autor. `recipe.classification.ingredientsIndex` para "Main ingredient" se mantiene.
 
-**Pendiente:** aplicar esta misma dirección visual (aún no acordada explícitamente) a Browse, ficha de receta, Planning y Shopping — por ahora solo está aprobada para Home.
+**Pendiente:** aplicar esta misma dirección visual a **Planning** y **Shopping** — todavía sin empezar.
 
 **Estado:** maqueta de Home aprobada; pendiente de que Claude Code la implemente en local para verificar con fuentes/datos reales antes de comitear, y de extenderla al resto de pantallas.
 
@@ -144,7 +157,7 @@ Tras muchas rondas de prueba y error (incluyendo errores míos de asumir prefere
 #### 10c. ✅ Rediseño de Browse — APROBADO (24 julio 2026)
 - Estética NYT Cooking (la misma de Home) extendida a Browse.
 - Modo lista y modo grid como vistas (ambas se mantienen, es preferencia del usuario) — el contenido VIGENTE de la tarjeta no cambia (imagen, título, preview de ingredientes, favorito/hecho/valoración/añadir semana), solo cambia la disposición visual de los iconos de acción (ver más abajo).
-- **Patrón de filtrado rediseñado por completo**: se descarta el panel desplegable con selects anidados (probado y rechazado por "cero intuitivo, hay que desplegarlo todo"). Se sustituye por una **barra lateral fija con casillas** (checkboxes) agrupadas por categoría, con conteo real de recetas junto a cada valor, y "+N more" para expandir valores adicionales dentro de una categoría — sin necesidad de abrir ni cerrar ningún panel modal. Categorías en la barra: Personal (Favorites/Planning/Made before), Rating, Method, Type (Format+Meal fusionados), Cuisine.
+- **Patrón de filtrado rediseñado por completo**: se descarta el panel desplegable con selects anidados (probado y rechazado por "cero intuitivo, hay que desplegarlo todo"). Se sustituye por una **barra lateral fija vertical** (nunca horizontal arriba — empuja el contenido y no queda visible al hacer scroll), con **chips seleccionables** (no checkboxes) agrupados por categoría: Personal, Rating, Method, Type (Format+Meal fusionados), Cuisine, Ingredients (solo los más numerosos + "+N"). Conteo real de recetas junto a cada valor. Los iconos de Personal (favorito/calendario) y Rating (estrella) reutilizan el sistema de iconos aprobado (ver sección de identidad visual); Method/Type/Cuisine/Ingredients van solo con texto, sin icono inventado.
 - Buscador con sugerencias en vivo (ya decidido en 10b).
 - **Tratamiento de iconos de la tarjeta — APROBADO**: los iconos de acción (favorito, hecho, añadir a esta semana) y la valoración se superponen sobre la imagen de la receta, dentro de una franja de degradado (negro semitransparente arriba → transparente abajo, pegada al borde inferior de la imagen, ancho completo — NO un badge/píldora flotante). Valoración a la izquierda de la franja (icono estrella + número, o "No rating"), iconos de acción a la derecha, mismo tamaño (~15-16px) y mismo grosor de trazo para los 4. Un único color de acento (rojo, el mismo del resto de la web) para el estado "activo"; blanco/gris para inactivo. Se descartaron: iconos con texto y separadores "|" (inconsistente), badge circular flotante solo para favorito (inconsistente con el resto), y un tercer color dorado para la estrella (rompía la regla de un único acento).
 
