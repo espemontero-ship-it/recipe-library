@@ -53,7 +53,7 @@ function statusLabel(status: Recipe["personal"]["status"]) {
 
 export default function RecipePage() {
   const params = useParams<{ id: string }>();
-  const { loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [recipe, setRecipe] = useState<Recipe | null | undefined>(undefined);
   const [privateNotesDraft, setPrivateNotesDraft] = useState("");
   const [saving, setSaving] = useState(false);
@@ -231,22 +231,24 @@ export default function RecipePage() {
         </Link>
 
         <div className={styles.utilityActions}>
-          <button
-            aria-pressed={Boolean(thisWeekItemId)}
-            className={`${styles.quietButton} ${
-              thisWeekItemId ? styles.weekButtonActive : ""
-            }`}
-            disabled={planningBusy}
-            onClick={() => void toggleThisWeek()}
-            type="button"
-          >
-            {thisWeekItemId ? (
-              <CalendarDays aria-hidden="true" size={16} />
-            ) : (
-              <CalendarPlus aria-hidden="true" size={16} />
-            )}
-            {thisWeekItemId ? "Remove from this week" : "Add to this week"}
-          </button>
+          {user && (
+            <button
+              aria-pressed={Boolean(thisWeekItemId)}
+              className={`${styles.quietButton} ${
+                thisWeekItemId ? styles.weekButtonActive : ""
+              }`}
+              disabled={planningBusy}
+              onClick={() => void toggleThisWeek()}
+              type="button"
+            >
+              {thisWeekItemId ? (
+                <CalendarDays aria-hidden="true" size={16} />
+              ) : (
+                <CalendarPlus aria-hidden="true" size={16} />
+              )}
+              {thisWeekItemId ? "Remove from this week" : "Add to this week"}
+            </button>
+          )}
           {isAdmin && (
             <Link className={styles.quietButton} href={`/recipes/${recipe.slug}/edit`}>
               <Pencil aria-hidden="true" size={16} />

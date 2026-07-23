@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { AuthGate } from "@/components/AuthGate";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { formatRange, type Recipe } from "@/lib/recipeModel";
@@ -60,7 +61,7 @@ function formatWeekRange(weekStart: string) {
   return `${formatter.format(start)} – ${formatter.format(end)}`;
 }
 
-export default function PlanningPage() {
+function PlanningPageContent() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [plan, setPlan] = useState<PlanningItem[]>([]);
   const [personalVersion, setPersonalVersion] = useState(0);
@@ -558,5 +559,13 @@ export default function PlanningPage() {
         </section>
       )}
     </main>
+  );
+}
+
+export default function PlanningPage() {
+  return (
+    <AuthGate>
+      <PlanningPageContent />
+    </AuthGate>
   );
 }

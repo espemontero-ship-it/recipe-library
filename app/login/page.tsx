@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading, isAdmin, signInWithPassword, signOut } = useAuth();
+  const { user, loading, signInWithPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -16,8 +16,8 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!loading && isAdmin) router.replace("/");
-  }, [loading, isAdmin, router]);
+    if (!loading && user) router.replace("/");
+  }, [loading, user, router]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -49,25 +49,6 @@ export default function LoginPage() {
 
   if (loading) {
     return <main className="login-page">Checking session…</main>;
-  }
-
-  if (user && !isAdmin) {
-    return (
-      <main className="login-page">
-        <section className="login-card">
-          <p className="eyebrow">No administrator permission</p>
-          <h1>Access denied</h1>
-          <p>This account can view recipes but cannot edit the library.</p>
-          <button
-            className="button button--dark"
-            onClick={() => void signOut()}
-            type="button"
-          >
-            Sign out
-          </button>
-        </section>
-      </main>
-    );
   }
 
   return (
@@ -102,6 +83,10 @@ export default function LoginPage() {
 
           <div className="login-inline-action">
             <Link href="/forgot-password">Forgot your password?</Link>
+          </div>
+
+          <div className="login-inline-action">
+            <Link href="/signup">Don&apos;t have an account? Sign up</Link>
           </div>
 
           {error && <p className="login-error">{error}</p>}

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BrowseRecipeCard } from "@/components/BrowseRecipeCard";
+import { useAuth } from "@/lib/auth";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
@@ -115,6 +116,7 @@ function valuesForFacet(recipe: Recipe, key: FacetKey) {
 }
 
 export default function BrowsePage() {
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [personalVersion, setPersonalVersion] = useState(0);
   const [query, setQuery] = useState("");
@@ -481,17 +483,19 @@ export default function BrowsePage() {
             <h1>Browse recipes</h1>
           </div>
 
-          <button
-            aria-pressed={planningMode}
-            className={`${styles.planModeButton} ${
-              planningMode ? styles.planModeButtonActive : ""
-            }`}
-            onClick={togglePlanningMode}
-            type="button"
-          >
-            <CalendarPlus aria-hidden="true" size={17} />
-            {planningMode ? "Cancel selection" : "Plan recipes"}
-          </button>
+          {user && (
+            <button
+              aria-pressed={planningMode}
+              className={`${styles.planModeButton} ${
+                planningMode ? styles.planModeButtonActive : ""
+              }`}
+              onClick={togglePlanningMode}
+              type="button"
+            >
+              <CalendarPlus aria-hidden="true" size={17} />
+              {planningMode ? "Cancel selection" : "Plan recipes"}
+            </button>
+          )}
         </div>
 
         <div className={styles.searchRow}>

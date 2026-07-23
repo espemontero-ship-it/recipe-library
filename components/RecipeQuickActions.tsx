@@ -24,7 +24,7 @@ export function RecipeQuickActions({
   onToggleThisWeek,
   planningBusy = false,
 }: Props) {
-  const { loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const editable = isAdmin && !authLoading;
@@ -54,7 +54,7 @@ export function RecipeQuickActions({
 
   return (
     <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
-      {onToggleThisWeek && (
+      {onToggleThisWeek && user && (
         <button
           aria-label={
             inThisWeek
@@ -65,7 +65,7 @@ export function RecipeQuickActions({
           className={`${styles.iconButton} ${
             inThisWeek ? styles.active : ""
           }`}
-          disabled={!editable || busy || planningBusy}
+          disabled={busy || planningBusy}
           onClick={() => void onToggleThisWeek()}
           title={inThisWeek ? "In this week" : "Add to this week"}
           type="button"

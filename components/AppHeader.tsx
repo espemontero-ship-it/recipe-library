@@ -16,7 +16,7 @@ const links = [
 export function AppHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const { loading, isAdmin, signOut } = useAuth();
+  const { loading, user, isAdmin, signOut } = useAuth();
   const navigationLinks = isAdmin
     ? [...links, { href: "/paste", label: "Add recipe" }]
     : links;
@@ -62,9 +62,9 @@ export function AppHeader() {
           </Link>
 
           {!loading &&
-            (isAdmin ? (
+            (user ? (
               <button
-                aria-label="Sign out of administrator mode"
+                aria-label="Sign out"
                 className="app-header__auth"
                 onClick={() => void signOut()}
                 type="button"

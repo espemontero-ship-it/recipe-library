@@ -17,6 +17,10 @@ type AuthContextValue = {
   loading: boolean;
   isAdmin: boolean;
   signInWithPassword: (email: string, password: string) => Promise<void>;
+  signUpWithPassword: (
+    email: string,
+    password: string,
+  ) => Promise<{ signedIn: boolean }>;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -101,6 +105,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const signUpWithPassword = useCallback(
+    async (email: string, password: string) => {
+      const supabase = requireSupabase();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return { signedIn: Boolean(data.session) };
+    },
+    [],
+  );
+
   const requestPasswordReset = useCallback(async (email: string) => {
     const supabase = requireSupabase();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -129,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       isAdmin,
       signInWithPassword,
+      signUpWithPassword,
       requestPasswordReset,
       updatePassword,
       signOut,
@@ -138,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       isAdmin,
       signInWithPassword,
+      signUpWithPassword,
       requestPasswordReset,
       updatePassword,
       signOut,
