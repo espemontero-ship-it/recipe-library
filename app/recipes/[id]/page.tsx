@@ -20,7 +20,6 @@ import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { useAuth } from "@/lib/auth";
 import {
   loadPrivateRecipeNotes,
-  mergePersonalState,
   savePersonalState,
   subscribeToPersonalState,
 } from "@/lib/personalRecipeState";
@@ -68,7 +67,7 @@ export default function RecipePage() {
 
     getSupabaseRecipe(params.id)
       .then((item) => {
-        if (active) setRecipe(item ? mergePersonalState(item) : item);
+        if (active) setRecipe(item);
       })
       .catch(() => {
         if (active) setRecipe(null);
@@ -133,7 +132,7 @@ export default function RecipePage() {
         getSupabaseRecipe(params.id)
           .then((item) => {
             if (item) {
-              const merged = mergePersonalState(item);
+              const merged = item;
               setRecipe((current) => ({
                 ...merged,
                 personal: {

@@ -4,10 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { HomeRecipeCard } from "@/components/HomeRecipeCard";
-import {
-  mergePersonalState,
-  subscribeToPersonalState,
-} from "@/lib/personalRecipeState";
+import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { formatRange, Recipe } from "@/lib/recipeModel";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 
@@ -81,10 +78,7 @@ export function PersonalRecipeSections() {
     [],
   );
 
-  const personalised = useMemo(
-    () => recipes.map(mergePersonalState),
-    [recipes, version],
-  );
+  const personalised = useMemo(() => recipes, [recipes, version]);
 
   const weekend = personalised
     .filter((recipe) => recipe.personal.thisWeekend)

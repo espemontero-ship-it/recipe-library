@@ -1,0 +1,11 @@
+{
+  "name": "Kitchen Index",
+  "short_name": "Kitchen Index",
+  "description": "A carefully organised recipe index to browse, plan and turn into a shopping list.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f1",
+  "theme_color": "#f4f4f1",
+  "lang": "en"
+}

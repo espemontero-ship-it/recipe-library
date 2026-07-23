@@ -65,10 +65,6 @@ function readLegacyStateMap(): PersonalStateMap {
   }
 }
 
-export function mergePersonalState(recipe: Recipe): Recipe {
-  return recipe;
-}
-
 export async function loadPrivateRecipeNotes(recipeId: string) {
   const supabase = getSupabaseClient();
   if (!supabase) return null;

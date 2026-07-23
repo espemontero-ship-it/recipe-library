@@ -13,10 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
-import {
-  mergePersonalState,
-  subscribeToPersonalState,
-} from "@/lib/personalRecipeState";
+import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { formatRange, type Recipe } from "@/lib/recipeModel";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
@@ -130,7 +127,7 @@ export default function PlanningPage() {
     return plan
       .map((item) => {
         const recipe = recipesById.get(item.recipeId);
-        return recipe ? { recipe: mergePersonalState(recipe), plan: item } : null;
+        return recipe ? { recipe, plan: item } : null;
       })
       .filter((item): item is PlannedRecipe => Boolean(item));
   }, [personalVersion, plan, recipes]);

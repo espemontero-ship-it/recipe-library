@@ -1,8 +1,0 @@
-Recipe Library v0.13.1 QA
-
-[OK] Next.js production build.
-[OK] TypeScript check.
-[OK] Summary CSV retained.
-[OK] Full JSON diagnostics export includes raw source and saved/parsed content.
-[OK] Audit remains read-only and contains no Supabase write action.
-[OK] No SQL migration required.

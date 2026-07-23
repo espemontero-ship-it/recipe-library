@@ -14,10 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BrowseRecipeCard } from "@/components/BrowseRecipeCard";
-import {
-  mergePersonalState,
-  subscribeToPersonalState,
-} from "@/lib/personalRecipeState";
+import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   addRecipesToPlanning,
@@ -201,7 +198,7 @@ export default function BrowsePage() {
   }, []);
 
   const personalisedRecipes = useMemo(
-    () => recipes.map(mergePersonalState),
+    () => recipes,
     [recipes, personalVersion],
   );
 
