@@ -133,7 +133,8 @@ export default function BrowsePage() {
   const [planningItems, setPlanningItems] = useState<PlanningItem[]>([]);
   const [planningBusyRecipeIds, setPlanningBusyRecipeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [recipesError, setRecipesError] = useState("");
+  const [planningError, setPlanningError] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -143,6 +144,11 @@ export default function BrowsePage() {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setPlanningItems([]);
+      return;
+    }
+
     let active = true;
     const refreshPlan = async () => {
       try {
@@ -150,7 +156,7 @@ export default function BrowsePage() {
         if (active) setPlanningItems(items);
       } catch (reason) {
         if (active) {
-          setError(reason instanceof Error ? reason.message : "Could not load Planning.");
+          setPlanningError(reason instanceof Error ? reason.message : "Could not load Planning.");
         }
       }
     };
@@ -160,7 +166,7 @@ export default function BrowsePage() {
       active = false;
       unsubscribe();
     };
-  }, []);
+  }, [user]);
 
   useEffect(
     () =>
@@ -183,7 +189,7 @@ export default function BrowsePage() {
       })
       .catch((reason: unknown) => {
         if (active) {
-          setError(
+          setRecipesError(
             reason instanceof Error
               ? reason.message
               : "Could not load recipes.",
@@ -443,14 +449,14 @@ export default function BrowsePage() {
       setPlanningMode(false);
       window.location.href = "/planning";
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not update Planning.");
+      setPlanningError(reason instanceof Error ? reason.message : "Could not update Planning.");
     }
   }
 
   async function toggleThisWeek(recipe: Recipe) {
     if (planningBusyRecipeIds.includes(recipe.id)) return;
     setPlanningBusyRecipeIds((current) => [...current, recipe.id]);
-    setError("");
+    setPlanningError("");
     try {
       const currentItem = thisWeekItemsByRecipe.get(recipe.id);
       if (currentItem) {
@@ -460,7 +466,7 @@ export default function BrowsePage() {
       }
       await regenerateShoppingWeekIfExists(personalisedRecipes, getWeekStart());
     } catch (reason) {
-      setError(
+      setPlanningError(
         reason instanceof Error
           ? reason.message
           : "Could not update this week.",
@@ -684,7 +690,7 @@ export default function BrowsePage() {
         )}
       </header>
 
-      {!loading && !error && (
+      {!loading && !recipesError && (
         <section className={styles.toolbar}>
           <p aria-live="polite">
             <strong>{filtered.length}</strong> of {personalisedRecipes.length} recipes
@@ -735,10 +741,10 @@ export default function BrowsePage() {
         <section className={styles.empty}>
           <h2>Loading recipes…</h2>
         </section>
-      ) : error ? (
+      ) : recipesError ? (
         <section className={styles.empty}>
           <h2>Could not load recipes.</h2>
-          <p>{error}</p>
+          <p>{recipesError}</p>
         </section>
       ) : filtered.length ? (
         <section className={view === "grid" ? styles.grid : styles.list}>

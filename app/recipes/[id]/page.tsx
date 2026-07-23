@@ -104,6 +104,11 @@ export default function RecipePage() {
   }, [authLoading, isAdmin, recipe?.id]);
 
   useEffect(() => {
+    if (!user) {
+      setThisWeekItemId(null);
+      return;
+    }
+
     let active = true;
     const refreshPlan = async () => {
       try {
@@ -123,7 +128,7 @@ export default function RecipePage() {
       active = false;
       unsubscribe();
     };
-  }, [recipe?.id]);
+  }, [recipe?.id, user]);
 
   useEffect(
     () =>
