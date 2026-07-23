@@ -4,7 +4,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Recipe Library",
+  title: "Kitchen Index",
   description: "A beautifully organised recipe library, public to browse and privately managed.",
 };
 

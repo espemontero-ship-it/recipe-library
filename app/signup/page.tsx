@@ -47,7 +47,7 @@ export default function SignUpPage() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="eyebrow">Recipe Library</p>
+        <p className="eyebrow">Kitchen Index</p>
         <h1>Create an account</h1>
         <p>Sign up with your email to use Planning and Shopping.</p>
 

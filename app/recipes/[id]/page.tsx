@@ -11,7 +11,6 @@ import {
   ExternalLink,
   Heart,
   Pencil,
-  Share2,
   Star,
   Users,
 } from "lucide-react";
@@ -255,10 +254,6 @@ export default function RecipePage() {
               Edit recipe
             </Link>
           )}
-          <button type="button" className={styles.quietButton}>
-            <Share2 aria-hidden="true" size={16} />
-            Share
-          </button>
         </div>
       </div>
 

@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="eyebrow">Recipe Library administration</p>
+        <p className="eyebrow">Kitchen Index administration</p>
         <h1>Choose a new password</h1>
 
         {!recoveryReady ? (

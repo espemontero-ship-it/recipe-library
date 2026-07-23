@@ -4,26 +4,41 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { HomeRecipeCard } from "@/components/HomeRecipeCard";
+import { useAuth } from "@/lib/auth";
+import {
+  getPlanning,
+  getWeekStart,
+  subscribeToPlanning,
+  type PlanningItem,
+} from "@/lib/planning";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { formatRange, Recipe } from "@/lib/recipeModel";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 
-function SectionHeading({ title }: { title: string }) {
+function SectionHeading({ title, href = "/browse" }: { title: string; href?: string }) {
   return (
     <div className="section-heading">
       <h2>{title}</h2>
-      <Link href="/browse">
+      <Link href={href}>
         See all <ArrowRight aria-hidden="true" size={16} />
       </Link>
     </div>
   );
 }
 
-function EmptyPersonalSection({ label }: { label: string }) {
+function EmptyState({
+  message,
+  linkLabel,
+  href,
+}: {
+  message: string;
+  linkLabel: string;
+  href: string;
+}) {
   return (
     <div className="home-personal-empty">
-      <p>No recipes marked as {label.toLowerCase()} yet.</p>
-      <Link href="/browse">Browse recipes</Link>
+      <p>{message}</p>
+      <Link href={href}>{linkLabel}</Link>
     </div>
   );
 }
@@ -48,8 +63,9 @@ function cardProps(recipe: Recipe, status?: string) {
 }
 
 export function PersonalRecipeSections() {
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [version, setVersion] = useState(0);
+  const [planningItems, setPlanningItems] = useState<PlanningItem[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -73,50 +89,101 @@ export function PersonalRecipeSections() {
         getSupabaseRecipes()
           .then((items) => setRecipes(items))
           .catch(() => undefined);
-        setVersion((current) => current + 1);
       }),
     [],
   );
 
-  const personalised = useMemo(() => recipes, [recipes, version]);
+  useEffect(() => {
+    if (!user) {
+      setPlanningItems([]);
+      return;
+    }
 
-  const weekend = personalised
-    .filter((recipe) => recipe.personal.thisWeekend)
-    .slice(0, 3);
-  const favorites = personalised
-    .filter((recipe) => recipe.personal.favorite)
-    .slice(0, 4);
+    let active = true;
+    const refreshPlan = () => {
+      getPlanning()
+        .then((items) => {
+          if (active) setPlanningItems(items);
+        })
+        .catch(() => {
+          if (active) setPlanningItems([]);
+        });
+    };
+
+    refreshPlan();
+    const unsubscribe = subscribeToPlanning(refreshPlan);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [user]);
+
+  const recentlyAdded = useMemo(
+    () =>
+      [...recipes]
+        .sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
+        .slice(0, 4),
+    [recipes],
+  );
+
+  const thisWeekRecipes = useMemo(() => {
+    const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
+    const currentWeek = getWeekStart();
+    return planningItems
+      .filter((item) => item.weekStart === currentWeek)
+      .map((item) => recipesById.get(item.recipeId))
+      .filter((recipe): recipe is Recipe => Boolean(recipe))
+      .slice(0, 4);
+  }, [planningItems, recipes]);
 
   return (
     <>
       <section className="home-section">
-        <SectionHeading title="This Weekend" />
-        {weekend.length ? (
-          <div className="recipe-grid recipe-grid--three">
-            {weekend.map((recipe) => (
-              <HomeRecipeCard
-                key={recipe.id}
-                {...cardProps(recipe, "This Weekend")}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyPersonalSection label="This Weekend" />
-        )}
-      </section>
-
-      <section className="home-section">
-        <SectionHeading title="Favorites" />
-        {favorites.length ? (
+        <SectionHeading title="Recently Added" />
+        {recentlyAdded.length ? (
           <div className="recipe-grid recipe-grid--four">
-            {favorites.map((recipe) => (
+            {recentlyAdded.map((recipe) => (
               <HomeRecipeCard key={recipe.id} {...cardProps(recipe)} />
             ))}
           </div>
         ) : (
-          <EmptyPersonalSection label="Favorites" />
+          <EmptyState href="/browse" linkLabel="Browse recipes" message="No recipes yet." />
         )}
       </section>
+
+      {user && (
+        <section className="home-section">
+          <SectionHeading href="/planning" title="Your week" />
+          {thisWeekRecipes.length ? (
+            <div className="recipe-grid recipe-grid--four">
+              {thisWeekRecipes.map((recipe) => (
+                <HomeRecipeCard key={recipe.id} {...cardProps(recipe)} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              href="/planning"
+              linkLabel="Open Planning"
+              message="No recipes planned for this week yet."
+            />
+          )}
+        </section>
+      )}
+
+      {!user && (
+        <section className="browse-band">
+          <div>
+            <p className="eyebrow">Plan your week</p>
+            <h2>Sign up to save your own weekly plan and shopping list.</h2>
+            <Link className="button button--dark" href="/signup">
+              Sign up
+            </Link>
+          </div>
+        </section>
+      )}
     </>
   );
 }

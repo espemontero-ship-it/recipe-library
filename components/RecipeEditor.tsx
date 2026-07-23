@@ -419,7 +419,7 @@ export function RecipeEditor({
             <div>
               <span>
                 <strong>Macros per serving</strong>
-                Enter values calculated outside Recipe Library. Leave any field blank if it is not available yet.
+                Enter values calculated outside Kitchen Index. Leave any field blank if it is not available yet.
               </span>
             </div>
             <div className={styles.gridTwo}>

@@ -54,7 +54,7 @@ export default function LoginPage() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="eyebrow">Recipe Library administration</p>
+        <p className="eyebrow">Kitchen Index administration</p>
         <h1>Sign in</h1>
         <p>Use your administrator email and password.</p>
 

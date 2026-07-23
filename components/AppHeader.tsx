@@ -25,7 +25,7 @@ export function AppHeader() {
     <header className="app-header">
       <div className="app-header__inner">
         <Link className="app-header__brand" href="/" onClick={() => setOpen(false)}>
-          Recipe Library
+          Kitchen Index
         </Link>
 
         <nav

@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="eyebrow">Recipe Library administration</p>
+        <p className="eyebrow">Kitchen Index administration</p>
         <h1>Reset password</h1>
         <p>
           Enter your administrator email. We will send a password-reset link that
