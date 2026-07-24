@@ -178,14 +178,14 @@ Colores (`--background`, `--ink`, `--muted`, `--line`, `--accent`, `--accent-sof
 #### 10b. Decisiones sobre el panel de filtros de Browse (24 julio 2026)
 - **"Cooked" y "Made before" se fusionan en un único filtro** — Esperanza confirma que son conceptualmente lo mismo.
 - **El buscador necesita sugerencias/autocompletado mientras se escribe** — hoy es un campo de texto plano sin sugerencias, se considera poco cómodo.
-- **Gestión de categorías de filtro**: Esperanza quiere poder añadir o quitar categorías ENTERAS de filtro (no solo editar los valores dentro de una categoría) — esto implica una interfaz de administración nueva para el sistema de filtros, no solo un rediseño visual.
+- ❌ **Gestión de categorías de filtro (añadir/quitar categorías ENTERAS) — DESCARTADO (25 julio 2026)**. Esperanza decide no construir esta interfaz de administración.
 - **Reducción de categorías — DECIDIDO (24 julio 2026)**, con datos reales de Supabase (547 recetas):
   - **Ingredients** (93% cobertura, 158 valores) y **Method** (82% cobertura, 18 valores) se mantienen tal cual — los más útiles con diferencia.
   - **Dish** (solo 12% cobertura) se elimina.
   - **Format + Meal se fusionan en una única categoría**: se queda con los valores actuales de Format (salad, bake, pasta, bowl, sauce, soup, skewers, sandwich, wrap) y se añaden los valores de Meal distintos de "main" (dessert, breakfast, snack, side) — "main" desaparece como valor porque es el 84% de las recetas con Meal y no discrimina nada como filtro.
   - **Cuisine** (solo 14% cobertura: mexican, korean, greek, mediterranean, thai...) se mantiene como categoría, pero necesita poblarse en más recetas — ver punto 14 del backlog.
 
-**Estado:** ✅ CERRADO — implementable directamente (decisión de datos, no bloqueada por estética; la reducción de categorías ya se refleja en la maqueta aprobada de 10c). Autocompletado del buscador: implementar con criterio propio y mostrar para aprobación (no bloqueante). Gestión de categorías enteras (añadir/quitar): pendiente, requiere interfaz de administración nueva, no es parte de esta tanda.
+**Estado:** ✅ CERRADO — implementado (autocompletado del buscador y reducción de categorías, ambos ya en `main`). Gestión de categorías enteras (añadir/quitar): descartada, no se construye.
 
 #### 10c. ✅ Rediseño de Browse — APROBADO (24 julio 2026)
 - Estética NYT Cooking (la misma de Home) extendida a Browse.
