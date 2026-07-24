@@ -14,6 +14,7 @@ type Props = {
   inThisWeek?: boolean;
   onToggleThisWeek?: () => void | Promise<void>;
   planningBusy?: boolean;
+  variant?: "default" | "overlay";
 };
 
 export function RecipeQuickActions({
@@ -23,6 +24,7 @@ export function RecipeQuickActions({
   inThisWeek = false,
   onToggleThisWeek,
   planningBusy = false,
+  variant = "default",
 }: Props) {
   const { user, loading: authLoading, isAdmin } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -53,7 +55,10 @@ export function RecipeQuickActions({
   const madeLabel = recipe.personal.tested ? "Made" : "Mark made";
 
   return (
-    <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
+    <div
+      className={`${styles.actions} ${variant === "overlay" ? styles.overlay : ""}`}
+      onClick={(event) => event.stopPropagation()}
+    >
       {onToggleThisWeek && user && (
         <button
           aria-label={

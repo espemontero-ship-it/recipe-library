@@ -80,3 +80,60 @@
   outline: 3px solid #a4c7ae;
   outline-offset: 2px;
 }
+
+/* Browse card overlay variant: each icon sits on its own dark circular chip
+   over the photo (Option B, chosen after an A/B/C comparison), so it stays
+   legible regardless of what's behind it. Active state uses a brightened
+   red — the plain brand red (#a3272c) doesn't contrast enough against the
+   dark chip background. */
+.actions.overlay {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.actions.overlay .rating {
+  display: none;
+}
+
+.actions.overlay .iconButton,
+.actions.overlay .cookedButton {
+  min-height: auto;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: #171915;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 6px;
+}
+
+.actions.overlay .iconButton svg,
+.actions.overlay .cookedButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.actions.overlay .cookedButton span {
+  display: none;
+}
+
+.actions.overlay .iconButton:hover,
+.actions.overlay .cookedButton:hover,
+.actions.overlay .active {
+  border-color: transparent;
+  background: #171915;
+  color: #e4574f;
+}
+
+.actions.overlay .iconButton:disabled,
+.actions.overlay .cookedButton:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.actions.overlay .error {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  color: #ffb4ac;
+}

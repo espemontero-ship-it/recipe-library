@@ -9,34 +9,36 @@
   height: 100%;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #ded8cc;
-  background: #fffdf8;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  transition: border-color 180ms ease;
 }
 
 .card:hover {
-  border-color: #aaa397;
-  box-shadow: 0 10px 24px rgba(34, 38, 31, 0.07);
-  transform: translateY(-2px);
+  border-color: var(--ink);
 }
 
 .selected .card {
-  border-color: #2f5a41;
-  box-shadow: 0 0 0 3px rgba(47, 90, 65, 0.16);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.imageWrap {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .imageLink,
 .imageButton {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  flex: 0 0 auto;
+  aspect-ratio: 4 / 3;
   border: 0;
   padding: 0;
-  background-color: #e6eee7;
+  background-color: #f0f0f0;
   background-position: center;
   background-size: cover;
-  color: #2f5a41;
+  color: var(--muted);
   cursor: pointer;
 }
 
@@ -45,12 +47,67 @@
   place-items: center;
 }
 
+.overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px;
+  pointer-events: none;
+}
+
+.overlay :global(button) {
+  pointer-events: auto;
+}
+
+.overlayRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #171915;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.overlayRating:empty {
+  padding: 0;
+  background: transparent;
+}
+
+.overlayRating svg {
+  color: #e4574f;
+}
+
+.overlayStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.overlayStatus svg {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border-radius: 50%;
+  background: #171915;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .body {
   display: flex;
   min-width: 0;
   flex: 1;
   flex-direction: column;
-  padding: 15px 17px 14px;
+  padding: 12px 2px 0;
 }
 
 .title,
@@ -60,7 +117,7 @@
   border: 0;
   padding: 0;
   background: transparent;
-  color: #171915;
+  color: var(--ink);
   cursor: pointer;
   text-align: left;
 }
@@ -70,11 +127,10 @@
   display: -webkit-box;
   overflow: hidden;
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.32rem;
-  font-weight: 400;
-  letter-spacing: -0.025em;
-  line-height: 1.08;
+  font-family: var(--sans);
+  font-size: var(--text-subsection);
+  font-weight: 600;
+  line-height: 1.2;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -82,37 +138,17 @@
 .ingredientPreview {
   display: -webkit-box;
   overflow: hidden;
-  margin: 9px 0 0;
-  color: #555950;
-  font-size: 0.76rem;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
   line-height: 1.42;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .more {
-  color: #777b72;
-  font-style: italic;
-}
-
-.quickActions,
-.statusIcons {
-  min-width: 0;
-  padding: 9px 12px 10px;
-  border-top: 1px solid #e4ded3;
-  background: #faf7f0;
-}
-
-.statusIcons {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #2f5a41;
-}
-
-.staticRating {
-  display: inline-flex;
-  gap: 1px;
+  color: var(--accent);
+  font-style: normal;
 }
 
 .selectionButton {
@@ -124,17 +160,16 @@
   width: 32px;
   height: 32px;
   place-items: center;
-  border: 1px solid #8c8f87;
+  border: 1px solid #ffffff;
   border-radius: 50%;
-  background: rgba(255, 253, 248, 0.94);
-  color: #2f5a41;
+  background: rgba(23, 25, 21, 0.55);
+  color: white;
   cursor: pointer;
 }
 
 .selectionButtonActive {
-  border-color: #2f5a41;
-  background: #2f5a41;
-  color: white;
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .selectionButton:disabled {
@@ -148,7 +183,7 @@
   top: 11px;
   right: 11px;
   padding: 6px 8px;
-  background: #171915;
+  background: var(--ink);
   color: white;
   font-size: 0.58rem;
   font-weight: 800;
@@ -158,21 +193,20 @@
 
 .list .card {
   display: grid;
-  min-height: 104px;
-  grid-template-columns: 172px minmax(0, 1fr) minmax(250px, auto);
+  min-height: 140px;
+  grid-template-columns: 172px minmax(0, 1fr);
   align-items: stretch;
-  transform: none;
 }
 
-.list .card:hover {
-  box-shadow: none;
-  transform: none;
+.list .imageWrap {
+  width: 172px;
+  height: 140px;
 }
 
 .list .imageLink,
 .list .imageButton {
   width: 172px;
-  height: 104px;
+  height: 140px;
   aspect-ratio: auto;
 }
 
@@ -183,32 +217,15 @@
 
 .list .title h2,
 .list .titleButton h2 {
+  display: block;
   overflow: hidden;
-  font-size: 1.18rem;
-  line-height: 1.12;
   text-overflow: ellipsis;
   white-space: nowrap;
-  -webkit-box-orient: initial;
-  -webkit-line-clamp: initial;
 }
 
 .list .ingredientPreview {
-  margin-top: 7px;
-  font-size: 0.78rem;
-  line-height: 1.38;
+  margin-top: 6px;
   -webkit-line-clamp: 2;
-}
-
-.list .quickActions,
-.list .statusIcons {
-  display: flex;
-  min-width: 250px;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 12px 18px;
-  border-top: 0;
-  border-left: 1px solid #e4ded3;
-  background: #fffdf8;
 }
 
 .imageLink:focus-visible,
@@ -216,7 +233,7 @@
 .title:focus-visible,
 .titleButton:focus-visible,
 .selectionButton:focus-visible {
-  outline: 3px solid #a4c7ae;
+  outline: 3px solid var(--accent-soft);
   outline-offset: 3px;
 }
 
@@ -225,46 +242,28 @@
     grid-template-columns: 150px minmax(0, 1fr);
   }
 
+  .list .imageWrap,
   .list .imageLink,
   .list .imageButton {
     width: 150px;
-    height: 104px;
-  }
-
-  .list .quickActions,
-  .list .statusIcons {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-    min-width: 0;
-    border-top: 1px solid #e4ded3;
-    border-left: 0;
-    padding: 8px 12px;
+    height: 128px;
   }
 }
 
 @media (max-width: 720px) {
   .list .card {
-    min-height: 96px;
+    min-height: 112px;
     grid-template-columns: 112px minmax(0, 1fr);
   }
 
+  .list .imageWrap,
   .list .imageLink,
   .list .imageButton {
     width: 112px;
-    height: 96px;
+    height: 112px;
   }
 
   .list .body {
     padding: 11px 13px;
-  }
-
-  .list .title h2,
-  .list .titleButton h2 {
-    font-size: 1.02rem;
-  }
-
-  .list .ingredientPreview {
-    font-size: 0.72rem;
-    -webkit-line-clamp: 2;
   }
 }

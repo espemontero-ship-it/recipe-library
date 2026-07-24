@@ -1,14 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CalendarDays,
-  Check,
-  CheckCircle2,
-  Heart,
-  ImageOff,
-  Star,
-} from "lucide-react";
+import { CalendarPlus, Check, CheckCircle2, Heart, ImageOff, Star } from "lucide-react";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { getRecipeIngredients, type Recipe } from "@/lib/recipeModel";
 import { ingredientDisplayLine } from "@/lib/ingredientParser";
@@ -81,40 +74,83 @@ export function BrowseRecipeCard({
         </button>
       )}
 
-      {alreadyPlanned && (
-        <span className={styles.plannedBadge}>In planning</span>
-      )}
-
       <div className={styles.card}>
-        {planningMode ? (
-          <button
-            aria-label={`Select ${recipe.title} for planning`}
-            className={`${styles.imageButton} ${
-              recipe.media.heroImage ? "" : styles.imageEmpty
-            }`}
-            disabled={alreadyPlanned}
-            onClick={onToggleSelection}
-            style={imageStyle}
-            type="button"
-          >
-            {!recipe.media.heroImage && (
-              <ImageOff aria-hidden="true" size={28} />
+        <div className={styles.imageWrap}>
+          {alreadyPlanned && (
+            <span className={styles.plannedBadge}>In planning</span>
+          )}
+
+          {planningMode ? (
+            <button
+              aria-label={`Select ${recipe.title} for planning`}
+              className={`${styles.imageButton} ${
+                recipe.media.heroImage ? "" : styles.imageEmpty
+              }`}
+              disabled={alreadyPlanned}
+              onClick={onToggleSelection}
+              style={imageStyle}
+              type="button"
+            >
+              {!recipe.media.heroImage && (
+                <ImageOff aria-hidden="true" size={28} />
+              )}
+            </button>
+          ) : (
+            <Link
+              aria-label={`Open ${recipe.title}`}
+              className={`${styles.imageLink} ${
+                recipe.media.heroImage ? "" : styles.imageEmpty
+              }`}
+              href={recipeHref}
+              style={imageStyle}
+            >
+              {!recipe.media.heroImage && (
+                <ImageOff aria-hidden="true" size={28} />
+              )}
+            </Link>
+          )}
+
+          <div className={styles.overlay}>
+            <span className={styles.overlayRating}>
+              {recipe.personal.rating ? (
+                <>
+                  <Star aria-hidden="true" fill="currentColor" size={19} />
+                  {recipe.personal.rating}
+                </>
+              ) : null}
+            </span>
+
+            {!planningMode ? (
+              <RecipeQuickActions
+                inThisWeek={inThisWeek}
+                onChange={onRecipeChange}
+                onToggleThisWeek={onToggleThisWeek}
+                planningBusy={planningBusy}
+                recipe={recipe}
+                showCookedLabel={false}
+                variant="overlay"
+              />
+            ) : (
+              <div aria-label="Recipe status" className={styles.overlayStatus}>
+                <Heart
+                  aria-label={recipe.personal.favorite ? "Favorite" : "Not favorite"}
+                  fill={recipe.personal.favorite ? "currentColor" : "none"}
+                  size={19}
+                />
+                <CheckCircle2
+                  aria-label={recipe.personal.tested ? "Made" : "Not made"}
+                  opacity={recipe.personal.tested ? 1 : 0.5}
+                  size={19}
+                />
+                <CalendarPlus
+                  aria-label={alreadyPlanned ? "In planning" : "Not planned"}
+                  opacity={alreadyPlanned ? 1 : 0.5}
+                  size={19}
+                />
+              </div>
             )}
-          </button>
-        ) : (
-          <Link
-            aria-label={`Open ${recipe.title}`}
-            className={`${styles.imageLink} ${
-              recipe.media.heroImage ? "" : styles.imageEmpty
-            }`}
-            href={recipeHref}
-            style={imageStyle}
-          >
-            {!recipe.media.heroImage && (
-              <ImageOff aria-hidden="true" size={28} />
-            )}
-          </Link>
-        )}
+          </div>
+        </div>
 
         <div className={styles.body}>
           {planningMode ? (
@@ -141,46 +177,6 @@ export function BrowseRecipeCard({
             )}
           </p>
         </div>
-
-        {!planningMode ? (
-          <div className={styles.quickActions}>
-            <RecipeQuickActions
-              inThisWeek={inThisWeek}
-              onChange={onRecipeChange}
-              onToggleThisWeek={onToggleThisWeek}
-              planningBusy={planningBusy}
-              recipe={recipe}
-              showCookedLabel={false}
-            />
-          </div>
-        ) : (
-          <div className={styles.statusIcons} aria-label="Recipe status">
-            <Heart
-              aria-label={recipe.personal.favorite ? "Favorite" : "Not favorite"}
-              fill={recipe.personal.favorite ? "currentColor" : "none"}
-              size={17}
-            />
-            <CheckCircle2
-              aria-label={recipe.personal.tested ? "Made" : "Not made"}
-              opacity={recipe.personal.tested ? 1 : 0.4}
-              size={17}
-            />
-            <span className={styles.staticRating}>
-              {Array.from({ length: 5 }, (_, index) => (
-                <Star
-                  aria-hidden="true"
-                  fill={index < (recipe.personal.rating ?? 0) ? "currentColor" : "none"}
-                  key={index}
-                  opacity={index < (recipe.personal.rating ?? 0) ? 1 : 0.4}
-                  size={15}
-                />
-              ))}
-            </span>
-            {alreadyPlanned && (
-              <CalendarDays aria-label="In planning" size={17} />
-            )}
-          </div>
-        )}
       </div>
     </article>
   );
