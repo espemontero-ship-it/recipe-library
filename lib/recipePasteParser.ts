@@ -67,6 +67,7 @@ const SECTION_HEADINGS = {
 };
 
 const UI_OR_JUNK_LINE = /^(?:save|saved|print|share|email|copy link|rate|rating|ratings|comments?|read more|see less|ver menos|add to your grocery list|add ingredients to grocery list|ingredient substitution guide|private notes?|unlock this recipe|subscribe|sign in|log in|view recipe|featured recipe|advertisement|skip advertisement)\b/i;
+const SITE_CHROME_LINE = /\blogo\b/i;
 const CREDIT_LINE = /(?:\bcredit\b|\bphoto(?:graph)?\s*(?:by|:)|\bfood stylist\b|\bprop stylist\b|\bstyled by\b|\bphotographer\b)/i;
 const NYT_NAV_OR_META_LINE = /^(?:recipes?|occasions|articles|about|give|published\s+.+|updated\s+.+|media\s+\d+\s+of\s+\d+|read\s+\d[\d,.]*\s+comments?|\(?\d[\d,.]*\)?|total time|prep time|cook time)$/i;
 const URL_LINE = /^https?:\/\/\S+$/i;
@@ -75,7 +76,31 @@ const SOCIAL_NETWORK_TYPES = new Set(["facebook", "instagram", "tiktok"]);
 const SOCIAL_PROFILE_ACTION_LINE = /^(?:follow|following|seguir|siguiendo)$/i;
 const SOCIAL_SEPARATOR_LINE = /^(?:[·•|]\s*)+$/;
 const SOCIAL_AUDIO_LINE = /^.{1,80}\s+·\s+.{1,80}$/;
-const MACRO_LINE = /^(?:(?:calories?|calor[ií]as|protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*:|(?:~?\d+(?:[.,]\d+)?\s*g?\s*(?:protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*$)|(?:(?:per\s+(?:serving|bowl|portion)|each\s+serving|recipe\s+complete|receta\s+completa|\d+\/\d+\s+receta)\s*:?\s*)?.*\b(?:k?cal(?:ories)?|calor[ií]as)\b.*(?:protein|prote[ií]na|carbs?|hidratos|fat|grasa)?|(?:\d+(?:[.,]\d+)?\s*[gG]?\s*(?:P|C|F)(?:\s*[|·/]\s*)?){2,})/i;
+const MACRO_LINE = /^(?:(?:calories?|calor[ií]as|protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*:|(?:~?\d+(?:[.,]\d+)?\s*g?\s*(?:protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*$)|.*\d+(?:[.,]\d+)?\s*(?:k?cal(?:ories)?|calor[ií]as)\b.*|.*\b(?:calories?|calor[ií]as)\b[^\n\d]{0,24}\d+(?:[.,]\d+)?.*|(?:\d+(?:[.,]\d+)?\s*[gG]?\s*(?:P|C|F)(?:\s*[|·/]\s*)?){2,})/i;
+
+// Instagram/Facebook captions often collapse several ingredients onto one line
+// (e.g. "300g chicken 50g yoghurt 1 tsp garlic purée"). Split before any quantity
+// that's immediately followed by a recognised unit, or before "Juice/Zest of" and
+// "Pinch of", which almost always start a new ingredient. The lookbehinds keep
+// "1 x 250g pouch", "2 ½ tbsp" (whole number + unicode fraction), and
+// "Yoghurt, 100g, 3.5oz" (comma-separated unit clarifications) intact.
+const COMPACT_UNIT_WORD =
+  "g|gr|grams?|kg|kilograms?|ml|l|litres?|liters?|tsp|teaspoons?|tbsp|tablespoons?|cups?|oz|ounces?|lbs?|pounds?|cloves?|cans?|tins?|packets?|slices?|pieces?|sprigs?|pinch(?:es)?";
+const EMBEDDED_QUANTITY_BOUNDARY = new RegExp(
+  String.raw`(?<!\bx)(?<!\d)(?<!,)\s+(?=(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:${COMPACT_UNIT_WORD})\b)`,
+  "gi",
+);
+const EMBEDDED_QUALITATIVE_BOUNDARY = /\s+(?=(?:juice\s+(?:and\s+zest\s+)?of\b|zest\s+(?:and\s+juice\s+)?of\b|(?:a\s+)?pinch\s+of\b))/gi;
+
+function splitEmbeddedIngredients(line: string) {
+  const expanded = line
+    .replace(EMBEDDED_QUANTITY_BOUNDARY, "\n")
+    .replace(EMBEDDED_QUALITATIVE_BOUNDARY, "\n");
+  return expanded
+    .split("\n")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
 
 export const emptyRange = (): NutritionRange => ({ min: "", max: "" });
 
@@ -358,6 +383,7 @@ function isJunkLine(value: string) {
     UI_OR_JUNK_LINE.test(line) ||
     CREDIT_LINE.test(line) ||
     NYT_NAV_OR_META_LINE.test(line) ||
+    SITE_CHROME_LINE.test(line) ||
     /^image\b/i.test(line)
   );
 }
@@ -416,6 +442,23 @@ function findSectionEnd(lines: string[], start: number, patterns: RegExp[]) {
     if (patterns.some((pattern) => isHeading(lines[index], pattern))) return index;
   }
   return lines.length;
+}
+
+// Some sites render "Ingredients" and "Nutrition" as adjacent tab labels with no real
+// content between them. Treating that as the end of the ingredients section leaves the
+// actual ingredient lines (which follow the tab UI) unparsed, so keep walking past any
+// method/nutrition heading that has no ingredient-like line before it.
+function findIngredientsSectionEnd(lines: string[], start: number) {
+  let cursor = start;
+  while (true) {
+    const boundary = findSectionEnd(lines, cursor, [SECTION_HEADINGS.method, SECTION_HEADINGS.nutrition]);
+    if (boundary >= lines.length) return boundary;
+    const hasIngredientContent = lines
+      .slice(cursor + 1, boundary)
+      .some((line) => isIngredientLikeLine(line) || looksLikeIngredientSubheading(line));
+    if (hasIngredientContent) return boundary;
+    cursor = boundary;
+  }
 }
 
 function lineAfterHeading(lines: string[], patterns: RegExp[]) {
@@ -506,7 +549,7 @@ function pushIngredientHeading(ingredients: string[], value: string) {
 }
 
 function parseExplicitIngredients(lines: string[], start: number) {
-  const explicitEnd = findSectionEnd(lines, start, [SECTION_HEADINGS.method, SECTION_HEADINGS.nutrition]);
+  const explicitEnd = findIngredientsSectionEnd(lines, start);
   const implicitMethodStart = findImplicitMethodStart(lines, start);
   const end = implicitMethodStart >= 0 ? Math.min(explicitEnd, implicitMethodStart) : explicitEnd;
   const ingredients: string[] = [];
@@ -517,7 +560,10 @@ function parseExplicitIngredients(lines: string[], start: number) {
     const rawLine = lines[index];
     const line = cleanContentLine(rawLine);
     if (!line || isJunkLine(line) || URL_LINE.test(line) || isMacroLine(line) || isDecorativeSeparator(line)) continue;
-    if (isHeading(rawLine, SECTION_HEADINGS.method) || isHeading(rawLine, SECTION_HEADINGS.nutrition)) break;
+    if (isHeading(rawLine, SECTION_HEADINGS.method) || isHeading(rawLine, SECTION_HEADINGS.nutrition)) {
+      if (ingredients.length === 0) continue;
+      break;
+    }
     if (isHeading(rawLine, SECTION_HEADINGS.ingredients)) {
       const suffix = ingredientHeadingSuffix(rawLine);
       if (suffix) pushIngredientHeading(ingredients, suffix);
@@ -532,7 +578,7 @@ function parseExplicitIngredients(lines: string[], start: number) {
     }
 
     if (isIngredientLikeLine(line) || (line.length <= 220 && !/[.!?]$/.test(line) && !looksLikeActionLine(line))) {
-      ingredients.push(line);
+      ingredients.push(...splitEmbeddedIngredients(line));
     }
   }
 
@@ -560,7 +606,7 @@ function parseImplicitIngredients(lines: string[], recipeTitle: string, recipeAu
 
     if (isIngredientLikeLine(line)) {
       started = true;
-      ingredients.push(line);
+      ingredients.push(...splitEmbeddedIngredients(line));
       continue;
     }
 
@@ -716,7 +762,7 @@ function extractRange(source: string, labels: string[]): NutritionRange {
   const label = labels.join("|");
   const exact = normalizedSource.match(
     new RegExp(
-      `(?:${label})\\s*:?\\s*(?:approximately\\s*)?(\\d+(?:[.,]\\d+)?)\\s*(?:[–—-]\\s*(\\d+(?:[.,]\\d+)?))?`,
+      `(?:${label})\\s*(?:per\\s+\\w+)?\\s*:?\\s*(?:approximately\\s*)?(\\d+(?:[.,]\\d+)?)\\s*(?:[–—-]\\s*(\\d+(?:[.,]\\d+)?))?`,
       "i",
     ),
   );
@@ -812,6 +858,7 @@ function extractTitle(lines: string[], sourceType = "", socialAuthor = "") {
   const searchEnd = ingredientsIndex > 0 ? ingredientsIndex : Math.min(lines.length, 40);
   const ignoredIndexes = socialHeaderNoiseIndexes(lines, sourceType);
 
+  const candidates: string[] = [];
   for (let index = 0; index < searchEnd; index += 1) {
     if (ignoredIndexes.has(index)) continue;
     const line = cleanTitle(lines[index]);
@@ -821,10 +868,21 @@ function extractTitle(lines: string[], sourceType = "", socialAuthor = "") {
     if (/^(?:by\b|recipe by\b|original recipe\b|yield\b|servings?\b|serves\b|total time\b|prep time\b|cook time\b|time\b|published\b|updated\b|rating\b)/i.test(line)) continue;
     if (/^(?:\d+(?:\.\d+)?\s*(?:stars?|ratings?)|\d+\s+(?:minutes?|hours?)(?:\s+total)?)\s*$/i.test(line)) continue;
     if (line.length < 3 || line.length > 180) continue;
-    return line;
+    candidates.push(line);
   }
 
-  return "";
+  if (!candidates.length) return "";
+
+  // Site chrome (nav, logo alt text, breadcrumbs) rarely repeats verbatim, while the
+  // real title is often printed 2-3 times (breadcrumb, image alt text, H1). When a
+  // candidate recurs, it beats an earlier one-off line that slipped past the junk filters.
+  const counts = new Map<string, number>();
+  for (const candidate of candidates) {
+    const key = candidate.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const repeated = candidates.find((candidate) => (counts.get(candidate.toLowerCase()) ?? 0) >= 2);
+  return repeated ?? candidates[0];
 }
 
 function extractAuthor(lines: string[]) {

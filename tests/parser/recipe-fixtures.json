@@ -703,5 +703,94 @@
         "Add everything to a bowl and microwave."
       ]
     }
+  },
+  {
+    "id": "bbc-goodfood-full-page-copy",
+    "name": "BBC Good Food page with nav chrome, logo alt text and adjacent Ingredients/Nutrition tabs",
+    "source": "Web",
+    "raw": "Good Food logo in black\nRecipes\nHealth\nWhat to buy\nBudget\nBaking\nSubscribe\nSearch\nSearch recipes...\nHome\nRecipes\nSoy-baked potatoes with tuna sriracha mayo\n4 soy-baked potatoes with tuna sriracha mayo\nSoy-baked potatoes with tuna sriracha mayo\nFliss Freeborn\nServes 4\nEasy\nPrep:\n10 mins\nCook:\n15 mins\nA star rating of 4.6 out of 5.\n18 ratings\nRate\n3 comments\nServe jacket potatoes with a spicy mayo that’s fragrant with ginger for a fresh take on the usual cheesy beans number. They're perfect for a speedy supper\nLow calorie\nLow fat\nTry our app\nShowing items 1 to 3 of 6\n\nIngredients\nNutrition\n4 large baking potatoes\n3 x 135g cans tuna\nchunks in brine, drained\n2 tbsp mayonnaise\n2 ½ tbsp natural yogurt\n4 spring onions\nthinly sliced\n1 thumb-sized piece of ginger\npeeled and finely grated\n1 lemon\njuiced\n2 tsp sriracha\nor hot sauce\n3 pickled gherkins\nfinely chopped (optional)\n2 tbsp reduced-salt soy sauce\n320g spinach\nFor the dressing\n1 tbsp extra virgin olive oil\n2 tbsp cider vinegar\n¼ tsp wholegrain mustard\nKeep the screen awake with cook mode on the Good Food app.\nAd\n\n\nMethod\nstep 1\nPrick the potatoes all over using a fork, then microwave on high for 10-15 mins, or until softened. Heat the oven to 200C/180C fan/gas 6, or turn on the air-fryer.\n\nstep 2\nTip the tuna into a bowl and mix with the mayo, yogurt, spring onions, ginger, half the lemon juice, the hot sauce and gherkins, if using.\n\nstep 3\nWhen the potatoes are tender, score them lightly with a sharp knife, then pour over the soy sauce and toss quickly to coat. Bake in the oven for 15-20 mins or the air-fryer at 200C for 5 mins to crisp up the skins. Meanwhile, combine the dressing ingredients with the remaining lemon juice and drizzle this over the spinach. Split the potatoes in half, fill with the tuna mayo and serve with the spinach.\n\nhttps://www.bbcgoodfood.com/recipes/soy-baked-potatoes-with-tuna-sriracha-mayo",
+    "expected": {
+      "title": "Soy-baked potatoes with tuna sriracha mayo",
+      "servings": "4",
+      "sourceType": "web",
+      "sourceUrl": "https://www.bbcgoodfood.com/recipes/soy-baked-potatoes-with-tuna-sriracha-mayo",
+      "ingredients": [
+        "4 large baking potatoes",
+        "3 x 135g cans tuna",
+        "chunks in brine, drained",
+        "2 tbsp mayonnaise",
+        "2 ½ tbsp natural yogurt",
+        "4 spring onions",
+        "thinly sliced",
+        "1 thumb-sized piece of ginger",
+        "peeled and finely grated",
+        "1 lemon",
+        "juiced",
+        "2 tsp sriracha",
+        "or hot sauce:",
+        "3 pickled gherkins",
+        "finely chopped (optional)",
+        "2 tbsp reduced-salt soy sauce",
+        "320g spinach",
+        "For the dressing:",
+        "1 tbsp extra virgin olive oil",
+        "2 tbsp cider vinegar",
+        "¼ tsp wholegrain mustard"
+      ]
+    }
+  },
+  {
+    "id": "facebook-reel-compact-ingredient-lines",
+    "name": "Facebook reel with several ingredients collapsed onto single lines and a calories-per-portion macro line",
+    "source": "Facebook",
+    "raw": "Alex's Kitchen Bangers\n\n ·\nFollowing\n﻿MoBlack · Yamore (Edit Version)\nRed Thai Curry Chicken Skewers\nIf you’re looking for your new favourite summer dinner… you’ve just found it 🤭\nRed Thai curry marinated chicken skewers with jasmine rice, crunchy salad and the dreamiest creamy coconut red Thai sauce 🤤\nSo easy to make and perfect for when you need a quick & absolutely banging dinner 🤌🏼\nIngredients (serves 2):\nChicken Skewers\n300g boneless, skinless chicken thighs, diced into large chunks (can use breast for lower cal/ higher protein) 50g 0% Greek style yoghurt 30g red Thai curry paste 1 tsp garlic purée 1 tsp ginger purée Juice of ½ lime\nRed Thai Sauce\n30g red Thai curry paste 100ml light coconut milk 1 tsp light soy sauce ½ tsp honey ½ tsp fish sauce Juice of ½ lime\nTo Serve\n1 x 250g pouch microwave jasmine rice\n ½ cucumber, diced\n1 medium carrot, julienned or ribboned Juice of ½ lime Pinch of salt 2-3 sprigs fresh coriander, chopped\n💞In a bowl combine all of the skewer ingredients.  Cover and marinate for at least 30 minutes, or overnight, then thread onto skewers.\n💞Air fry at 200°C for 12-14 minutes, turning halfway through, until lightly charred and cooked through.\n💞Toss the carrot with the lime juice and a pinch of salt. Set aside while the chicken cooks.\n💞Heat the jasmine rice according to the packet instructions.\n💞Add the red Thai curry paste to a small saucepan over a medium heat and cook for 1 minute. Add the honey, light soy & fish sauce and for a further 30 seconds before stirring in the coconut milk. Simmer until smooth and slightly thickened, then remove from the heat and stir through the lime juice.\n💞Divide the rice between two bowls. Arrange the cucumber and carrot alongside the rice before laying the skewers over the top.\n💞Drizzle over the red thai sauce and finish with the chopped coriander and an extra squeeze of fresh lime.\nCalories per portion: 600 | Protein: 34.9g | Fat: 24.8g | Carbs: 58.8g\nhttps://www.facebook.com/reel/1425719482743903",
+    "expected": {
+      "title": "Red Thai Curry Chicken Skewers",
+      "author": "Alex's Kitchen Bangers",
+      "publication": "Facebook",
+      "sourceType": "facebook",
+      "sourceUrl": "https://www.facebook.com/reel/1425719482743903",
+      "servings": "2",
+      "ingredients": [
+        "(serves 2):",
+        "Chicken Skewers",
+        "300g boneless, skinless chicken thighs, diced into large chunks (can use breast for lower cal/ higher protein)",
+        "50g 0% Greek style yoghurt",
+        "30g red Thai curry paste",
+        "1 tsp garlic purée",
+        "1 tsp ginger purée",
+        "Juice of ½ lime",
+        "Red Thai Sauce:",
+        "30g red Thai curry paste",
+        "100ml light coconut milk",
+        "1 tsp light soy sauce",
+        "½ tsp honey",
+        "½ tsp fish sauce",
+        "Juice of ½ lime",
+        "To Serve:",
+        "1 x 250g pouch microwave jasmine rice",
+        "½ cucumber, diced",
+        "1 medium carrot, julienned or ribboned",
+        "Juice of ½ lime",
+        "Pinch of salt",
+        "2-3 sprigs fresh coriander, chopped"
+      ],
+      "calories": {
+        "min": "600",
+        "max": "600"
+      },
+      "protein": {
+        "min": "34.9",
+        "max": "34.9"
+      },
+      "fat": {
+        "min": "24.8",
+        "max": "24.8"
+      },
+      "carbs": {
+        "min": "58.8",
+        "max": "58.8"
+      }
+    }
   }
 ]
