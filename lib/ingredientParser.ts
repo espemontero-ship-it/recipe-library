@@ -205,7 +205,7 @@ const WEIGHT_UNIT_PATTERN = Object.keys(WEIGHT_UNIT_ALIASES)
 const PACKAGE_UNIT_PATTERN = "cans?|tins?|latas?|packages?|packets?|paquetes?|sobres?";
 const MODIFIER_PATTERN = "packed|heaped|level|rounded|big|small|medium|large|colmadas?|rasas?|generosas?|grandes?|pequeñas?|pequenos?|medianas?";
 
-function parseSimpleNumber(value: string) {
+export function parseSimpleNumber(value: string) {
   const normalized = value.trim().toLowerCase().replace(",", ".");
   if (!normalized) return null;
 

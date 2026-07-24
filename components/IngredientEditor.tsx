@@ -6,22 +6,18 @@ import {
   CircleAlert,
   CircleCheck,
   Copy,
+  ListPlus,
   Plus,
   Trash2,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
+import { NumericField } from "@/components/NumericField";
 import { parseIngredientLine } from "@/lib/ingredientParser";
 import type {
   RecipeIngredient,
   RecipeIngredientSection,
 } from "@/lib/recipeModel";
 import styles from "./IngredientEditor.module.css";
-
-function numberValue(value: string) {
-  if (!value.trim()) return null;
-  const parsed = Number.parseFloat(value.replace(",", "."));
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
 function updateItem(
   sections: RecipeIngredientSection[],
@@ -49,7 +45,7 @@ function move<T>(values: T[], from: number, to: number) {
   return next;
 }
 
-function resetLegacyNutrition(item: RecipeIngredient): RecipeIngredient["nutrition"] {
+function resetLegacyNutrition(): RecipeIngredient["nutrition"] {
   return {
     status: "pending",
     fdcId: null,
@@ -98,12 +94,10 @@ export function IngredientEditor({
   return (
     <div className={`${styles.editor} ${compact ? styles.compact : ""}`}>
       <div className={styles.summary}>
-        <div>
-          <strong>{counts.total} ingredients</strong>
-          <span>
-            {counts.parsed} parsed · {counts.total - counts.parsed} need review
-          </span>
-        </div>
+        <strong>{counts.total} ingredients</strong>
+        <span>
+          {counts.parsed} parsed · {counts.total - counts.parsed} need review
+        </span>
       </div>
 
       {sections.map((section, sectionIndex) => (
@@ -131,247 +125,244 @@ export function IngredientEditor({
                 }
                 type="button"
               >
-                <Trash2 aria-hidden="true" size={16} />
+                <Trash2 aria-hidden="true" size={15} />
               </button>
             )}
           </div>
 
-          <div className={styles.rows}>
-            {section.items.map((item, itemIndex) => {
-              const expanded = openIngredient === item.id;
-              const parsed = item.parseStatus === "confirmed";
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th className={styles.colDrag} />
+                <th className={styles.colQty}>Qty</th>
+                <th className={styles.colUnit}>Unit</th>
+                <th className={styles.colName}>Name</th>
+                <th className={styles.colNote}>Note</th>
+                <th className={styles.colStatus}>Status</th>
+                <th className={styles.colActions} />
+              </tr>
+            </thead>
+            <tbody>
+              {section.items.map((item, itemIndex) => {
+                const expanded = openIngredient === item.id;
+                const parsed = item.parseStatus === "confirmed";
 
-              return (
-                <article className={styles.row} key={item.id}>
-                  <div className={styles.rowMain}>
-                    <div className={styles.dragButtons}>
-                      <button
-                        aria-label="Move ingredient up"
-                        disabled={itemIndex === 0}
-                        onClick={() =>
-                          commit(
-                            sectionsRef.current.map((current, index) =>
-                              index === sectionIndex
-                                ? {
-                                    ...current,
-                                    items: move(current.items, itemIndex, itemIndex - 1),
-                                  }
-                                : current,
-                            ),
-                          )
-                        }
-                        type="button"
-                      >
-                        <ArrowUp aria-hidden="true" size={14} />
-                      </button>
-                      <button
-                        aria-label="Move ingredient down"
-                        disabled={itemIndex === section.items.length - 1}
-                        onClick={() =>
-                          commit(
-                            sectionsRef.current.map((current, index) =>
-                              index === sectionIndex
-                                ? {
-                                    ...current,
-                                    items: move(current.items, itemIndex, itemIndex + 1),
-                                  }
-                                : current,
-                            ),
-                          )
-                        }
-                        type="button"
-                      >
-                        <ArrowDown aria-hidden="true" size={14} />
-                      </button>
-                    </div>
-
-                    <input
-                      aria-label="Ingredient quantity"
-                      className={styles.quantity}
-                      inputMode="decimal"
-                      onChange={(event) => {
-                        const value = numberValue(event.target.value);
-                        setIngredient(sectionIndex, itemIndex, {
-                          parseStatus: "confirmed",
-                          quantity: { min: value, max: value },
-                          nutrition: resetLegacyNutrition(item),
-                        });
-                      }}
-                      value={item.quantity.min ?? ""}
-                    />
-
-                    <input
-                      aria-label="Ingredient unit"
-                      className={styles.unit}
-                      onChange={(event) =>
-                        setIngredient(sectionIndex, itemIndex, {
-                          parseStatus: "confirmed",
-                          unit: event.target.value || null,
-                          nutrition: resetLegacyNutrition(item),
-                        })
-                      }
-                      placeholder="Unit"
-                      value={item.unit ?? ""}
-                    />
-
-                    <input
-                      aria-label="Ingredient name"
-                      onChange={(event) =>
-                        setIngredient(sectionIndex, itemIndex, {
-                          parseStatus: event.target.value.trim() ? "confirmed" : "review",
-                          canonicalIngredient: event.target.value || null,
-                          nutrition: resetLegacyNutrition(item),
-                        })
-                      }
-                      placeholder="Ingredient"
-                      value={item.canonicalIngredient ?? ""}
-                    />
-
-                    <input
-                      aria-label="Ingredient preparation note"
-                      onChange={(event) =>
-                        setIngredient(sectionIndex, itemIndex, {
-                          preparationNote: event.target.value || null,
-                        })
-                      }
-                      placeholder="Preparation / note"
-                      value={item.preparationNote ?? ""}
-                    />
-
-                    <button
-                      className={`${styles.parseButton} ${parsed ? styles.resolved : styles.pending}`}
-                      onClick={() =>
-                        setIngredient(sectionIndex, itemIndex, {
-                          parseStatus: parsed ? "review" : "confirmed",
-                        })
-                      }
-                      type="button"
-                    >
-                      {parsed ? (
-                        <CircleCheck aria-hidden="true" size={15} />
-                      ) : (
-                        <CircleAlert aria-hidden="true" size={15} />
-                      )}
-                      {parsed ? "Parsed" : "Review"}
-                    </button>
-
-                    <button
-                      className={styles.statusButton}
-                      onClick={() => setOpenIngredient(expanded ? null : item.id)}
-                      type="button"
-                    >
-                      {expanded ? "Close" : "Details"}
-                    </button>
-
-                    <button
-                      aria-label="Duplicate ingredient"
-                      className={styles.deleteButton}
-                      onClick={() =>
-                        commit(
-                          sectionsRef.current.map((current, index) =>
-                            index === sectionIndex
-                              ? {
-                                  ...current,
-                                  items: [
-                                    ...current.items.slice(0, itemIndex + 1),
-                                    {
-                                      ...item,
-                                      id: `ingredient_${crypto.randomUUID()}`,
-                                      nutrition: resetLegacyNutrition(item),
-                                    },
-                                    ...current.items.slice(itemIndex + 1),
-                                  ],
-                                }
-                              : current,
-                          ),
-                        )
-                      }
-                      type="button"
-                    >
-                      <Copy aria-hidden="true" size={15} />
-                    </button>
-
-                    <button
-                      aria-label="Delete ingredient"
-                      className={styles.deleteButton}
-                      onClick={() =>
-                        commit(
-                          sectionsRef.current.map((current, index) =>
-                            index === sectionIndex
-                              ? {
-                                  ...current,
-                                  items: current.items.filter((_, index) => index !== itemIndex),
-                                }
-                              : current,
-                          ),
-                        )
-                      }
-                      type="button"
-                    >
-                      <Trash2 aria-hidden="true" size={15} />
-                    </button>
-                  </div>
-
-                  {expanded && (
-                    <div className={styles.details}>
-                      <p className={styles.originalLine}>
-                        <strong>Original:</strong> {item.originalLine || "No original line"}
-                      </p>
-
-                      <div className={styles.parseDecision}>
-                        <div>
-                          <strong>Ingredient parsing</strong>
-                          <span>
-                            Confirm only whether quantity, unit, ingredient and note are separated correctly.
-                          </span>
+                return (
+                  <Fragment key={item.id}>
+                    <tr className={styles.row}>
+                      <td className={styles.colDrag}>
+                        <div className={styles.dragButtons}>
+                          <button
+                            aria-label="Move ingredient up"
+                            disabled={itemIndex === 0}
+                            onClick={() =>
+                              commit(
+                                sectionsRef.current.map((current, index) =>
+                                  index === sectionIndex
+                                    ? { ...current, items: move(current.items, itemIndex, itemIndex - 1) }
+                                    : current,
+                                ),
+                              )
+                            }
+                            type="button"
+                          >
+                            <ArrowUp aria-hidden="true" size={12} />
+                          </button>
+                          <button
+                            aria-label="Move ingredient down"
+                            disabled={itemIndex === section.items.length - 1}
+                            onClick={() =>
+                              commit(
+                                sectionsRef.current.map((current, index) =>
+                                  index === sectionIndex
+                                    ? { ...current, items: move(current.items, itemIndex, itemIndex + 1) }
+                                    : current,
+                                ),
+                              )
+                            }
+                            type="button"
+                          >
+                            <ArrowDown aria-hidden="true" size={12} />
+                          </button>
                         </div>
-                        <button
-                          className={parsed ? styles.choiceActive : ""}
-                          onClick={() =>
-                            setIngredient(sectionIndex, itemIndex, { parseStatus: "confirmed" })
-                          }
-                          type="button"
-                        >
-                          <CircleCheck aria-hidden="true" size={15} />
-                          Parsing is correct
-                        </button>
-                        <button
-                          className={!parsed ? styles.choiceActive : ""}
-                          onClick={() =>
-                            setIngredient(sectionIndex, itemIndex, { parseStatus: "review" })
-                          }
-                          type="button"
-                        >
-                          Needs correction
-                        </button>
-                      </div>
+                      </td>
 
-                      <div className={styles.flags}>
-                        {[
-                          ["optional", "Optional"],
-                          ["garnish", "Garnish"],
-                          ["servingAccompaniment", "Accompaniment"],
-                        ].map(([key, label]) => (
-                          <label key={key}>
-                            <input
-                              checked={Boolean(item[key as keyof RecipeIngredient])}
-                              onChange={(event) =>
-                                setIngredient(sectionIndex, itemIndex, {
-                                  [key]: event.target.checked,
-                                } as Partial<RecipeIngredient>)
-                              }
-                              type="checkbox"
-                            />
-                            {label}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </div>
+                      <td className={styles.colQty}>
+                        <NumericField
+                          aria-label="Ingredient quantity"
+                          onCommit={(value) =>
+                            setIngredient(sectionIndex, itemIndex, {
+                              parseStatus: "confirmed",
+                              quantity: { min: value, max: value },
+                              nutrition: resetLegacyNutrition(),
+                            })
+                          }
+                          value={item.quantity.min}
+                          warningClassName={styles.warn}
+                        />
+                      </td>
+
+                      <td className={styles.colUnit}>
+                        <input
+                          aria-label="Ingredient unit"
+                          onChange={(event) =>
+                            setIngredient(sectionIndex, itemIndex, {
+                              parseStatus: "confirmed",
+                              unit: event.target.value || null,
+                              nutrition: resetLegacyNutrition(),
+                            })
+                          }
+                          placeholder="Unit"
+                          value={item.unit ?? ""}
+                        />
+                      </td>
+
+                      <td className={styles.colName}>
+                        <input
+                          aria-label="Ingredient name"
+                          onChange={(event) =>
+                            setIngredient(sectionIndex, itemIndex, {
+                              parseStatus: event.target.value.trim() ? "confirmed" : "review",
+                              canonicalIngredient: event.target.value || null,
+                              nutrition: resetLegacyNutrition(),
+                            })
+                          }
+                          placeholder="Ingredient"
+                          value={item.canonicalIngredient ?? ""}
+                        />
+                      </td>
+
+                      <td className={styles.colNote}>
+                        <input
+                          aria-label="Ingredient preparation note"
+                          onChange={(event) =>
+                            setIngredient(sectionIndex, itemIndex, {
+                              preparationNote: event.target.value || null,
+                            })
+                          }
+                          placeholder="Preparation / note"
+                          value={item.preparationNote ?? ""}
+                        />
+                      </td>
+
+                      <td className={styles.colStatus}>
+                        <button
+                          className={`${styles.statusChip} ${parsed ? styles.parsed : styles.review}`}
+                          onClick={() =>
+                            setIngredient(sectionIndex, itemIndex, {
+                              parseStatus: parsed ? "review" : "confirmed",
+                            })
+                          }
+                          type="button"
+                        >
+                          {parsed ? (
+                            <CircleCheck aria-hidden="true" size={13} />
+                          ) : (
+                            <CircleAlert aria-hidden="true" size={13} />
+                          )}
+                          {parsed ? "Parsed" : "Review"}
+                        </button>
+                      </td>
+
+                      <td className={styles.colActions}>
+                        <div className={styles.rowActions}>
+                          <button
+                            aria-expanded={expanded}
+                            aria-label="Ingredient details"
+                            className={`${styles.iconButton} ${expanded ? styles.detailsOpen : ""}`}
+                            onClick={() => setOpenIngredient(expanded ? null : item.id)}
+                            type="button"
+                          >
+                            <ListPlus aria-hidden="true" size={14} />
+                          </button>
+                          <button
+                            aria-label="Duplicate ingredient"
+                            className={styles.iconButton}
+                            onClick={() =>
+                              commit(
+                                sectionsRef.current.map((current, index) =>
+                                  index === sectionIndex
+                                    ? {
+                                        ...current,
+                                        items: [
+                                          ...current.items.slice(0, itemIndex + 1),
+                                          {
+                                            ...item,
+                                            id: `ingredient_${crypto.randomUUID()}`,
+                                            nutrition: resetLegacyNutrition(),
+                                          },
+                                          ...current.items.slice(itemIndex + 1),
+                                        ],
+                                      }
+                                    : current,
+                                ),
+                              )
+                            }
+                            type="button"
+                          >
+                            <Copy aria-hidden="true" size={14} />
+                          </button>
+                          <button
+                            aria-label="Delete ingredient"
+                            className={`${styles.iconButton} ${styles.iconButtonDanger}`}
+                            onClick={() =>
+                              commit(
+                                sectionsRef.current.map((current, index) =>
+                                  index === sectionIndex
+                                    ? {
+                                        ...current,
+                                        items: current.items.filter((_, index) => index !== itemIndex),
+                                      }
+                                    : current,
+                                ),
+                              )
+                            }
+                            type="button"
+                          >
+                            <Trash2 aria-hidden="true" size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {expanded && (
+                      <tr className={styles.detailsRow}>
+                        <td colSpan={7}>
+                          <div className={styles.detailsPanel}>
+                            <p className={styles.originalLine}>
+                              Original: {item.originalLine || "No original line"}
+                            </p>
+                            <div className={styles.flags}>
+                              {(
+                                [
+                                  ["optional", "Optional"],
+                                  ["garnish", "Garnish"],
+                                  ["servingAccompaniment", "Accompaniment"],
+                                ] as const
+                              ).map(([key, label]) => (
+                                <label key={key}>
+                                  <input
+                                    checked={Boolean(item[key])}
+                                    onChange={(event) =>
+                                      setIngredient(sectionIndex, itemIndex, {
+                                        [key]: event.target.checked,
+                                      } as Partial<RecipeIngredient>)
+                                    }
+                                    type="checkbox"
+                                  />
+                                  {label}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
 
           <button
             className={styles.addIngredient}
@@ -386,7 +377,7 @@ export function IngredientEditor({
             }
             type="button"
           >
-            <Plus aria-hidden="true" size={16} />
+            <Plus aria-hidden="true" size={15} />
             Add ingredient
           </button>
         </section>
@@ -406,7 +397,7 @@ export function IngredientEditor({
         }
         type="button"
       >
-        <Plus aria-hidden="true" size={16} />
+        <Plus aria-hidden="true" size={15} />
         Add ingredient section
       </button>
     </div>
