@@ -867,7 +867,7 @@ function extractServings(lines: string[]) {
   const patterns = [
     /(?:^|\n|\b)recipe\s*\(\s*(\d+(?:[.,]\d+)?)\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:servings?|raciones?|porciones?)\s*\)\s*:?/i,
     /(?:^|\n|\b)ingredients?\s+(?:for\s+)?(?:about\s+)?(\d+(?:[.,]\d+)?)\s*(?:servings?|raciones?|porciones?)\b/i,
-    /(?:^|\n|\b)(?:yield|servings?|serves|makes|raciones?|porciones?)\s*:?\s*x?\s*(?:about\s*)?(\d+(?:[.,]\d+)?)(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?/i,
+    /(?:^|\n|\b)(?:yield|servings?|serves|makes|raciones?|porciones?)[^\S\n]*:?[^\S\n]*x?[^\S\n]*(?:about[^\S\n]*)?(\d+(?:[.,]\d+)?)(?:[^\S\n]*[-–—][^\S\n]*\d+(?:[.,]\d+)?)?/i,
     /(?:^|\n)\s*(\d+(?:[.,]\d+)?)\s*(?:servings?|raciones?|porciones?)\b/i,
     /\b(\d+(?:[.,]\d+)?)\s*(?:raciones|porciones)\b/i,
     /(?:^|\n)\s*para\s+(\d+(?:[.,]\d+)?)\s+personas?\b/i,
