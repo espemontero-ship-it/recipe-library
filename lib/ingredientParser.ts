@@ -443,12 +443,41 @@ export function parseIngredientLine(originalLine: string): RecipeIngredient {
   };
 }
 
+const COMMON_FRACTIONS: Array<[number, string]> = [
+  [1 / 8, "⅛"],
+  [1 / 6, "⅙"],
+  [1 / 5, "⅕"],
+  [1 / 4, "¼"],
+  [1 / 3, "⅓"],
+  [3 / 8, "⅜"],
+  [2 / 5, "⅖"],
+  [1 / 2, "½"],
+  [3 / 5, "⅗"],
+  [5 / 8, "⅝"],
+  [2 / 3, "⅔"],
+  [3 / 4, "¾"],
+  [4 / 5, "⅘"],
+  [5 / 6, "⅚"],
+  [7 / 8, "⅞"],
+];
+
+export function formatQuantity(value: number) {
+  const rounded = Math.round(value * 1000) / 1000;
+  const whole = Math.floor(rounded + 1e-9);
+  const fraction = rounded - whole;
+  const close = COMMON_FRACTIONS.find(([numeric]) => Math.abs(fraction - numeric) < 0.025);
+
+  if (close) return `${whole || ""}${close[1]}`;
+  if (Math.abs(fraction) < 0.025) return String(whole);
+  return rounded.toLocaleString("en-GB", { maximumFractionDigits: 2 });
+}
+
 export function ingredientDisplayLine(item: RecipeIngredient) {
   const quantity = item.quantity.min === null
     ? ""
     : item.quantity.max !== null && item.quantity.max !== item.quantity.min
-      ? `${item.quantity.min}–${item.quantity.max}`
-      : `${item.quantity.min}`;
+      ? `${formatQuantity(item.quantity.min)}–${formatQuantity(item.quantity.max)}`
+      : formatQuantity(item.quantity.min);
   return [quantity, item.unit, item.canonicalIngredient, item.preparationNote]
     .filter(Boolean)
     .join(" ")

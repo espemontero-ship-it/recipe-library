@@ -3,7 +3,7 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Recipe } from "@/lib/recipeModel";
 import type { PlanningItem } from "@/lib/planning";
-import { ingredientDisplayLine } from "@/lib/ingredientParser";
+import { formatQuantity, ingredientDisplayLine } from "@/lib/ingredientParser";
 import { getPlanning, getRecipeDefaultServings, getWeekStart } from "@/lib/planning";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -200,36 +200,6 @@ function parseFraction(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function formatNumber(value: number) {
-  const rounded = Math.round(value * 1000) / 1000;
-  const whole = Math.floor(rounded + 1e-9);
-  const fraction = rounded - whole;
-  const commonFractions: Array<[number, string]> = [
-    [1 / 8, "⅛"],
-    [1 / 6, "⅙"],
-    [1 / 5, "⅕"],
-    [1 / 4, "¼"],
-    [1 / 3, "⅓"],
-    [3 / 8, "⅜"],
-    [2 / 5, "⅖"],
-    [1 / 2, "½"],
-    [3 / 5, "⅗"],
-    [5 / 8, "⅝"],
-    [2 / 3, "⅔"],
-    [3 / 4, "¾"],
-    [4 / 5, "⅘"],
-    [5 / 6, "⅚"],
-    [7 / 8, "⅞"],
-  ];
-  const close = commonFractions.find(([numeric]) =>
-    Math.abs(fraction - numeric) < 0.025,
-  );
-
-  if (close) return `${whole || ""}${close[1]}`;
-  if (Math.abs(fraction) < 0.025) return String(whole);
-  return rounded.toLocaleString("en-GB", { maximumFractionDigits: 2 });
-}
-
 export function scaleIngredientLine(line: string, factor: number) {
   if (!line.trim() || Math.abs(factor - 1) < 0.0001) return line.trim();
   const match = STARTING_QUANTITY.exec(line);
@@ -241,8 +211,8 @@ export function scaleIngredientLine(line: string, factor: number) {
 
   const prefix = match[1] ?? "";
   const separator = match[3]?.replace(match[4] ?? "", "") ?? "";
-  const scaledFirst = formatNumber(first * factor);
-  const scaledSecond = second === null ? "" : formatNumber(second * factor);
+  const scaledFirst = formatQuantity(first * factor);
+  const scaledSecond = second === null ? "" : formatQuantity(second * factor);
   const replacement = `${prefix}${scaledFirst}${second === null ? "" : `${separator}${scaledSecond}`}`;
   return `${replacement}${line.slice(match[0].length)}`.trim();
 }
@@ -547,7 +517,7 @@ export function consolidateDraft(
   const merged = Array.from(groups.values()).map((group) => ({
     id: createShoppingId(),
     weekStart,
-    text: `${formatNumber(group.quantity)} ${displayUnit(group.unit, group.quantity)} ${group.displayIngredient}`.trim(),
+    text: `${formatQuantity(group.quantity)} ${displayUnit(group.unit, group.quantity)} ${group.displayIngredient}`.trim(),
     checked: false,
     manual: false,
     sources: group.sources,
