@@ -14,7 +14,7 @@ type Props = {
   inThisWeek?: boolean;
   onToggleThisWeek?: () => void | Promise<void>;
   planningBusy?: boolean;
-  variant?: "default" | "overlay";
+  variant?: "default" | "overlay" | "strip";
 };
 
 export function RecipeQuickActions({
@@ -30,6 +30,7 @@ export function RecipeQuickActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const editable = isAdmin && !authLoading;
+  const showFavoriteLabel = variant === "strip";
 
   async function updatePersonal(
     patch: Partial<
@@ -56,7 +57,7 @@ export function RecipeQuickActions({
 
   return (
     <div
-      className={`${styles.actions} ${variant === "overlay" ? styles.overlay : ""}`}
+      className={`${styles.actions} ${variant !== "default" ? styles[variant] : ""}`}
       onClick={(event) => event.stopPropagation()}
     >
       {onToggleThisWeek && user && (
@@ -103,6 +104,7 @@ export function RecipeQuickActions({
           fill={recipe.personal.favorite ? "currentColor" : "none"}
           size={17}
         />
+        {showFavoriteLabel && <span>Favorite</span>}
       </button>
 
       <button

@@ -4,14 +4,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft,
-  CalendarDays,
   CalendarPlus,
-  CheckCircle2,
   Clock3,
   ExternalLink,
-  Heart,
   Pencil,
-  Star,
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,19 +36,9 @@ import {
 } from "@/lib/recipeModel";
 import styles from "./recipe.module.css";
 
-function statusLabel(status: Recipe["personal"]["status"]) {
-  return {
-    to_try: "To Try",
-    this_weekend: "This Weekend",
-    tested: "Tested",
-    favorite: "Favorite",
-    discarded: "Discarded",
-  }[status];
-}
-
 export default function RecipePage() {
   const params = useParams<{ id: string }>();
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [recipe, setRecipe] = useState<Recipe | null | undefined>(undefined);
   const [privateNotesDraft, setPrivateNotesDraft] = useState("");
   const [saving, setSaving] = useState(false);
@@ -78,7 +64,7 @@ export default function RecipePage() {
   }, [params.id]);
 
   useEffect(() => {
-    if (!recipe || authLoading || !isAdmin) return;
+    if (!recipe || !isAdmin) return;
 
     let active = true;
     loadPrivateRecipeNotes(recipe.id)
@@ -101,7 +87,7 @@ export default function RecipePage() {
     return () => {
       active = false;
     };
-  }, [authLoading, isAdmin, recipe?.id]);
+  }, [isAdmin, recipe?.id]);
 
   useEffect(() => {
     if (!user) {
@@ -151,14 +137,8 @@ export default function RecipePage() {
     [params.id],
   );
 
-
   async function updatePersonal(
-    patch: Partial<
-      Pick<
-        Recipe["personal"],
-        "favorite" | "tested" | "thisWeekend" | "rating" | "privateNotes"
-      >
-    >,
+    patch: Partial<Pick<Recipe["personal"], "privateNotes">>,
   ) {
     if (!recipe || !isAdmin || saving) return;
 
@@ -221,46 +201,30 @@ export default function RecipePage() {
     recipe.nutrition.fatG.min,
     recipe.nutrition.fiberG.min,
   ].some((value) => value !== null);
-  const hasPublicState =
-    recipe.personal.favorite ||
-    recipe.personal.tested ||
-    recipe.personal.rating !== null;
+  const macros = [
+    recipe.nutrition.calories.min !== null
+      ? `${formatRange(recipe.nutrition.calories)} kcal`
+      : null,
+    recipe.nutrition.proteinG.min !== null
+      ? `${formatRange(recipe.nutrition.proteinG, "g")} protein`
+      : null,
+    recipe.nutrition.carbohydratesG.min !== null
+      ? `${formatRange(recipe.nutrition.carbohydratesG, "g")} carbs`
+      : null,
+    recipe.nutrition.fatG.min !== null
+      ? `${formatRange(recipe.nutrition.fatG, "g")} fat`
+      : null,
+    recipe.nutrition.fiberG.min !== null
+      ? `${formatRange(recipe.nutrition.fiberG, "g")} fiber`
+      : null,
+  ].filter(Boolean);
 
   return (
     <main className={styles.page}>
-      <div className={styles.utilityBar}>
-        <Link href="/browse" className={styles.backLink}>
-          <ArrowLeft aria-hidden="true" size={17} />
-          Back to library
-        </Link>
-
-        <div className={styles.utilityActions}>
-          {user && (
-            <button
-              aria-pressed={Boolean(thisWeekItemId)}
-              className={`${styles.quietButton} ${
-                thisWeekItemId ? styles.weekButtonActive : ""
-              }`}
-              disabled={planningBusy}
-              onClick={() => void toggleThisWeek()}
-              type="button"
-            >
-              {thisWeekItemId ? (
-                <CalendarDays aria-hidden="true" size={16} />
-              ) : (
-                <CalendarPlus aria-hidden="true" size={16} />
-              )}
-              {thisWeekItemId ? "Remove from this week" : "Add to this week"}
-            </button>
-          )}
-          {isAdmin && (
-            <Link className={styles.quietButton} href={`/recipes/${recipe.slug}/edit`}>
-              <Pencil aria-hidden="true" size={16} />
-              Edit recipe
-            </Link>
-          )}
-        </div>
-      </div>
+      <Link href="/browse" className={styles.backLink}>
+        <ArrowLeft aria-hidden="true" size={16} />
+        Back to library
+      </Link>
 
       <article>
         <header className={`${styles.hero} ${!recipe.media.heroImage ? styles.heroNoImage : ""}`}>
@@ -314,74 +278,56 @@ export default function RecipePage() {
                 <span><Users aria-hidden="true" size={17} />{recipe.yield.servingsDisplay}</span>
               )}
             </div>
-
-            {(isAdmin || hasPublicState) && (
-              <section aria-label="Recipe state" className={styles.personalPanel}>
-                {isAdmin ? (
-                  <>
-                    <RecipeQuickActions
-                      onChange={(updated) =>
-                        setRecipe({
-                          ...updated,
-                          personal: {
-                            ...updated.personal,
-                            privateNotes: recipe.personal.privateNotes,
-                          },
-                        })
-                      }
-                      recipe={recipe}
-                    />
-
-                    <div className={styles.personalSummary}>
-                      <span className={styles.status}>
-                        {statusLabel(recipe.personal.status)}
-                      </span>
-                      <span>
-                        {saving
-                          ? "Saving…"
-                          : recipe.personal.tested
-                            ? "Made"
-                            : "Not made yet"}
-                      </span>
-                    </div>
-                    {saveError && <p className={styles.saveError}>{saveError}</p>}
-                  </>
-                ) : (
-                  <div className={styles.publicState}>
-                    {recipe.personal.favorite && (
-                      <span><Heart aria-hidden="true" fill="currentColor" size={16} />Favorite</span>
-                    )}
-                    {recipe.personal.tested && (
-                      <span>
-                        <CheckCircle2 aria-hidden="true" size={16} />
-                        Made
-                      </span>
-                    )}
-                    {recipe.personal.rating !== null && (
-                      <span><Star aria-hidden="true" fill="currentColor" size={16} />{recipe.personal.rating}/5</span>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
           </div>
         </header>
 
-        <section className={styles.nutrition} aria-label="Macros per serving">
-          <div><span>Calories</span><strong>{formatRange(recipe.nutrition.calories, " kcal")}</strong></div>
-          <div><span>Protein</span><strong>{formatRange(recipe.nutrition.proteinG, " g")}</strong></div>
-          <div><span>Carbohydrates</span><strong>{formatRange(recipe.nutrition.carbohydratesG, " g")}</strong></div>
-          <div><span>Fat</span><strong>{formatRange(recipe.nutrition.fatG, " g")}</strong></div>
-          <div><span>Fiber</span><strong>{formatRange(recipe.nutrition.fiberG, " g")}</strong></div>
-          <p className={styles.nutritionStatus}>
-            {hasNutrition ? "Manual values per serving" : "Macros not added yet"}
-          </p>
+        <section aria-label="Recipe actions" className={styles.actionStrip}>
+          <RecipeQuickActions
+            onChange={(updated) =>
+              setRecipe({
+                ...updated,
+                personal: {
+                  ...updated.personal,
+                  privateNotes: recipe.personal.privateNotes,
+                },
+              })
+            }
+            recipe={recipe}
+            variant="strip"
+          />
+
+          <span className={styles.stripSpacer} />
+
+          {macros.length > 0 && (
+            <p className={styles.macros}>{macros.join(" · ")}</p>
+          )}
+
+          {user && (
+            <button
+              aria-pressed={Boolean(thisWeekItemId)}
+              className={styles.addWeekButton}
+              disabled={planningBusy}
+              onClick={() => void toggleThisWeek()}
+              type="button"
+            >
+              <CalendarPlus aria-hidden="true" size={15} />
+              {thisWeekItemId ? "Remove from this week" : "Add to this week"}
+            </button>
+          )}
+
+          {isAdmin && (
+            <Link className={styles.editLink} href={`/recipes/${recipe.slug}/edit`}>
+              <Pencil aria-hidden="true" size={14} />
+              Edit recipe
+            </Link>
+          )}
+
+          {saveError && <p className={styles.saveError}>{saveError}</p>}
         </section>
 
         <div className={styles.recipeBody}>
           <aside className={styles.ingredients}>
             <div className={styles.stickyInner}>
-              <p className={styles.sectionNumber}>01</p>
               <h2>Ingredients</h2>
               {ingredients.length ? (
                 recipe.ingredientSections.map((section) => (
@@ -406,7 +352,6 @@ export default function RecipePage() {
           </aside>
 
           <section className={styles.method}>
-            <p className={styles.sectionNumber}>02</p>
             <h2>Method</h2>
 
             {steps.length ? (

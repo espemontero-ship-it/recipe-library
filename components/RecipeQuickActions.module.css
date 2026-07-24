@@ -137,3 +137,61 @@
   bottom: 100%;
   color: #ffb4ac;
 }
+
+/* Recipe detail "strip" variant: consolidated action strip per Anexo C —
+   plain text/icons, no button chrome, thin vertical dividers between
+   groups, red accent for active state. */
+.actions.strip {
+  gap: 14px;
+}
+
+.actions.strip > *:not(:last-child) {
+  padding-right: 14px;
+  border-right: 1px solid #ddd;
+}
+
+.actions.strip .iconButton,
+.actions.strip .cookedButton,
+.actions.strip .starButton {
+  min-height: auto;
+  width: auto;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.actions.strip .iconButton svg,
+.actions.strip .cookedButton svg,
+.actions.strip .starButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+.actions.strip .iconButton:hover,
+.actions.strip .cookedButton:hover,
+.actions.strip .starButton:hover,
+.actions.strip .active {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+}
+
+.actions.strip .iconButton:disabled,
+.actions.strip .cookedButton:disabled,
+.actions.strip .starButton:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.actions.strip .rating {
+  gap: 3px;
+}
+
+.actions.strip .error {
+  color: #9f2f25;
+  font-size: 12px;
+}
