@@ -1,9 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
 import { PersonalRecipeSections } from "@/components/PersonalRecipeSections";
-
-const ingredients = ["Chicken", "Shrimp", "Salmon", "Beef", "Sweet Potato", "Pasta"];
-const publications = ["NYT Cooking", "Instagram", "Foodiligence", "Adam Hoad"];
 
 export default function HomePage() {
   return (
@@ -17,19 +13,24 @@ export default function HomePage() {
             you are.
           </p>
 
-          <form className="hero-search" action="/browse">
-            <Search aria-hidden="true" size={21} />
+          <form className="hero-search-row" action="/browse">
             <input
               aria-label="Search recipes"
+              className="hero-search"
               name="q"
               placeholder="Search recipes, ingredients, authors..."
               type="search"
             />
-            <button type="submit">Search</button>
+            <Link className="hero-filters" href="/browse">
+              Filters
+            </Link>
+            <button className="hero-search-submit" type="submit">
+              Search
+            </button>
           </form>
 
           <div className="hero-actions">
-            <Link className="button button--dark" href="/browse">
+            <Link className="button button--quiet" href="/browse">
               Browse library
             </Link>
           </div>
@@ -43,35 +44,6 @@ export default function HomePage() {
       </section>
 
       <PersonalRecipeSections />
-
-      <section className="browse-band">
-        <div>
-          <p className="eyebrow">Find your way in</p>
-          <h2>Browse the library</h2>
-        </div>
-
-        <div className="browse-band__group">
-          <h3>Main ingredient</h3>
-          <div className="browse-links">
-            {ingredients.map((ingredient) => (
-              <Link href={`/browse?q=${encodeURIComponent(ingredient)}`} key={ingredient}>
-                {ingredient}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="browse-band__group">
-          <h3>Publication</h3>
-          <div className="browse-links">
-            {publications.map((publication) => (
-              <Link href={`/browse?q=${encodeURIComponent(publication)}`} key={publication}>
-                {publication}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
     </main>
   );
 }

@@ -133,11 +133,12 @@ Estas son decisiones explícitas de Esperanza que resuelven ambigüedades reales
 #### 10a. ✅ Dirección visual para Home — APROBADA (24 julio 2026)
 Tras muchas rondas de prueba y error (incluyendo errores míos de asumir preferencias sin preguntar, ya corregidos en las "Reglas para decidir cosas estéticas" de este documento), Esperanza aprobó una dirección clara: **estética fiel al sitio real de NYT Cooking** (consultado con búsqueda de imágenes para no inventar de memoria). Concretamente:
 - Fondo blanco/crudo, texto en negro, un único acento en rojo apagado (tipo `#a3272c`) usado con moderación (etiquetas en mayúsculas, enlaces "See all", botón de "Sign up").
-- **Regla de sistema para botones**: un único botón "principal" por pantalla lleva relleno sólido en rojo (la acción más importante de esa pantalla, ej. "Sign up" en Home, "Add to this week" en la ficha). Todo lo demás (Edit recipe, Filters, navegación, acciones secundarias) va en texto plano o subrayado, sin relleno — nunca bloques sólidos negros ni múltiples botones rellenos en la misma pantalla.
-- El hero ("What will you cook next?") se mantiene exactamente como está hoy — Libre Caslon Display, sin cambios.
-- Títulos de sección ("Recently added", "Browse the library") en una serif distinta al hero (ej. Noto Serif u otra serif editorial), en negro.
+- **Regla de sistema para botones**: **"Search" es la acción principal de toda la web** (buscar/encontrar recetas es la función central de Kitchen Index) — lleva el relleno sólido rojo allá donde aparezca (Home, Browse). "Sign up" en Home va SIN relleno (texto/borde), igual que el resto de acciones secundarias. En la ficha de receta, "Add to this week" sigue siendo el botón principal con relleno (no hay buscador en esa pantalla). Nunca más de un botón con relleno sólido por pantalla, y nunca bloques sólidos negros.
+- El hero ("What will you cook next?") se mantiene exactamente como está hoy — Libre Caslon Display, sin cambios. Es la ÚNICA cosa en esa fuente.
+- Títulos de sección ("Recently added", "Browse the library") en **DM Sans, negrita (700), negro** — NO en una serif nueva ni en la del hero (decisión final, sustituye cualquier mención anterior a "Noto Serif u otra serif" para este elemento concreto — esa serif es solo para títulos de PÁGINA como "Browse recipes"/"Edit recipe", ver Resolución de preguntas bloqueantes).
 - Nav con línea inferior roja bajo el enlace activo.
 - Botones y bordes de esquina recta (sin border-radius), estética editorial/prensa.
+- Bandas de "Plan your week" y "Find your way in" van delimitadas por líneas finas negras arriba/abajo (`border-top`/`border-bottom`), sin relleno de color sólido.
 
 #### Sistema de iconos aprobado (no inventar otros)
 Solo estos 4 iconos están aprobados y deben reutilizarse en cualquier pantalla que los necesite — nunca inventar iconos nuevos para categorías o conceptos sin aprobación explícita:
@@ -147,13 +148,32 @@ Solo estos 4 iconos están aprobados y deben reutilizarse en cualquier pantalla 
 - **Estrella** (`star`) — valoración.
 
 Mismo tamaño (~13-16px según contexto), mismo grosor de trazo en los 4, color gris cuando inactivo y rojo (el acento único) cuando activo. Si una pantalla necesita representar un concepto sin icono aprobado (ej. Method, Type, Cuisine, Ingredients en los filtros de Browse), se usa solo texto — no se inventa un icono nuevo sin preguntar primero.
-- Bandas de "Plan your week" y "Find your way in" pasan de bloque de color sólido a bandas delimitadas por líneas finas negras arriba/abajo, sin relleno de color — mucho más "aire" y look de prensa.
-- Botón "Filters" junto al buscador de Home → lleva a `/browse?filters=1` (ya decidido).
 - "Find your way in" con conteos reales dinámicos: `recipe.source.author` (o el campo equivalente en el modelo) para la segunda columna, en vez de `recipe.source.publication` — decisión revisada, se prefiere buscar por autor. `recipe.classification.ingredientsIndex` para "Main ingredient" se mantiene.
 
 **Pendiente:** aplicar esta misma dirección visual a **Planning** y **Shopping** — todavía sin empezar.
 
-**Estado:** maqueta de Home aprobada; pendiente de que Claude Code la implemente en local para verificar con fuentes/datos reales antes de comitear, y de extenderla al resto de pantallas.
+**Estado:** ✅ IMPLEMENTADO Y VALIDADO (24 julio 2026) — Home comprobado en local con datos reales de Supabase y aprobado visualmente por Esperanza tras varias rondas de ajuste. El Anexo A de más abajo ya no es el mockup de miniatura de chat original: se ha sustituido por el HTML/CSS **as-built** real, que es la referencia vigente para Browse/Planning/Shopping (ver también "Sistema de diseño (tokens)" justo debajo).
+
+##### Sistema de diseño (tokens) — fuente de verdad para toda pantalla futura
+Al implementar Home se detectó el mismo problema varias veces: cada tamaño se copiaba suelto del mockup de miniatura sin relación con los demás, así que cada arreglo puntual (tarjeta, enlaces, espaciado) rompía la proporción con el resto. Para no repetirlo en Browse/Planning/Shopping, los tamaños de tipografía y espaciado de Home ya están declarados como variables CSS en `app/globals.css` (`:root`), no como números sueltos — **cualquier pantalla nueva debe reutilizar estas variables, no inventar tamaños nuevos**:
+
+| Variable | Valor | Uso |
+|---|---|---|
+| `--text-hero` | `clamp(4rem, 7.6vw, 7.5rem)` | Titular del hero (Libre Caslon Display), sin cambios respecto a como estaba |
+| `--text-section` | `26px` | Título de sección, ej. "Recently added" |
+| `--text-subsection` | `20px` | Título de tarjeta, de banda ("Sign up to save...") y de sub-bloque ("Browse the library") |
+| `--text-header-brand` | `24px` | Logo "Kitchen Index" en la cabecera |
+| `--text-nav` | `14px` | Enlaces de navegación de la cabecera |
+| `--text-body` | `15px` | Enlaces de contenido real: "See all", ingrediente/autor en "Find your way in" |
+| `--text-eyebrow` | `13px` | Etiqueta roja en mayúsculas (meta-dato) |
+| `--text-label` | `11px` | Etiqueta gris en mayúsculas (micro-dato, ej. "MAIN INGREDIENT") |
+| `--space-section-top` | `72px` | Separación antes de una sección nueva de página |
+| `--space-heading-gap` | `18px` | Entre el título de sección y su contenido |
+| `--space-grid-gap` | `16px` | Gap entre tarjetas de una rejilla |
+| `--space-block-gap` | `56px` | Separación entre bloques/bandas mayores de página |
+| `--space-band-padding` | `22px` | Padding vertical interno de una banda con líneas arriba/abajo |
+
+Colores (`--background`, `--ink`, `--muted`, `--line`, `--accent`, `--accent-soft`) y fuentes (`--display`, `--editorial`, `--sans`) ya existían como variables desde antes y se mantienen igual — `--background` se corrigió de `#f7f3eb` (crudo antiguo) a `#ffffff` (blanco real, como pide la dirección NYT Cooking), efecto colateral global ya visible en toda la web.
 
 #### 10b. Decisiones sobre el panel de filtros de Browse (24 julio 2026)
 - **"Cooked" y "Made before" se fusionan en un único filtro** — Esperanza confirma que son conceptualmente lo mismo.
@@ -235,102 +255,112 @@ No se ejecuta la lista de arriba a abajo por número — se agrupa por impacto/e
 - La tarjeta de receta en modo lista (imagen, título, preview de ingredientes, favorito, hecha, valoración, añadir/quitar semana) es innegociable y no se toca en ningún rediseño.
 
 ## Anexo: maquetas exactas validadas (código fuente de referencia)
-Esto es el HTML/CSS literal de las maquetas que Esperanza aprobó. No es para copiar y pegar tal cual en componentes React — es la referencia visual exacta (estructura, tamaños, colores, tipografías) contra la que debe compararse la implementación real. Ante cualquier duda de "¿cómo se veía exactamente?", esto es la fuente de verdad, no la prosa de las secciones anteriores.
+Esto es el HTML/CSS literal de las maquetas que Esperanza aprobó, **ya corregido a tamaños reales de pantalla completa** (no a escala de miniatura de chat). Es la fuente de verdad absoluta: estructura, colores, tipografías y tamaños en px, todos literales — no requiere interpretación, escalado ni ningún ajuste adicional. Ante cualquier duda, esto manda sobre la prosa de las secciones anteriores.
 
-**Aclaración importante sobre los tamaños en px (24 julio 2026):** este código se generó para caber en un panel de chat estrecho (una vista en miniatura), no en pantalla completa. Por tanto:
-- **Lo que SÍ es fuente de verdad absoluta:** estructura (orden de elementos, qué va sticky, qué va en franja con líneas vs. relleno), colores exactos (`#a3272c`, `#1a1a1a`, etc.), qué fuente va en qué elemento (Libre Caslon Display solo en el hero, DM Sans en títulos de sección, Noto Serif en títulos de página), y las proporciones relativas entre elementos (qué es más grande que qué).
-- **Lo que NO es fuente de verdad absoluta:** los valores de `px` concretos. Donde la prosa de una sección ya especifique un tamaño real (ej. "el hero se mantiene como está hoy" = su tamaño real actual en `clamp()`, no 36px del anexo), o pida explícitamente adaptar a pantalla completa (ej. "aumenta tamaño/espaciado de la barra lateral para pantallas anchas"), esa instrucción prevalece sobre el número de px literal del anexo. El anexo nunca debe interpretarse como "achicar todo a tamaño de miniatura de chat" — eso sería exactamente el tipo de regresión que ya sufrimos antes.
-
-### Anexo A — Home (referencia de 10a)
+### Anexo A — Home (referencia de 10a) — AS-BUILT REAL (24 julio 2026, sustituye el mockup de miniatura anterior)
+Esto ya no es un mockup de chat: es el HTML/CSS tal como está implementado y validado en `app/page.tsx` / `components/PersonalRecipeSections.tsx` / `app/globals.css`, con las variables de la tabla de tokens de arriba. Fuente de verdad vigente para Home y punto de partida para Browse/Planning/Shopping.
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<div style="font-family:'DM Sans',sans-serif;background:#ffffff;border:0.5px solid var(--border);border-radius:4px;overflow:hidden">
+<div style="font-family:'DM Sans',sans-serif;background:#ffffff">
 
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 26px;border-bottom:1px solid #1a1a1a">
-    <span style="font-family:'Libre Caslon Display',serif;font-size:19px;color:#1a1a1a">Kitchen Index</span>
-    <div style="display:flex;gap:22px;font-size:12px;letter-spacing:0.04em;color:#333;text-transform:uppercase">
-      <span style="color:#1a1a1a;font-weight:600;border-bottom:2px solid #a3272c;padding-bottom:3px">Home</span><span>Browse</span><span>Planning</span><span>Shopping</span>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:22px 32px;border-bottom:1px solid #1a1a1a">
+    <span style="font-family:'Libre Caslon Display',serif;font-size:var(--text-header-brand);color:#1a1a1a">Kitchen Index</span>
+    <div style="display:flex;gap:26px;font-size:var(--text-nav);letter-spacing:0.04em;color:#333;text-transform:uppercase">
+      <span style="color:#1a1a1a;font-weight:600;border-bottom:2px solid #a3272c;padding-bottom:4px">Home</span><span>Browse</span><span>Planning</span><span>Shopping</span>
     </div>
   </div>
 
-  <div style="padding:36px 26px 24px">
-    <p style="font-size:11px;letter-spacing:0.1em;color:#a3272c;margin:0 0 8px;font-weight:700;text-transform:uppercase">Your personal cooking library</p>
-    <h1 style="font-family:'Libre Caslon Display',serif;font-size:36px;color:#1a1a1a;margin:0 0 14px">What will you cook next?</h1>
-    <div style="display:flex;gap:8px">
-      <input placeholder="Search recipes, ingredients, authors..." style="flex:1;max-width:340px;border:1px solid #1a1a1a;border-radius:0"/>
-      <button style="border:1px solid #1a1a1a;background:#fff;border-radius:0">Filters</button>
-      <button style="background:#1a1a1a;color:#fff;border:none;border-radius:0">Search</button>
+  <div style="padding:56px 32px 32px">
+    <p style="font-size:var(--text-eyebrow);letter-spacing:0.1em;color:#a3272c;margin:0 0 12px;font-weight:700;text-transform:uppercase">Your personal cooking library</p>
+    <h1 style="font-family:'Libre Caslon Display',serif;font-size:var(--text-hero);color:#1a1a1a;margin:0;line-height:0.9">What will you cook next?</h1>
+    <div style="display:flex;gap:10px;max-width:600px;margin-top:38px">
+      <input placeholder="Search recipes, ingredients, authors..." style="flex:1;border:1px solid #1a1a1a;border-radius:0;padding:10px"/>
+      <button style="border:1px solid #1a1a1a;background:#fff;border-radius:0;padding:0 18px">Filters</button>
+      <button style="background:#a3272c;color:#fff;border:none;border-radius:0;padding:0 22px">Search</button>
     </div>
+    <a style="display:inline-flex;border:1px solid #1a1a1a;padding:0 20px;min-height:48px;align-items:center;margin-top:20px">Browse library</a>
   </div>
 
-  <div style="padding:0 26px 8px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h2 style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:22px;color:#1a1a1a;margin:0">Recently added</h2>
-      <span style="font-size:12px;color:#a3272c;text-decoration:underline">See all</span>
+  <div style="padding:0 32px 8px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:var(--space-heading-gap)">
+      <h2 style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:var(--text-section);color:#1a1a1a;margin:0">Recently Added</h2>
+      <a style="font-size:var(--text-body);color:#a3272c;text-decoration:underline;font-weight:700">See all</a>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
-      <!-- 4 tarjetas de receta reales -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-grid-gap);margin-bottom:var(--space-block-gap)">
+      <div>
+        <div style="aspect-ratio:4/3;background:#f0f0f0;margin-bottom:8px"></div>
+        <h3 style="font-family:'DM Sans',sans-serif;font-size:var(--text-subsection);font-weight:600;color:#1a1a1a;margin:0">Título de la receta</h3>
+      </div>
+      <!-- 3 tarjetas más, mismo patrón: solo imagen + título, sin autor/nutrición/estado -->
     </div>
 
-    <div style="border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;padding:18px 0;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-      <div><p style="font-size:11px;letter-spacing:0.1em;color:#a3272c;margin:0 0 6px;font-weight:700;text-transform:uppercase">Plan your week</p><h3 style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a;margin:0">Sign up to save your own weekly plan and shopping list.</h3></div>
-      <button style="background:#a3272c;color:#fff;border:none;border-radius:0;white-space:nowrap">Sign up</button>
+    <div style="border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;padding:var(--space-band-padding) 0;margin-bottom:var(--space-block-gap);display:flex;justify-content:space-between;align-items:center">
+      <div><p style="font-size:var(--text-eyebrow);letter-spacing:0.1em;color:#a3272c;margin:0 0 8px;font-weight:700;text-transform:uppercase">Plan your week</p><h3 style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:var(--text-subsection);color:#1a1a1a;margin:0">Sign up to save your own weekly plan and shopping list.</h3></div>
+      <button style="border:1px solid #1a1a1a;background:#fff;border-radius:0;padding:10px 20px;white-space:nowrap">Sign up</button>
     </div>
 
-    <div style="padding-bottom:20px">
-      <p style="font-size:11px;letter-spacing:0.1em;color:#a3272c;margin:0 0 6px;font-weight:700;text-transform:uppercase">Find your way in</p>
-      <h3 style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a;margin:0 0 12px">Browse the library</h3>
-      <p style="font-size:10px;color:#888;text-transform:uppercase;margin:0 0 6px">Main ingredient</p>
-      <div style="display:flex;gap:14px;margin-bottom:12px;font-size:12px"><span>Chicken · 86</span><span>Pasta · 54</span><span>Salmon · 31</span></div>
-      <p style="font-size:10px;color:#888;text-transform:uppercase;margin:0 0 6px">Author</p>
-      <div style="display:flex;gap:14px;font-size:12px"><span>Adam Hoad · 12</span><span>Alfonso D. Martín · 8</span></div>
+    <div style="padding-bottom:24px">
+      <p style="font-size:var(--text-eyebrow);letter-spacing:0.1em;color:#a3272c;margin:0 0 8px;font-weight:700;text-transform:uppercase">Find your way in</p>
+      <h3 style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:var(--text-subsection);color:#1a1a1a;margin:0 0 14px">Browse the library</h3>
+      <p style="font-size:var(--text-label);color:#888;text-transform:uppercase;margin:0 0 8px">Main ingredient</p>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:14px;font-size:var(--text-body)"><a style="text-decoration:underline">chicken · 177</a><a style="text-decoration:underline">greek yogurt · 130</a><a style="text-decoration:underline">lemon · 115</a><a style="text-decoration:underline">tomato · 112</a><a style="text-decoration:underline">soy sauce · 107</a></div>
+      <p style="font-size:var(--text-label);color:#888;text-transform:uppercase;margin:0 0 8px">Author</p>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:var(--text-body)"><a style="text-decoration:underline">Adam Hoad · 46</a><a style="text-decoration:underline">@ADAMHOAD_COACHING · 32</a><a style="text-decoration:underline">Chris Lee · 10</a><a style="text-decoration:underline">Arash Hashemi · 8</a></div>
     </div>
   </div>
 </div>
 ```
-**Puntos clave que no se deben perder:** el hero es la ÚNICA cosa en Libre Caslon Display. "Recently added" es `<h2>` en DM Sans 700, 22px. El banner "Plan your week" tiene el titular en DM Sans 700 a **16px** (no más grande), en 1-2 líneas. Orden de botones: Filters antes que Search. Bandas delimitadas por `border-top`/`border-bottom`, nunca relleno de color sólido.
+**Diferencias reales frente al mockup de miniatura original** (por si se compara con capturas antiguas de esta sesión):
+- Fondo de toda la web pasado de crudo `#f7f3eb` a blanco `#ffffff` (variable `--background`, efecto colateral global).
+- Tarjeta de receta: solo imagen (proporción 4:3, no un alto fijo) + título — sin autor, sin macros, sin etiqueta de estado (decisión explícita de Esperanza).
+- Título de tarjeta subido de 13px a `--text-subsection` (20px) tras validar que 13px se veía "enano" al lado de la imagen.
+- "See all" y los enlaces de ingrediente/autor subidos de 13px a `--text-body` (15px), con subrayado permanente (antes sin decoración).
+- Separación entre bloques ("Recently added" → "Plan your week" → "Find your way in") subida de ~20px a `--space-block-gap` (56px) — el mockup de miniatura estaba pensado para un panel de chat estrecho, no para el respiro de una página editorial completa.
+- "Find your way in" con conteos reales dinámicos y deduplicados sin distinguir mayúsculas (evita que "Adam Hoad"/"adam hoad" cuenten como autores distintos y desplacen del top 5 a autores reales).
 
-### Anexo B — Browse (referencia de 10c)
+**Estructura (sin cambios respecto a la dirección original):** el hero es la ÚNICA cosa en Libre Caslon Display, salvo el logo de la cabecera (excepción explícita del propio Anexo, no una desviación). Orden de botones: Filters antes que Search. "Search" es el único botón con relleno sólido rojo de toda la pantalla Home — ni "Sign up" ni "Filters" ni "Browse library" llevan relleno. Bandas delimitadas por `border-top`/`border-bottom`, nunca relleno de color sólido.
+
+### Anexo B — Browse (referencia de 10c) — TAMAÑOS REALES DE PANTALLA
 ```html
 <div style="font-family:'DM Sans',sans-serif;background:#ffffff;border:0.5px solid var(--border);border-radius:4px;overflow:hidden">
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #1a1a1a">
-    <span style="font-family:'Libre Caslon Display',serif;font-size:17px;color:#1a1a1a">Kitchen Index</span>
-    <div style="display:flex;gap:20px;font-size:11px;letter-spacing:0.04em;color:#333;text-transform:uppercase">
-      <span>Home</span><span style="color:#1a1a1a;font-weight:600;border-bottom:2px solid #a3272c;padding-bottom:3px">Browse</span><span>Planning</span><span>Shopping</span>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:22px 32px;border-bottom:1px solid #1a1a1a">
+    <span style="font-family:'Libre Caslon Display',serif;font-size:22px;color:#1a1a1a">Kitchen Index</span>
+    <div style="display:flex;gap:26px;font-size:14px;letter-spacing:0.04em;color:#333;text-transform:uppercase">
+      <span>Home</span><span style="color:#1a1a1a;font-weight:600;border-bottom:2px solid #a3272c;padding-bottom:4px">Browse</span><span>Planning</span><span>Shopping</span>
     </div>
   </div>
 
-  <div style="padding:18px 24px">
-    <h1 style="font-family:'Noto Serif',serif;font-size:26px;color:#1a1a1a;margin:0 0 12px">Browse recipes</h1>
-    <div style="display:flex;gap:8px">
-      <input placeholder="Search title, ingredient, author..." style="flex:1;border:1px solid #1a1a1a;border-radius:0"/>
-      <div style="display:flex;border:1px solid #1a1a1a"><span style="padding:6px 10px;border-right:1px solid #1a1a1a">⊞</span><span style="padding:6px 10px;background:#1a1a1a;color:#fff">☰</span></div>
+  <div style="padding:26px 32px">
+    <h1 style="font-family:'Noto Serif',serif;font-size:34px;color:#1a1a1a;margin:0 0 16px">Browse recipes</h1>
+    <div style="display:flex;gap:10px">
+      <input placeholder="Search title, ingredient, author..." style="flex:1;border:1px solid #1a1a1a;border-radius:0;padding:10px"/>
+      <div style="display:flex;border:1px solid #1a1a1a"><span style="padding:10px 14px;border-right:1px solid #1a1a1a">⊞</span><span style="padding:10px 14px;background:#1a1a1a;color:#fff">☰</span></div>
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:220px 1fr;gap:0;border-top:1px solid #1a1a1a">
-    <div style="padding:16px 16px 16px 24px;border-right:1px solid #e5e5e5">
-      <!-- barra lateral: chips agrupados por categoría, estilo .rchip/.rchip.on abajo -->
-      <p style="font-size:10px;letter-spacing:0.06em;color:#1a1a1a;font-weight:700;text-transform:uppercase;margin:0 0 7px">Personal</p>
-      <div style="margin-bottom:14px">
-        <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:4px 10px;border:1px solid #999;color:#333;margin:0 5px 5px 0">Favorites</span>
-        <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:4px 10px;background:#1a1a1a;color:#fff;border:1px solid #1a1a1a;margin:0 5px 5px 0">Planning</span>
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:0;border-top:1px solid #1a1a1a">
+    <div style="padding:22px 20px 22px 32px;border-right:1px solid #e5e5e5">
+      <!-- barra lateral: chips agrupados por categoría -->
+      <p style="font-size:12px;letter-spacing:0.06em;color:#1a1a1a;font-weight:700;text-transform:uppercase;margin:0 0 10px">Personal</p>
+      <div style="margin-bottom:18px">
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:14px;padding:6px 12px;border:1px solid #999;color:#333;margin:0 6px 6px 0">Favorites</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:14px;padding:6px 12px;background:#1a1a1a;color:#fff;border:1px solid #1a1a1a;margin:0 6px 6px 0">Planning</span>
       </div>
       <!-- Rating, Method, Type, Cuisine, Ingredients: mismo patrón de chips, con conteo real "· N" -->
     </div>
-    <div style="padding:16px 24px">
-      <div style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid #e5e5e5">
-        <div style="width:110px;height:80px;background:#f0f0f0;flex-shrink:0"></div>
+    <div style="padding:22px 32px">
+      <div style="display:flex;gap:20px;padding:16px 0;border-bottom:1px solid #e5e5e5">
+        <div style="width:130px;height:95px;background:#f0f0f0;flex-shrink:0"></div>
         <div style="flex:1;min-width:0">
-          <p style="font-size:14px;font-weight:600;color:#1a1a1a;margin:0 0 6px">Garlic Parmesan Chicken Wraps</p>
-          <p style="font-size:12px;color:#888;margin:0;max-width:460px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Chicken, garlic, parmesan, tortilla, spinach <span style="color:#a3272c">+3 more</span></p>
+          <p style="font-size:16px;font-weight:600;color:#1a1a1a;margin:0 0 8px">Garlic Parmesan Chicken Wraps</p>
+          <p style="font-size:14px;color:#888;margin:0;max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Chicken, garlic, parmesan, tortilla, spinach <span style="color:#a3272c">+3 more</span></p>
         </div>
       </div>
     </div>
   </div>
 </div>
 ```
-**Puntos clave:** buscador con `flex:1` (nunca ancho fijo). Filtros = chips (fondo negro sólido `#1a1a1a` si activo, borde `#999` si no — nunca checkbox), tamaño de texto ≥12px, con icono aprobado solo en Personal/Rating. Texto de ingredientes con `max-width` + `text-overflow:ellipsis` (nunca 3 columnas fijas con hueco vacío). "Search" es el único botón de relleno sólido de esta pantalla (rojo, no negro).
+**Tamaños reales confirmados:** barra lateral a **280px** de ancho (no 220px), chips a **14px** de texto (no 12px), padding generoso `6px 12px`. Estos números YA son los reales para pantalla completa — no hace falta agrandar nada más allá de esto.
+**Estructura (igual que antes):** buscador con `flex:1`. Filtros = chips (fondo negro sólido si activo, borde `#999` si no — nunca checkbox). Texto de ingredientes con `max-width` + `text-overflow:ellipsis`. "Search" es el único botón de relleno sólido de esta pantalla.
 
 ### Anexo C — Ficha de receta (referencia de 10d)
 ```html

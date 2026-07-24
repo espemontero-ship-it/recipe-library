@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { HomeRecipeCard } from "@/components/HomeRecipeCard";
 import { useAuth } from "@/lib/auth";
@@ -12,18 +11,45 @@ import {
   type PlanningItem,
 } from "@/lib/planning";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
-import { formatRange, Recipe } from "@/lib/recipeModel";
+import { Recipe } from "@/lib/recipeModel";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 
 function SectionHeading({ title, href = "/browse" }: { title: string; href?: string }) {
   return (
     <div className="section-heading">
       <h2>{title}</h2>
-      <Link href={href}>
-        See all <ArrowRight aria-hidden="true" size={16} />
-      </Link>
+      <Link href={href}>See all</Link>
     </div>
   );
+}
+
+function isProperCased(value: string) {
+  return value === value.replace(/\w\S*/g, (word) => word[0].toUpperCase() + word.slice(1).toLowerCase());
+}
+
+function topByCount(values: string[], limit: number) {
+  // Group case-insensitively so the same real value ("Adam Hoad" vs "adam hoad")
+  // isn't split across multiple entries and pushed out of the top N.
+  const groups = new Map<string, Map<string, number>>();
+  for (const raw of values) {
+    const value = raw.trim();
+    if (!value) continue;
+    const key = value.toLowerCase();
+    const variants = groups.get(key) ?? new Map<string, number>();
+    variants.set(value, (variants.get(value) ?? 0) + 1);
+    groups.set(key, variants);
+  }
+
+  return [...groups.values()]
+    .map((variants) => {
+      const count = [...variants.values()].reduce((sum, n) => sum + n, 0);
+      const entries = [...variants.entries()];
+      const [name] = entries.find(([variant]) => isProperCased(variant)) ??
+        entries.sort((a, b) => b[1] - a[1])[0];
+      return { name, count };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
 }
 
 function EmptyState({
@@ -43,22 +69,11 @@ function EmptyState({
   );
 }
 
-function cardProps(recipe: Recipe, status?: string) {
+function cardProps(recipe: Recipe) {
   return {
     title: recipe.title,
     href: `/recipes/${recipe.slug}`,
-    author: recipe.source.author,
-    publication: recipe.source.type,
-    calories:
-      recipe.nutrition.calories.min === null
-        ? null
-        : `${formatRange(recipe.nutrition.calories)} kcal`,
-    protein:
-      recipe.nutrition.proteinG.min === null
-        ? null
-        : `${formatRange(recipe.nutrition.proteinG, " g")} protein`,
     image: recipe.media.heroImage,
-    status,
   };
 }
 
@@ -129,6 +144,22 @@ export function PersonalRecipeSections() {
     [recipes],
   );
 
+  const topIngredients = useMemo(
+    () => topByCount(recipes.flatMap((recipe) => recipe.classification.ingredientsIndex), 5),
+    [recipes],
+  );
+
+  const topAuthors = useMemo(
+    () =>
+      topByCount(
+        recipes
+          .map((recipe) => recipe.source.author)
+          .filter((author): author is string => Boolean(author)),
+        5,
+      ),
+    [recipes],
+  );
+
   const thisWeekRecipes = useMemo(() => {
     const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
     const currentWeek = getWeekStart();
@@ -177,13 +208,40 @@ export function PersonalRecipeSections() {
         <section className="browse-band">
           <div>
             <p className="eyebrow">Plan your week</p>
-            <h2>Sign up to save your own weekly plan and shopping list.</h2>
-            <Link className="button button--dark" href="/signup">
-              Sign up
-            </Link>
+            <h3>Sign up to save your own weekly plan and shopping list.</h3>
           </div>
+          <Link className="button button--quiet" href="/signup">
+            Sign up
+          </Link>
         </section>
       )}
+
+      <section className="browse-explore">
+        <p className="eyebrow">Find your way in</p>
+        <h3>Browse the library</h3>
+
+        <div className="browse-explore__group">
+          <p className="browse-explore__label">Main ingredient</p>
+          <div className="browse-links">
+            {topIngredients.map(({ name, count }) => (
+              <Link href={`/browse?q=${encodeURIComponent(name)}`} key={name}>
+                {name} · {count}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="browse-explore__group">
+          <p className="browse-explore__label">Author</p>
+          <div className="browse-links">
+            {topAuthors.map(({ name, count }) => (
+              <Link href={`/browse?q=${encodeURIComponent(name)}`} key={name}>
+                {name} · {count}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
     </>
   );
 }
