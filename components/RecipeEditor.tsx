@@ -287,7 +287,7 @@ export function RecipeEditor({
                   onChange={(event) =>
                     patch("yield", { ...recipe.yield, timeDisplay: event.target.value || null })
                   }
-                  placeholder="About 4 hours"
+                  placeholder="e.g. About 4 hours"
                   value={recipe.yield.timeDisplay ?? ""}
                 />
               </label>

@@ -504,6 +504,21 @@ function looksLikeIngredientSubheading(value: string) {
     /:$/.test(line);
 }
 
+const TITLE_CASE_MINOR_WORD = new Set(["and", "or", "the", "of", "in", "with", "a", "an", "to", "for"]);
+
+// Distinguishes a real section title ("Chicken Skewers", "Red Thai Sauce") from a
+// lowercase continuation fragment of the previous ingredient ("chunks in brine,
+// drained") — both are short, punctuation-free lines that may precede an ingredient,
+// but only the former has every significant word capitalised.
+function looksTitleCased(value: string) {
+  const words = value.split(/\s+/).filter(Boolean);
+  if (!words.length) return false;
+  return words.every((word, index) => {
+    if (index > 0 && TITLE_CASE_MINOR_WORD.has(word.toLowerCase())) return true;
+    return /^[A-ZÀ-Ý]/.test(word);
+  });
+}
+
 function looksLikeStepBody(value: string) {
   const line = cleanContentLine(value);
   return looksLikeActionLine(line) || /^(?:in|into|using|once|meanwhile|when|after|then|meanwhile|with)\b/i.test(line);
@@ -537,7 +552,7 @@ function ingredientHeadingSuffix(value: string) {
   if (!match) return "";
   const suffix = match[1].trim();
   if (/^(?:for|para)?\s*\d+(?:[.,]\d+)?\s*(?:servings?|serves?|raciones?|porciones?)?\)?$/i.test(suffix)) return "";
-  if (/^\([^)]*(?:servings?|raciones?|porciones?)[^)]*\)$/i.test(suffix)) return "";
+  if (/^\([^)]*(?:servings?|serves?|raciones?|porciones?)[^)]*\)$/i.test(suffix)) return "";
   if (!/[\p{L}]/u.test(suffix)) return "";
   return suffix.replace(/^for\s+/i, "").trim();
 }
@@ -572,7 +587,18 @@ function parseExplicitIngredients(lines: string[], start: number) {
     if (isServingsLine(line) || /^(?:yield|servings?|serves|makes|recipe\s*\(|raciones?|porciones?)\s*:?/i.test(line)) continue;
     if (/^(?:ingredient checklist|ingredient substitution guide)$/i.test(line)) continue;
 
-    if (looksLikeIngredientSubheading(line)) {
+    const nextUseful = lines
+      .slice(index + 1, end)
+      .map(cleanContentLine)
+      .find((candidate) => candidate && !isJunkLine(candidate) && !isMacroLine(candidate));
+    const shortHeadingBeforeIngredient =
+      !isIngredientLikeLine(line) &&
+      line.length <= 60 &&
+      !/[.!?]$/.test(line) &&
+      looksTitleCased(line) &&
+      Boolean(nextUseful && isIngredientLikeLine(nextUseful));
+
+    if (looksLikeIngredientSubheading(line) || shortHeadingBeforeIngredient) {
       pushIngredientHeading(ingredients, line);
       continue;
     }
@@ -701,7 +727,7 @@ function methodMarker(value: string): MethodMarker {
   const keycap = value.match(/^\s*([1-9])(?:\uFE0F?\u20E3)\s*(.*)$/);
   if (keycap) return { number: keycap[1], inlineBody: keycap[2].trim() };
 
-  const bullet = value.match(/^\s*[-*•‣▪◦]\s*(.+)$/);
+  const bullet = value.match(/^\s*(?:[-*•‣▪◦]|\p{Extended_Pictographic}️?)\s*(.+)$/u);
   if (bullet) return { number: null, inlineBody: bullet[1].trim() };
 
   return null;
@@ -920,6 +946,25 @@ function extractContextualAuthor(lines: string[], title: string) {
   return "";
 }
 
+// Last-resort author fallback: on a simplified paste (title, then byline, then
+// URL/ingredients — no "Following" button or "(N servings)" line to anchor on),
+// the line right after the title is usually the author if it's short and
+// name-shaped, with nothing recipe-like about it yet.
+function extractLeadingByline(lines: string[], title: string) {
+  const useful = lines
+    .map((raw) => cleanContentLine(raw))
+    .filter((line) => line && !URL_LINE.test(line) && !isJunkLine(line));
+
+  const titleIndex = useful.findIndex((line) => line === title);
+  const candidate = titleIndex >= 0 ? useful[titleIndex + 1] : undefined;
+  if (!candidate) return "";
+  if (/\d/.test(candidate) || candidate.length > 60) return "";
+  if (isServingsLine(candidate) || SECTION_HEADINGS.ingredients.test(candidate) || SECTION_HEADINGS.method.test(candidate)) return "";
+  if (looksLikeIngredientSubheading(candidate)) return "";
+  if (!/^[\p{L}'’.-]+(?:\s+[\p{L}'’.-]+){0,4}$/u.test(candidate)) return "";
+  return candidate;
+}
+
 function extractServings(lines: string[]) {
   const normalized = normalizeText(lines.join("\n"));
   const patterns = [
@@ -994,7 +1039,11 @@ export function parseRecipe(raw: string, context: PasteContext = {}): ParsedReci
       : "";
   const socialAuthor = extractSocialAuthor(lines, sourceType);
   const title = extractTitle(lines, sourceType, socialAuthor);
-  const author = extractAuthor(lines) || socialAuthor || extractContextualAuthor(lines, title);
+  const author =
+    extractAuthor(lines) ||
+    socialAuthor ||
+    extractContextualAuthor(lines, title) ||
+    extractLeadingByline(lines, title);
   const ingredients = parseIngredients(lines, title, author);
   const finalIngredients = ingredients.length ? ingredients : parseSocialIngredients(lines, title, author);
   const imageUrl = context.imageUrl?.trim() || "";
