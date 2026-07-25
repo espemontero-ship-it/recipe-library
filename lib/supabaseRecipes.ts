@@ -1071,3 +1071,82 @@ export async function restoreSupabaseRecipeSourceBackup(
     onProgress?.(completed, rows.length);
   }
 }
+
+export type RecipeNutritionBackupRow = {
+  id: string;
+  title: string;
+  updated_at: string | null;
+  calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fat: number | null;
+  fiber: number | null;
+};
+
+export type RecipeNutritionUpdate = {
+  id: string;
+  expectedUpdatedAt: string;
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
+  fiber?: number | null;
+};
+
+export async function getRecipeNutritionBackup(): Promise<RecipeNutritionBackupRow[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  const { data, error } = await supabase
+    .from(RECIPE_TABLE)
+    .select("id,title,updated_at,calories,protein,carbs,fat,fiber")
+    .order("title", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as RecipeNutritionBackupRow[];
+}
+
+export async function updateSupabaseRecipeNutrition(update: RecipeNutritionUpdate): Promise<Recipe> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  const values: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (Object.prototype.hasOwnProperty.call(update, "calories")) values.calories = update.calories ?? null;
+  if (Object.prototype.hasOwnProperty.call(update, "protein")) values.protein = update.protein ?? null;
+  if (Object.prototype.hasOwnProperty.call(update, "carbs")) values.carbs = update.carbs ?? null;
+  if (Object.prototype.hasOwnProperty.call(update, "fat")) values.fat = update.fat ?? null;
+  if (Object.prototype.hasOwnProperty.call(update, "fiber")) values.fiber = update.fiber ?? null;
+
+  const { data, error } = await supabase
+    .from(RECIPE_TABLE)
+    .update(values)
+    .eq("id", update.id)
+    .eq("updated_at", update.expectedUpdatedAt)
+    .select("*")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Recipe changed while nutrition estimates were applying; it was skipped safely.");
+  return mapRecipeRow(data as RecipeRow);
+}
+
+export async function restoreSupabaseRecipeNutritionBackup(
+  rows: RecipeNutritionBackupRow[],
+  onProgress?: (completed: number, total: number) => void,
+) {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  let completed = 0;
+  for (const row of rows) {
+    const { error } = await supabase
+      .from(RECIPE_TABLE)
+      .update({
+        calories: row.calories,
+        protein: row.protein,
+        carbs: row.carbs,
+        fat: row.fat,
+        fiber: row.fiber,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+    if (error) throw error;
+    completed += 1;
+    onProgress?.(completed, rows.length);
+  }
+}
