@@ -19,10 +19,14 @@ import { TagListField } from "@/components/TagListField";
 import {
   createEntityId,
   type Recipe,
-  type RecipeClassification,
   type RecipeMethodSection,
 } from "@/lib/recipeModel";
 import { getSupabaseClient } from "@/lib/supabase";
+import {
+  getClassificationSuggestions,
+  type ClassificationField,
+  type ClassificationSuggestions,
+} from "@/lib/supabaseRecipes";
 import { parseSimpleNumber } from "@/lib/ingredientParser";
 import styles from "./RecipeEditor.module.css";
 
@@ -59,15 +63,12 @@ function imageFileName(url: string | null) {
   }
 }
 
-const CLASSIFICATION_FIELDS: Array<[keyof RecipeClassification, string]> = [
+const CLASSIFICATION_FIELDS: Array<[ClassificationField, string]> = [
   ["ingredientsIndex", "Main ingredients"],
-  ["dish", "Dish type"],
   ["formats", "Format"],
   ["mealTypes", "Meal"],
   ["cookingMethods", "Cooking methods"],
   ["cuisines", "Cuisine"],
-  ["collections", "Collections"],
-  ["tags", "Tags"],
 ];
 
 type TimeFieldKey =
@@ -114,7 +115,20 @@ export function RecipeEditor({
   const [sourceMessage, setSourceMessage] = useState("");
   const [sourceCollapsed, setSourceCollapsed] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [classificationSuggestions, setClassificationSuggestions] = useState<ClassificationSuggestions | null>(null);
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    let active = true;
+    getClassificationSuggestions()
+      .then((suggestions) => {
+        if (active) setClassificationSuggestions(suggestions);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!dirty) return;
@@ -423,6 +437,7 @@ export function RecipeEditor({
                   <TagListField
                     containerClassName={styles.pills}
                     inputClassName={styles.pillInput}
+                    newValueClassName={styles.tagSuggestionNew}
                     onChange={(values) =>
                       patch("classification", {
                         ...recipe.classification,
@@ -432,6 +447,10 @@ export function RecipeEditor({
                     }
                     pillClassName={styles.pill}
                     removeClassName={styles.pillRemove}
+                    suggestionCountClassName={styles.tagSuggestionCount}
+                    suggestionItemClassName={styles.tagSuggestionItem}
+                    suggestions={classificationSuggestions?.[key] ?? []}
+                    suggestionsClassName={styles.tagSuggestions}
                     values={recipe.classification[key]}
                   />
                 </div>

@@ -482,6 +482,60 @@ export async function getSupabaseRecipes(): Promise<Recipe[]> {
   return (data as RecipeRow[]).map(mapRecipeRow);
 }
 
+export type ClassificationField =
+  | "ingredientsIndex"
+  | "formats"
+  | "mealTypes"
+  | "cookingMethods"
+  | "cuisines";
+
+export type ClassificationSuggestions = Record<ClassificationField, Array<{ value: string; count: number }>>;
+
+const CLASSIFICATION_COLUMNS: Record<ClassificationField, string> = {
+  ingredientsIndex: "ingredients_index",
+  formats: "format",
+  mealTypes: "meal_type",
+  cookingMethods: "cooking_methods",
+  cuisines: "cuisines",
+};
+
+// Powers the "existing values" autocomplete in the classification editor. Values are
+// deduped case-insensitively (recipes disagree on casing today) and the most common
+// casing variant is kept as the display label, so "Feta" and "feta" collapse into one
+// suggestion instead of looking like two different tags.
+export async function getClassificationSuggestions(): Promise<ClassificationSuggestions> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  const columns = Object.values(CLASSIFICATION_COLUMNS);
+  const { data, error } = await supabase.from(RECIPE_TABLE).select(columns.join(","));
+  if (error) throw error;
+  const rows = data as unknown as Record<string, string[] | null>[];
+
+  const result = {} as ClassificationSuggestions;
+  for (const [field, column] of Object.entries(CLASSIFICATION_COLUMNS) as [ClassificationField, string][]) {
+    const variantsByKey = new Map<string, Map<string, number>>();
+    for (const row of rows) {
+      for (const raw of row[column] ?? []) {
+        const value = raw.trim();
+        if (!value) continue;
+        const key = value.toLowerCase();
+        const variants = variantsByKey.get(key) ?? new Map<string, number>();
+        variants.set(value, (variants.get(value) ?? 0) + 1);
+        variantsByKey.set(key, variants);
+      }
+    }
+
+    result[field] = Array.from(variantsByKey.values())
+      .map((variants) => {
+        const [display] = Array.from(variants.entries()).sort((a, b) => b[1] - a[1])[0];
+        const count = Array.from(variants.values()).reduce((total, n) => total + n, 0);
+        return { value: display, count };
+      })
+      .sort((a, b) => b.count - a.count);
+  }
+  return result;
+}
+
 export async function getSupabaseRecipe(idOrSlug: string): Promise<Recipe | null> {
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error("Supabase environment variables are missing.");

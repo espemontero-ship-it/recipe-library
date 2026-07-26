@@ -345,6 +345,7 @@
 }
 
 .tagField {
+  position: relative;
   margin-bottom: 8px;
 }
 
@@ -401,6 +402,59 @@
   padding: 4px;
   font: inherit;
   font-size: 12.5px;
+}
+
+.tagSuggestions {
+  position: absolute;
+  z-index: 30;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--ink);
+  border-top: 0;
+  background: #fff;
+}
+
+.tagSuggestionItem,
+.tagSuggestionNew {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+}
+
+.tagSuggestionItem:hover,
+.tagSuggestionNew:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tagSuggestionCount {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.tagSuggestionItem:hover .tagSuggestionCount {
+  color: var(--accent);
+}
+
+.tagSuggestionNew {
+  font-weight: 600;
 }
 
 .methodSection {
