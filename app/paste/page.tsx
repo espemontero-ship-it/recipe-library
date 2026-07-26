@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  Check,
   ClipboardPaste,
   Loader2,
   Sparkles,
@@ -21,6 +22,7 @@ import {
   extractPasteContextFromHtml,
   normalizeSourceUrl,
   parseRecipe,
+  splitMultipleRecipes,
   type PasteContext,
 } from "@/lib/recipePasteParser";
 import { createSupabaseRecipeFromRecipe } from "@/lib/supabaseRecipes";
@@ -150,11 +152,45 @@ function draftFromParser(raw: string, parsed: ReturnType<typeof parseRecipe>): R
   };
 }
 
+async function buildDraft(chunk: string, context: PasteContext): Promise<Recipe> {
+  let parsed = parseRecipe(chunk, context);
+
+  if (parsed.sourceUrl) {
+    try {
+      const response = await fetch("/api/source-metadata", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: parsed.sourceUrl }),
+      });
+      const metadata = (await response.json()) as {
+        sourceUrl?: string | null;
+        author?: string | null;
+        siteName?: string | null;
+        imageUrl?: string | null;
+      };
+      parsed = {
+        ...parsed,
+        sourceUrl: metadata.sourceUrl || parsed.sourceUrl,
+        author: parsed.author || metadata.author || "",
+        publication: parsed.publication || metadata.siteName || "",
+        imageUrl: parsed.imageUrl || metadata.imageUrl || "",
+        imageStatus: parsed.imageUrl || metadata.imageUrl ? "found_source" : "missing",
+      };
+    } catch {
+      // The recipe remains fully editable if the source blocks metadata lookup.
+    }
+  }
+
+  return draftFromParser(chunk, parsed);
+}
+
 function PasteRecipePageContent() {
   const router = useRouter();
   const [raw, setRaw] = useState("");
   const [pasteContext, setPasteContext] = useState<PasteContext>({});
-  const [draft, setDraft] = useState<Recipe | null>(null);
+  const [drafts, setDrafts] = useState<Recipe[] | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [savedSlugs, setSavedSlugs] = useState<Record<number, string>>({});
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
@@ -184,35 +220,11 @@ function PasteRecipePageContent() {
     setParsing(true);
     setError("");
     try {
-      let parsed = parseRecipe(raw, pasteContext);
-
-      if (parsed.sourceUrl) {
-        try {
-          const response = await fetch("/api/source-metadata", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ url: parsed.sourceUrl }),
-          });
-          const metadata = (await response.json()) as {
-            sourceUrl?: string | null;
-            author?: string | null;
-            siteName?: string | null;
-            imageUrl?: string | null;
-          };
-          parsed = {
-            ...parsed,
-            sourceUrl: metadata.sourceUrl || parsed.sourceUrl,
-            author: parsed.author || metadata.author || "",
-            publication: parsed.publication || metadata.siteName || "",
-            imageUrl: parsed.imageUrl || metadata.imageUrl || "",
-            imageStatus: parsed.imageUrl || metadata.imageUrl ? "found_source" : "missing",
-          };
-        } catch {
-          // The recipe remains fully editable if the source blocks metadata lookup.
-        }
-      }
-
-      setDraft(draftFromParser(raw, parsed));
+      const chunks = splitMultipleRecipes(raw);
+      const built = await Promise.all(chunks.map((chunk) => buildDraft(chunk, pasteContext)));
+      setSavedSlugs({});
+      setDrafts(built);
+      setActiveIndex(built.length === 1 ? 0 : null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The recipe could not be parsed.");
     } finally {
@@ -220,18 +232,72 @@ function PasteRecipePageContent() {
     }
   }
 
-  if (draft) {
+  function startOver() {
+    setDrafts(null);
+    setActiveIndex(null);
+    setSavedSlugs({});
+  }
+
+  if (drafts && activeIndex !== null) {
+    const single = drafts.length === 1;
     return (
       <RecipeEditor
-        initialRecipe={draft}
+        initialRecipe={drafts[activeIndex]}
         mode="review"
-        onCancel={() => setDraft(null)}
+        onCancel={() => (single ? startOver() : setActiveIndex(null))}
         onSave={async (recipe) => {
           const saved = await createSupabaseRecipeFromRecipe(recipe);
-          router.push(`/recipes/${saved.slug}`);
-          router.refresh();
+          if (single) {
+            router.push(`/recipes/${saved.slug}`);
+            router.refresh();
+            return;
+          }
+          setSavedSlugs((current) => ({ ...current, [activeIndex]: saved.slug }));
+          setActiveIndex(null);
         }}
       />
+    );
+  }
+
+  if (drafts && drafts.length > 1) {
+    const savedCount = Object.keys(savedSlugs).length;
+    return (
+      <main className={styles.page}>
+        <div className={styles.topBar}>
+          <button className={styles.backLink} onClick={startOver} type="button">
+            <ArrowLeft aria-hidden="true" size={16} /> Back to pasted text
+          </button>
+          <span className={styles.version}>Import and review</span>
+        </div>
+
+        <section className={styles.intro}>
+          <p className={styles.eyebrow}>Add recipes</p>
+          <h1>{drafts.length} recipes detected.</h1>
+          <p>
+            {savedCount} of {drafts.length} saved. Review each one before it&apos;s added to the library.
+          </p>
+        </section>
+
+        <ul className={styles.queueList}>
+          {drafts.map((draft, index) => {
+            const savedSlug = savedSlugs[index];
+            return (
+              <li className={styles.queueItem} key={draft.id}>
+                <span className={styles.queueTitle}>{draft.title || "Untitled recipe"}</span>
+                {savedSlug ? (
+                  <Link className={styles.queueSaved} href={`/recipes/${savedSlug}`}>
+                    <Check aria-hidden="true" size={15} /> Saved
+                  </Link>
+                ) : (
+                  <button className={styles.queueReview} onClick={() => setActiveIndex(index)} type="button">
+                    Review
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </main>
     );
   }
 
@@ -269,6 +335,11 @@ function PasteRecipePageContent() {
             placeholder="Paste the recipe text and its URL here…"
             value={raw}
           />
+
+          <p className={styles.multiHint}>
+            Got several recipes from a cookbook or PDF? Paste them one after another, separated by a line
+            with just three dashes (<code>---</code>), and you&apos;ll review each one in turn.
+          </p>
 
           {error && <p className={styles.errorMessage}>{error}</p>}
 

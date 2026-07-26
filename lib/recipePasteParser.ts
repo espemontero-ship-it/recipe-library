@@ -1025,6 +1025,20 @@ function servingSuggestion(lines: string[]) {
     .join("\n\n");
 }
 
+const MULTI_RECIPE_SEPARATOR = /^[ \t]*-{3,}[ \t]*$/m;
+
+// Lets a user paste several recipes from a cookbook/PDF in one go, marking the
+// boundary between them with a line of three or more dashes. Deliberately explicit
+// rather than auto-detected — guessing where one recipe ends and the next begins in
+// arbitrary cookbook text (intros, tips, sidebars) is far less reliable than asking
+// for a marker.
+export function splitMultipleRecipes(raw: string): string[] {
+  return raw
+    .split(MULTI_RECIPE_SEPARATOR)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+}
+
 export function parseRecipe(raw: string, context: PasteContext = {}): ParsedRecipe {
   const initiallyNormalized = normalizeText(raw);
   const sourceUrl = normalizeSourceUrl(context.sourceUrl || extractSourceUrl(initiallyNormalized));
