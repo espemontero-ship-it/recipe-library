@@ -76,7 +76,7 @@ const SOCIAL_NETWORK_TYPES = new Set(["facebook", "instagram", "tiktok"]);
 const SOCIAL_PROFILE_ACTION_LINE = /^(?:follow|following|seguir|siguiendo)$/i;
 const SOCIAL_SEPARATOR_LINE = /^(?:[·•|]\s*)+$/;
 const SOCIAL_AUDIO_LINE = /^.{1,80}\s+·\s+.{1,80}$/;
-const MACRO_LINE = /^(?:(?:calories?|calor[ií]as|protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*:|(?:~?\d+(?:[.,]\d+)?\s*g?\s*(?:protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*$)|.*\d+(?:[.,]\d+)?\s*(?:k?cal(?:ories)?|calor[ií]as)\b.*|.*\b(?:calories?|calor[ií]as)\b[^\n\d]{0,24}\d+(?:[.,]\d+)?.*|(?:\d+(?:[.,]\d+)?\s*[gG]?\s*(?:P|C|F)(?:\s*[|·/]\s*)?){2,})/i;
+const MACRO_LINE = /^(?:(?:calories?|calor[ií]as|protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*:|(?:~?\d+(?:[.,]\d+)?\s*g?\s*(?:protein|prote[ií]na|carbs?|carbohydrates?|hidratos|fat|grasa|fib(?:er|re|ra))\s*$)|(?:approx(?:imately)?\s*)?~?\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:k?cal(?:ories)?|calor[ií]as)\s*$|(?:total\s+)?(?:calories?|calor[ií]as)\b[^\n\d]{0,24}\d+(?:[.,]\d+)?\s*$|(?:\d+(?:[.,]\d+)?\s*[gG]?\s*(?:P|C|F)(?:\s*[|·/]\s*)?){2,})/i;
 
 // Instagram/Facebook captions often collapse several ingredients onto one line
 // (e.g. "300g chicken 50g yoghurt 1 tsp garlic purée"). Split before any quantity
@@ -783,6 +783,94 @@ function parseMethod(lines: string[]) {
   return body ? [{ title: "Step 1", body }] : [];
 }
 
+type MacroField = "calories" | "protein" | "carbs" | "fat" | "fiber";
+
+const STACK_LABEL_FIELDS: { regex: RegExp; field: MacroField | null }[] = [
+  { regex: /^calor(?:ies|[ií]as)$/i, field: "calories" },
+  { regex: /^proteins?$|^prote[ií]nas?$/i, field: "protein" },
+  { regex: /^carbs?$|^carbohydrates?$|^hidratos(?:\s+de\s+carbono)?$/i, field: "carbs" },
+  { regex: /^fats?$|^grasas?$/i, field: "fat" },
+  { regex: /^fib(?:er|re|ra)$/i, field: "fiber" },
+  { regex: /^(?:added\s+)?sugars?$|^az[uú]car(?:es)?(?:\s+a[ñn]adid[oa]s?)?$/i, field: null },
+  { regex: /^sodium$|^sodio$/i, field: null },
+  { regex: /^cholesterol$|^colesterol$/i, field: null },
+  { regex: /^saturated\s+fat$|^grasa\s+saturada$/i, field: null },
+  { regex: /^trans\s+fat$/i, field: null },
+];
+
+const STACK_NUMBER_LINE = /^~?(\d+(?:[.,]\d+)?)\s*g?$/i;
+const STACK_CALORIE_LINE = /^~?(\d+(?:[.,]\d+)?)\s*k?cal(?:or[ií]as|ories)?$/i;
+
+function classifyStackLine(rawLine: string) {
+  const line = cleanContentLine(rawLine);
+  if (!line) return null;
+  const calorieMatch = line.match(STACK_CALORIE_LINE);
+  if (calorieMatch) return { type: "calorie" as const, value: calorieMatch[1].replace(",", ".") };
+  const numberMatch = line.match(STACK_NUMBER_LINE);
+  if (numberMatch) return { type: "number" as const, value: numberMatch[1].replace(",", ".") };
+  for (const { regex, field } of STACK_LABEL_FIELDS) {
+    if (regex.test(line)) return { type: "label" as const, field };
+  }
+  return null;
+}
+
+// Some meal-planning sites render each nutrition figure and its label as separate
+// lines rather than "Label: value" — copy/pasting the page yields a stack like
+// "505 calories / 13g / Carbs / 57g / Protein…", where the figure is sometimes
+// before and sometimes after its label. Detect that stack, pair each label with
+// whichever adjacent line is an unclaimed number, and mark the consumed lines so
+// the caller can strip them before they leak into the ingredient list.
+function extractStackedMacros(lines: string[], boundary: number) {
+  const ranges: Partial<Record<MacroField, NutritionRange>> = {};
+  const consumed = new Set<number>();
+
+  const anchor = lines.slice(0, boundary).findIndex((line) => {
+    const classified = classifyStackLine(line);
+    return classified?.type === "calorie" || classified?.type === "label";
+  });
+  if (anchor < 0) return { ranges, consumed };
+
+  const tokens: { index: number; classified: NonNullable<ReturnType<typeof classifyStackLine>> }[] = [];
+  for (let index = anchor; index < boundary; index += 1) {
+    if (!cleanContentLine(lines[index])) continue;
+    const classified = classifyStackLine(lines[index]);
+    if (!classified) break;
+    tokens.push({ index, classified });
+  }
+
+  const tokenConsumed = new Set<number>();
+  for (let i = 0; i < tokens.length; i += 1) {
+    const { classified } = tokens[i];
+    if (classified.type === "calorie") {
+      ranges.calories = { min: classified.value, max: classified.value };
+      tokenConsumed.add(i);
+      consumed.add(tokens[i].index);
+      continue;
+    }
+    if (classified.type !== "label") continue;
+
+    const prev = tokens[i - 1];
+    const next = tokens[i + 1];
+    let value: string | null = null;
+    if (prev && prev.classified.type === "number" && !tokenConsumed.has(i - 1)) {
+      value = prev.classified.value;
+      tokenConsumed.add(i - 1);
+      consumed.add(prev.index);
+    } else if (next && next.classified.type === "number" && !tokenConsumed.has(i + 1)) {
+      value = next.classified.value;
+      tokenConsumed.add(i + 1);
+      consumed.add(next.index);
+    }
+    tokenConsumed.add(i);
+    consumed.add(tokens[i].index);
+    if (value && classified.field) {
+      ranges[classified.field] = { min: value, max: value };
+    }
+  }
+
+  return { ranges, consumed };
+}
+
 function extractRange(source: string, labels: string[]): NutritionRange {
   const normalizedSource = stripMarkdown(source);
   const label = labels.join("|");
@@ -1045,6 +1133,12 @@ export function parseRecipe(raw: string, context: PasteContext = {}): ParsedReci
   const sourceType = sourceTypeFromUrl(sourceUrl);
   const normalized = expandCompactSocialPaste(initiallyNormalized, sourceType, sourceUrl);
   const lines = normalized.split("\n");
+  const macroBoundary = (() => {
+    const start = findIngredientsSectionStart(lines);
+    return start >= 0 ? start : Math.min(lines.length, 40);
+  })();
+  const stackedMacros = extractStackedMacros(lines, macroBoundary);
+  for (const index of stackedMacros.consumed) lines[index] = "";
   const publicationFromUrl = sourceFromUrl(sourceUrl);
   const publicationFromText = /\bNYT Cooking\b/i.test(normalized)
     ? "NYT Cooking"
@@ -1081,11 +1175,11 @@ export function parseRecipe(raw: string, context: PasteContext = {}): ParsedReci
     totalMinutes: durationMinutes(extractTime(lines)),
     ingredients: finalIngredients,
     method: parseMethod(lines),
-    calories: extractRange(normalized, ["Calories", "Calorías"]),
-    protein: extractRange(normalized, ["Protein", "Proteína"]),
-    carbs: extractRange(normalized, ["Carbohydrates", "Carbs", "Hidratos"]),
-    fat: extractRange(normalized, ["Fat", "Grasa"]),
-    fiber: extractRange(normalized, ["Fiber", "Fibre", "Fibra"]),
+    calories: stackedMacros.ranges.calories ?? extractRange(normalized, ["Calories", "Calorías"]),
+    protein: stackedMacros.ranges.protein ?? extractRange(normalized, ["Protein", "Proteína"]),
+    carbs: stackedMacros.ranges.carbs ?? extractRange(normalized, ["Carbohydrates", "Carbs", "Hidratos"]),
+    fat: stackedMacros.ranges.fat ?? extractRange(normalized, ["Fat", "Grasa"]),
+    fiber: stackedMacros.ranges.fiber ?? extractRange(normalized, ["Fiber", "Fibre", "Fibra"]),
     servingSuggestion: servingSuggestion(lines),
     mainIngredients: inferMainIngredients(title, finalIngredients),
     dish: [],
