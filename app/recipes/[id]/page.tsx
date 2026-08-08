@@ -377,6 +377,34 @@ export default function RecipePage() {
               </div>
             )}
 
+            {recipe.publicNotes && (
+              <div className={styles.editorialNote}>
+                <p className={styles.noteLabel}>Notes</p>
+                <p>{recipe.publicNotes}</p>
+              </div>
+            )}
+
+            {recipe.storageNotes && (
+              <div className={styles.editorialNote}>
+                <p className={styles.noteLabel}>Storage</p>
+                <p>{recipe.storageNotes}</p>
+              </div>
+            )}
+
+            {recipe.reheatingNotes && (
+              <div className={styles.editorialNote}>
+                <p className={styles.noteLabel}>Reheating</p>
+                <p>{recipe.reheatingNotes}</p>
+              </div>
+            )}
+
+            {recipe.nutritionNotes && (
+              <div className={styles.editorialNote}>
+                <p className={styles.noteLabel}>Nutrition note</p>
+                <p>{recipe.nutritionNotes}</p>
+              </div>
+            )}
+
             {isAdmin && (
               <div className={styles.privateNote}>
                 <label htmlFor="private-notes">Private notes</label>
