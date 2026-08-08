@@ -37,6 +37,9 @@ type RatingFilter = "all" | "5" | "4plus";
 type SortValue = "title-asc" | "title-desc" | "newest" | "rating-desc";
 type ViewValue = "grid" | "list";
 
+type MacroKey = "calories" | "protein" | "carbs" | "fat" | "fiber";
+type MacroRange = { min: string; max: string };
+
 const GENERIC_FACETS: { key: "cuisine"; label: string }[] = [
   { key: "cuisine", label: "Cuisine" },
 ];
@@ -115,6 +118,37 @@ const EMPTY_FILTERS: Record<FacetKey, string[]> = {
   cuisine: [],
 };
 
+const MACRO_FIELDS: { key: MacroKey; label: string; unit: string }[] = [
+  { key: "calories", label: "Calories", unit: "kcal" },
+  { key: "protein", label: "Protein", unit: "g" },
+  { key: "carbs", label: "Carbs", unit: "g" },
+  { key: "fat", label: "Fat", unit: "g" },
+  { key: "fiber", label: "Fiber", unit: "g" },
+];
+
+const EMPTY_MACRO_FILTERS: Record<MacroKey, MacroRange> = {
+  calories: { min: "", max: "" },
+  protein: { min: "", max: "" },
+  carbs: { min: "", max: "" },
+  fat: { min: "", max: "" },
+  fiber: { min: "", max: "" },
+};
+
+function macroValue(recipe: Recipe, key: MacroKey): number | null {
+  switch (key) {
+    case "calories":
+      return recipe.nutrition.calories.min;
+    case "protein":
+      return recipe.nutrition.proteinG.min;
+    case "carbs":
+      return recipe.nutrition.carbohydratesG.min;
+    case "fat":
+      return recipe.nutrition.fatG.min;
+    case "fiber":
+      return recipe.nutrition.fiberG.min;
+  }
+}
+
 function normalize(value: string) {
   return value
     .normalize("NFD")
@@ -185,6 +219,7 @@ export default function BrowsePage() {
   const [query, setQuery] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [filters, setFilters] = useState<Record<FacetKey, string[]>>(EMPTY_FILTERS);
+  const [macroFilters, setMacroFilters] = useState<Record<MacroKey, MacroRange>>(EMPTY_MACRO_FILTERS);
   const [personalFilters, setPersonalFilters] = useState<PersonalFilter[]>([]);
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
   const [sort, setSort] = useState<SortValue>("title-asc");
@@ -322,13 +357,22 @@ export default function BrowsePage() {
     return results;
   }, [personalisedRecipes, query]);
 
+  const activeMacroFilterCount = useMemo(
+    () =>
+      Object.values(macroFilters).reduce(
+        (total, range) => total + (range.min.trim() ? 1 : 0) + (range.max.trim() ? 1 : 0),
+        0,
+      ),
+    [macroFilters],
+  );
+
   const activeFilterCount = useMemo(
     () =>
       Object.values(filters).reduce(
         (total, selectedValues) => total + selectedValues.length,
-        personalFilters.length + (ratingFilter === "all" ? 0 : 1),
+        personalFilters.length + (ratingFilter === "all" ? 0 : 1) + activeMacroFilterCount,
       ),
-    [filters, personalFilters, ratingFilter],
+    [activeMacroFilterCount, filters, personalFilters, ratingFilter],
   );
 
   const filtered = useMemo(() => {
@@ -381,6 +425,18 @@ export default function BrowsePage() {
         }
       }
 
+      for (const { key } of MACRO_FIELDS) {
+        const range = macroFilters[key];
+        const min = range.min.trim() ? Number(range.min) : null;
+        const max = range.max.trim() ? Number(range.max) : null;
+        if (min === null && max === null) continue;
+
+        const value = macroValue(recipe, key);
+        if (value === null) return false;
+        if (min !== null && value < min) return false;
+        if (max !== null && value > max) return false;
+      }
+
       if (personalFilters.includes("favorite") && !recipe.personal.favorite) {
         return false;
       }
@@ -417,7 +473,7 @@ export default function BrowsePage() {
 
       return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
     });
-  }, [filters, personalFilters, personalisedRecipes, plannedRecipeIds, query, ratingFilter, sort]);
+  }, [filters, macroFilters, personalFilters, personalisedRecipes, plannedRecipeIds, query, ratingFilter, sort]);
 
   function toggleFacetValue(key: FacetKey, value: string) {
     setFilters((current) => ({
@@ -440,8 +496,16 @@ export default function BrowsePage() {
     setRatingFilter((current) => (current === value ? "all" : value));
   }
 
+  function setMacroRange(key: MacroKey, bound: "min" | "max", value: string) {
+    setMacroFilters((current) => ({
+      ...current,
+      [key]: { ...current[key], [bound]: value },
+    }));
+  }
+
   function clearAll() {
     setFilters(EMPTY_FILTERS);
+    setMacroFilters(EMPTY_MACRO_FILTERS);
     setPersonalFilters([]);
     setRatingFilter("all");
     setQuery("");
@@ -644,6 +708,38 @@ export default function BrowsePage() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <p className={styles.filterGroupLabel}>Macros</p>
+            <div className={styles.macroGrid}>
+              {MACRO_FIELDS.map(({ key, label, unit }) => (
+                <div className={styles.macroRow} key={key}>
+                  <span className={styles.macroLabel}>
+                    {label} <span aria-hidden="true">({unit})</span>
+                  </span>
+                  <input
+                    aria-label={`${label} minimum (${unit})`}
+                    inputMode="numeric"
+                    min={0}
+                    onChange={(event) => setMacroRange(key, "min", event.target.value)}
+                    placeholder="Min"
+                    type="number"
+                    value={macroFilters[key].min}
+                  />
+                  <span aria-hidden="true" className={styles.macroDash}>–</span>
+                  <input
+                    aria-label={`${label} maximum (${unit})`}
+                    inputMode="numeric"
+                    min={0}
+                    onChange={(event) => setMacroRange(key, "max", event.target.value)}
+                    placeholder="Max"
+                    type="number"
+                    value={macroFilters[key].max}
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
