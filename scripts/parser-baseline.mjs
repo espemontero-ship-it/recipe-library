@@ -7,8 +7,14 @@ import ts from "typescript";
 const root = process.cwd();
 const nativeRequire = createRequire(import.meta.url);
 const strict = process.argv.includes("--strict");
+const moduleCache = new Map();
 
-function loadTypescriptModule(relativePath, mocks = {}) {
+// Cross-file "@/lib/X" imports resolve back through this loader (not Node's
+// resolver, which doesn't understand the TS path alias) so lib modules can
+// freely import one another without every caller having to hand-wire mocks.
+function loadTypescriptModule(relativePath) {
+  if (moduleCache.has(relativePath)) return moduleCache.get(relativePath);
+
   const filename = path.join(root, relativePath);
   const source = fs.readFileSync(filename, "utf8");
   const output = ts.transpileModule(source, {
@@ -21,8 +27,11 @@ function loadTypescriptModule(relativePath, mocks = {}) {
   }).outputText;
 
   const module = { exports: {} };
+  moduleCache.set(relativePath, module.exports);
+
   const customRequire = (id) => {
-    if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
+    const aliasMatch = id.match(/^@\/lib\/(.+)$/);
+    if (aliasMatch) return loadTypescriptModule(`lib/${aliasMatch[1]}.ts`);
     return nativeRequire(id);
   };
   const factory = new Function("exports", "require", "module", "__filename", "__dirname", output);
@@ -31,11 +40,7 @@ function loadTypescriptModule(relativePath, mocks = {}) {
 }
 
 const recipeParser = loadTypescriptModule("lib/recipePasteParser.ts");
-const ingredientParser = loadTypescriptModule("lib/ingredientParser.ts", {
-  "@/lib/recipeModel": {
-    createEntityId: () => "fixture-id",
-  },
-});
+const ingredientParser = loadTypescriptModule("lib/ingredientParser.ts");
 
 const recipeFixtures = JSON.parse(
   fs.readFileSync(path.join(root, "tests/parser/recipe-fixtures.json"), "utf8"),

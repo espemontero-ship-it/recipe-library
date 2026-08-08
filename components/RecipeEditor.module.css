@@ -113,7 +113,16 @@
   text-transform: uppercase;
 }
 
+.sourceHeadActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .sourceHead button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 0;
   background: transparent;
   color: var(--accent);
@@ -123,6 +132,17 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.sourceHead button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sourceStrip .helperMessage {
+  margin: 0;
+  padding: 8px 14px 0;
 }
 
 .sourceBody {

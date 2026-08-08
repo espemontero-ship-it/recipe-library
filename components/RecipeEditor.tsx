@@ -7,6 +7,7 @@ import {
   Check,
   ImageIcon,
   Plus,
+  RotateCw,
   Save,
   Trash2,
   Upload,
@@ -18,6 +19,8 @@ import { NumericField } from "@/components/NumericField";
 import { TagListField } from "@/components/TagListField";
 import {
   createEntityId,
+  parseServings,
+  toNumericRange,
   type Recipe,
   type RecipeMethodSection,
 } from "@/lib/recipeModel";
@@ -28,6 +31,7 @@ import {
   type ClassificationSuggestions,
 } from "@/lib/supabaseRecipes";
 import { parseSimpleNumber } from "@/lib/ingredientParser";
+import { buildIngredientSectionsFromLines, parseRecipe } from "@/lib/recipePasteParser";
 import styles from "./RecipeEditor.module.css";
 
 function move<T>(items: T[], from: number, to: number) {
@@ -114,6 +118,7 @@ export function RecipeEditor({
   const [error, setError] = useState("");
   const [sourceMessage, setSourceMessage] = useState("");
   const [sourceCollapsed, setSourceCollapsed] = useState(false);
+  const [parseMessage, setParseMessage] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [classificationSuggestions, setClassificationSuggestions] = useState<ClassificationSuggestions | null>(null);
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -158,6 +163,78 @@ export function RecipeEditor({
       [key]: { min: value, max: value },
       note: "Manual values per serving.",
     });
+  }
+
+  function recalculateParse() {
+    if (!recipe.rawSourceText) return;
+    const parsed = parseRecipe(recipe.rawSourceText, {
+      sourceUrl: recipe.source.originalUrl || undefined,
+      imageUrl: recipe.media.heroImage || undefined,
+    });
+
+    const ingredientSections = buildIngredientSectionsFromLines(parsed.ingredients);
+    const hasIngredients = ingredientSections.some((section) => section.items.length > 0);
+    const hasMethod = parsed.method.length > 0;
+
+    setRecipe((current) => ({
+      ...current,
+      title: parsed.title.trim() || current.title,
+      summary: parsed.summary.trim() || current.summary,
+      source: {
+        ...current.source,
+        author: parsed.author.trim() || current.source.author,
+        publication: parsed.publication.trim() || current.source.publication,
+        type: parsed.sourceType.trim() || current.source.type,
+        originalUrl: parsed.sourceUrl.trim() || current.source.originalUrl,
+      },
+      yield: {
+        ...current.yield,
+        servings: parsed.servings.trim() ? parseServings(parsed.servings) : current.yield.servings,
+        servingsDisplay: parsed.servings.trim() || current.yield.servingsDisplay,
+        timeDisplay: parsed.time.trim() || current.yield.timeDisplay,
+        prepMinutes: parsed.prepMinutes.trim()
+          ? parseSimpleNumber(parsed.prepMinutes)
+          : current.yield.prepMinutes,
+        cookMinutes: parsed.cookMinutes.trim()
+          ? parseSimpleNumber(parsed.cookMinutes)
+          : current.yield.cookMinutes,
+        restingMinutes: parsed.restingMinutes.trim()
+          ? parseSimpleNumber(parsed.restingMinutes)
+          : current.yield.restingMinutes,
+        marinatingMinutes: parsed.marinatingMinutes.trim()
+          ? parseSimpleNumber(parsed.marinatingMinutes)
+          : current.yield.marinatingMinutes,
+        totalMinutes: parsed.totalMinutes.trim()
+          ? parseSimpleNumber(parsed.totalMinutes)
+          : current.yield.totalMinutes,
+      },
+      ingredientSections: hasIngredients ? ingredientSections : current.ingredientSections,
+      methodSections: hasMethod
+        ? [
+            {
+              id: createEntityId("method_section"),
+              title: null,
+              steps: parsed.method.map((step) => ({
+                id: createEntityId("step"),
+                title: step.title.trim() || null,
+                body: step.body,
+                durationMinutes: null,
+                temperatureC: null,
+              })),
+            },
+          ]
+        : current.methodSections,
+      nutrition: {
+        ...current.nutrition,
+        calories: parsed.calories.min.trim() ? toNumericRange(parsed.calories) : current.nutrition.calories,
+        proteinG: parsed.protein.min.trim() ? toNumericRange(parsed.protein) : current.nutrition.proteinG,
+        carbohydratesG: parsed.carbs.min.trim() ? toNumericRange(parsed.carbs) : current.nutrition.carbohydratesG,
+        fatG: parsed.fat.min.trim() ? toNumericRange(parsed.fat) : current.nutrition.fatG,
+        fiberG: parsed.fiber.min.trim() ? toNumericRange(parsed.fiber) : current.nutrition.fiberG,
+      },
+    }));
+    setDirty(true);
+    setParseMessage("Recalculated from original text. Review the changes below and save.");
   }
 
   async function uploadImage(file: File) {
@@ -246,10 +323,29 @@ export function RecipeEditor({
         <div className={styles.sourceStrip}>
           <div className={styles.sourceHead}>
             <span>Original pasted text</span>
-            <button onClick={() => setSourceCollapsed((current) => !current)} type="button">
-              {sourceCollapsed ? "Expand" : "Collapse"}
-            </button>
+            <div className={styles.sourceHeadActions}>
+              <button
+                disabled={!recipe.rawSourceText}
+                onClick={() => {
+                  setParseMessage("");
+                  recalculateParse();
+                }}
+                title={
+                  recipe.rawSourceText
+                    ? "Re-run the parser on the original pasted text"
+                    : "No original text stored for this recipe"
+                }
+                type="button"
+              >
+                <RotateCw aria-hidden="true" size={13} />
+                Recalculate parse
+              </button>
+              <button onClick={() => setSourceCollapsed((current) => !current)} type="button">
+                {sourceCollapsed ? "Expand" : "Collapse"}
+              </button>
+            </div>
           </div>
+          {parseMessage && <p className={styles.helperMessage}>{parseMessage}</p>}
           {!sourceCollapsed && (
             <pre className={styles.sourceBody}>{recipe.rawSourceText || "No original text stored."}</pre>
           )}

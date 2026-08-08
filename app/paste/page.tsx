@@ -12,13 +12,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminGate } from "@/components/AdminGate";
 import { RecipeEditor } from "@/components/RecipeEditor";
-import { parseIngredientLine } from "@/lib/ingredientParser";
 import {
   createRecipeFromInput,
   slugifyRecipeTitle,
   type Recipe,
 } from "@/lib/recipeModel";
 import {
+  buildIngredientSectionsFromLines,
   extractPasteContextFromHtml,
   normalizeSourceUrl,
   parseRecipe,
@@ -54,47 +54,6 @@ function numeric(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function parsedIngredientSections(lines: string[]) {
-  const sections: Array<{
-    id: string;
-    title: string | null;
-    items: ReturnType<typeof parseIngredientLine>[];
-  }> = [];
-  let current: (typeof sections)[number] | null = null;
-
-  const ensureSection = () => {
-    if (!current) {
-      current = {
-        id: `ingredient_section_${crypto.randomUUID()}`,
-        title: null,
-        items: [],
-      };
-      sections.push(current);
-    }
-    return current;
-  };
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    const isHeading = /:$/.test(line) && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line);
-    if (isHeading) {
-      current = {
-        id: `ingredient_section_${crypto.randomUUID()}`,
-        title: line.replace(/:\s*$/, "").trim() || null,
-        items: [],
-      };
-      sections.push(current);
-      continue;
-    }
-    ensureSection().items.push(parseIngredientLine(line));
-  }
-
-  const nonEmpty = sections.filter((section) => section.items.length > 0);
-  return nonEmpty.length
-    ? nonEmpty
-    : [{ id: `ingredient_section_${crypto.randomUUID()}`, title: null, items: [] }];
-}
-
 function draftFromParser(raw: string, parsed: ReturnType<typeof parseRecipe>): Recipe {
   const now = new Date().toISOString();
   const recipe = createRecipeFromInput({
@@ -111,7 +70,7 @@ function draftFromParser(raw: string, parsed: ReturnType<typeof parseRecipe>): R
     restingMinutes: numeric(parsed.restingMinutes),
     marinatingMinutes: numeric(parsed.marinatingMinutes),
     totalMinutes: numeric(parsed.totalMinutes),
-    ingredientSections: parsedIngredientSections(parsed.ingredients),
+    ingredientSections: buildIngredientSectionsFromLines(parsed.ingredients),
     methodSections: [
       {
         id: `method_section_${crypto.randomUUID()}`,

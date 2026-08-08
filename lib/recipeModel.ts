@@ -241,7 +241,7 @@ export function slugifyRecipeTitle(value: string) {
     .slice(0, 72);
 }
 
-function parseServings(value?: string) {
+export function parseServings(value?: string) {
   if (!value) return null;
   const match = value.match(/\d+(?:[.,]\d+)?/);
   return match ? parseNullableNumber(match[0]) : null;

@@ -1,3 +1,6 @@
+import { createEntityId, type RecipeIngredientSection } from "@/lib/recipeModel";
+import { parseIngredientLine } from "@/lib/ingredientParser";
+
 export type NutritionRange = {
   min: string;
   max: string;
@@ -1125,6 +1128,39 @@ export function splitMultipleRecipes(raw: string): string[] {
     .split(MULTI_RECIPE_SEPARATOR)
     .map((chunk) => chunk.trim())
     .filter(Boolean);
+}
+
+export function buildIngredientSectionsFromLines(lines: string[]): RecipeIngredientSection[] {
+  const sections: RecipeIngredientSection[] = [];
+  let current: RecipeIngredientSection | null = null;
+
+  const ensureSection = () => {
+    if (!current) {
+      current = { id: createEntityId("ingredient_section"), title: null, items: [] };
+      sections.push(current);
+    }
+    return current;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    const isHeading = /:$/.test(line) && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line);
+    if (isHeading) {
+      current = {
+        id: createEntityId("ingredient_section"),
+        title: line.replace(/:\s*$/, "").trim() || null,
+        items: [],
+      };
+      sections.push(current);
+      continue;
+    }
+    ensureSection().items.push(parseIngredientLine(line));
+  }
+
+  const nonEmpty = sections.filter((section) => section.items.length > 0);
+  return nonEmpty.length
+    ? nonEmpty
+    : [{ id: createEntityId("ingredient_section"), title: null, items: [] }];
 }
 
 export function parseRecipe(raw: string, context: PasteContext = {}): ParsedRecipe {
