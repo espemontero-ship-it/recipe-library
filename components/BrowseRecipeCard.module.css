@@ -151,6 +151,12 @@
   font-style: normal;
 }
 
+.macros {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .selectionButton {
   position: absolute;
   z-index: 4;

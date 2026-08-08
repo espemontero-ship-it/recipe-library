@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CalendarPlus, Check, CheckCircle2, Heart, ImageOff, Star } from "lucide-react";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
-import { getRecipeIngredients, type Recipe } from "@/lib/recipeModel";
+import { formatRange, getRecipeIngredients, type Recipe } from "@/lib/recipeModel";
 import { ingredientDisplayLine } from "@/lib/ingredientParser";
 import styles from "./BrowseRecipeCard.module.css";
 
@@ -43,6 +43,23 @@ export function BrowseRecipeCard({
     .map((item) => ingredientDisplayLine(item) || item.originalLine.trim())
     .filter(Boolean)
     .join(", ");
+  const macros = [
+    recipe.nutrition.calories.min !== null
+      ? `${formatRange(recipe.nutrition.calories)} kcal`
+      : null,
+    recipe.nutrition.proteinG.min !== null
+      ? `${formatRange(recipe.nutrition.proteinG, "g")} protein`
+      : null,
+    recipe.nutrition.carbohydratesG.min !== null
+      ? `${formatRange(recipe.nutrition.carbohydratesG, "g")} carbs`
+      : null,
+    recipe.nutrition.fatG.min !== null
+      ? `${formatRange(recipe.nutrition.fatG, "g")} fat`
+      : null,
+    recipe.nutrition.fiberG.min !== null
+      ? `${formatRange(recipe.nutrition.fiberG, "g")} fiber`
+      : null,
+  ].filter(Boolean);
   const recipeHref = `/recipes/${recipe.slug}`;
 
   const imageStyle = recipe.media.heroImage
@@ -176,6 +193,10 @@ export function BrowseRecipeCard({
               </span>
             )}
           </p>
+
+          {macros.length > 0 && (
+            <p className={styles.macros}>{macros.join(" · ")}</p>
+          )}
         </div>
       </div>
     </article>
