@@ -699,6 +699,13 @@ export async function updateSupabaseRecipe(recipe: Recipe): Promise<Recipe> {
   return mapRecipeRow(data as RecipeRow);
 }
 
+export async function deleteSupabaseRecipe(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase environment variables are missing.");
+  const { error } = await supabase.from(RECIPE_TABLE).delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function createSupabaseRecipeFromRecipe(recipe: Recipe): Promise<Recipe> {
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error("Supabase environment variables are missing.");

@@ -68,6 +68,26 @@
   opacity: 0.6;
 }
 
+.deleteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e4574f;
+  border-radius: 0;
+  padding: 8px 16px;
+  background: transparent;
+  color: #e4574f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.deleteBtn:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .titleBlock {
   padding: 12px 0 0;
 }

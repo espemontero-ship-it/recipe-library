@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AdminGate } from "@/components/AdminGate";
 import { RecipeEditor } from "@/components/RecipeEditor";
 import type { Recipe } from "@/lib/recipeModel";
-import { getSupabaseRecipe, updateSupabaseRecipe } from "@/lib/supabaseRecipes";
+import { deleteSupabaseRecipe, getSupabaseRecipe, updateSupabaseRecipe } from "@/lib/supabaseRecipes";
 
 function EditRecipePageContent() {
   const params = useParams<{ id: string }>();
@@ -32,6 +32,11 @@ function EditRecipePageContent() {
   return (
     <RecipeEditor
       initialRecipe={recipe}
+      onDelete={async (target) => {
+        await deleteSupabaseRecipe(target.id);
+        router.push("/browse");
+        router.refresh();
+      }}
       onSave={async (nextRecipe) => {
         const saved = await updateSupabaseRecipe(nextRecipe);
         router.push(`/recipes/${saved.slug}`);

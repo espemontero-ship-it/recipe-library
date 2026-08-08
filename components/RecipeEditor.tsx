@@ -57,6 +57,24 @@ function validate(recipe: Recipe) {
   return "";
 }
 
+// Supabase throws PostgrestError-shaped plain objects ({message, details, hint,
+// code}), not Error instances, so `reason instanceof Error` misses them and
+// falls back to a generic message that hides what actually went wrong (e.g. a
+// duplicate slug on save).
+function errorMessage(reason: unknown, fallback: string) {
+  if (reason instanceof Error) return reason.message;
+  if (
+    reason &&
+    typeof reason === "object" &&
+    "message" in reason &&
+    typeof (reason as { message: unknown }).message === "string" &&
+    (reason as { message: string }).message
+  ) {
+    return (reason as { message: string }).message;
+  }
+  return fallback;
+}
+
 function imageFileName(url: string | null) {
   if (!url) return "No image selected";
   try {
@@ -103,17 +121,20 @@ const MACRO_FIELDS: Array<
 export function RecipeEditor({
   initialRecipe,
   onSave,
+  onDelete,
   mode = "edit",
   onCancel,
 }: {
   initialRecipe: Recipe;
   onSave: (recipe: Recipe) => Promise<void>;
+  onDelete?: (recipe: Recipe) => Promise<void>;
   mode?: "edit" | "review";
   onCancel?: () => void;
 }) {
   const [recipe, setRecipe] = useState(initialRecipe);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState("");
   const [sourceMessage, setSourceMessage] = useState("");
@@ -258,7 +279,7 @@ export function RecipeEditor({
       patch("media", { ...recipe.media, heroImage: data.publicUrl });
       setSourceMessage("Photo uploaded.");
     } catch (reason) {
-      setSourceMessage(reason instanceof Error ? reason.message : "Photo upload failed.");
+      setSourceMessage(errorMessage(reason, "Photo upload failed."));
     } finally {
       setUploadingImage(false);
     }
@@ -280,9 +301,26 @@ export function RecipeEditor({
       window.clearTimeout(savedTimeout.current);
       savedTimeout.current = setTimeout(() => setJustSaved(false), 4000);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not save recipe.");
+      setError(errorMessage(reason, "Could not save recipe."));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!onDelete || deleting) return;
+    const confirmed = window.confirm(
+      `Delete "${recipe.title || "this recipe"}"? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError("");
+    try {
+      await onDelete(recipe);
+    } catch (reason) {
+      setError(errorMessage(reason, "Could not delete recipe."));
+      setDeleting(false);
     }
   }
 
@@ -306,6 +344,17 @@ export function RecipeEditor({
               <Check aria-hidden="true" size={14} />
               Saved
             </span>
+          )}
+          {onDelete && (
+            <button
+              className={styles.deleteBtn}
+              disabled={saving || deleting}
+              onClick={() => void handleDelete()}
+              type="button"
+            >
+              <Trash2 aria-hidden="true" size={15} />
+              {deleting ? "Deleting…" : "Delete recipe"}
+            </button>
           )}
           <button className={styles.saveBtn} disabled={saving} form="recipe-editor" type="submit">
             <Save aria-hidden="true" size={15} />
