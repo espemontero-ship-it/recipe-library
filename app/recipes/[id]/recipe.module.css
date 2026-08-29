@@ -199,6 +199,31 @@
   color: var(--ink);
 }
 
+.ingredientsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metricToggle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.metricToggle:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 3px;
+}
+
 .ingredientSection {
   margin-top: 16px;
 }

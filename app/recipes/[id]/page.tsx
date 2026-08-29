@@ -28,6 +28,7 @@ import {
 } from "@/lib/planning";
 import { regenerateShoppingWeekIfExists } from "@/lib/shoppingList";
 import { ingredientDisplayLine } from "@/lib/ingredientParser";
+import { metricIngredientDisplayLine } from "@/lib/measurementConversion";
 import {
   formatRange,
   getRecipeIngredients,
@@ -45,6 +46,7 @@ export default function RecipePage() {
   const [saveError, setSaveError] = useState("");
   const [thisWeekItemId, setThisWeekItemId] = useState<string | null>(null);
   const [planningBusy, setPlanningBusy] = useState(false);
+  const [metricView, setMetricView] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -328,7 +330,18 @@ export default function RecipePage() {
         <div className={styles.recipeBody}>
           <aside className={styles.ingredients}>
             <div className={styles.stickyInner}>
-              <h2>Ingredients</h2>
+              <div className={styles.ingredientsHead}>
+                <h2>Ingredients</h2>
+                {ingredients.length > 0 && (
+                  <button
+                    className={styles.metricToggle}
+                    onClick={() => setMetricView((current) => !current)}
+                    type="button"
+                  >
+                    {metricView ? "Show original units" : "Convert to metric"}
+                  </button>
+                )}
+              </div>
               {ingredients.length ? (
                 recipe.ingredientSections.map((section) => (
                   <section className={styles.ingredientSection} key={section.id}>
@@ -338,7 +351,11 @@ export default function RecipePage() {
                         <li key={item.id}>
                           <label>
                             <input type="checkbox" />
-                            <span>{ingredientDisplayLine(item) || item.originalLine}</span>
+                            <span>
+                              {(metricView && metricIngredientDisplayLine(item)) ||
+                                ingredientDisplayLine(item) ||
+                                item.originalLine}
+                            </span>
                           </label>
                         </li>
                       ))}
