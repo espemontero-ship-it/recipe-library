@@ -1,3 +1,4 @@
+import { parseIngredientLine } from "@/lib/ingredientParser";
 import type { RecipeIngredient } from "@/lib/recipeModel";
 
 // Pure liquids poured from a measuring cup convert at a flat 240 ml/cup —
@@ -153,4 +154,13 @@ export function metricIngredientDisplayLine(item: RecipeIngredient): string {
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// For plain-text ingredient lines (Shopping's draft/consolidated lines have
+// already lost their structured RecipeIngredient by the time they reach the
+// UI) — re-parses the line to recover quantity/unit/name, then converts it
+// the same way as the recipe page. Returns "" when there's nothing to convert
+// so callers can fall back to the original line.
+export function metricLine(line: string): string {
+  return metricIngredientDisplayLine(parseIngredientLine(line));
 }

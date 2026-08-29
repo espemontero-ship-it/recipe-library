@@ -103,6 +103,55 @@
   font-size: 12px;
 }
 
+.reviewIntroActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Higher specificity than ".reviewIntro button" / ".listToolbar button" so
+   this stays a plain underlined toggle instead of picking up their bordered
+   button look. */
+.reviewIntroActions .metricToggle,
+.listToolbar .metricToggle {
+  min-height: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.metricReadonlyRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.metricReadonlyText {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.editItemLink {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 .recipeGroups {
   display: grid;
   gap: 12px;

@@ -18,6 +18,7 @@ import {
   getWeekStart,
   subscribeToPlanning,
 } from "@/lib/planning";
+import { metricLine } from "@/lib/measurementConversion";
 import type { Recipe } from "@/lib/recipeModel";
 import {
   addManualShoppingItem,
@@ -86,6 +87,8 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
   const [error, setError] = useState("");
   const [manualItem, setManualItem] = useState("");
   const [copied, setCopied] = useState(false);
+  const [metricView, setMetricView] = useState(false);
+  const [editingItemIds, setEditingItemIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let active = true;
@@ -199,6 +202,23 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
     [recipes],
   );
 
+  function metricOrOriginal(text: string) {
+    if (!metricView) return text;
+    return metricLine(text) || text;
+  }
+
+  function unlockItemForEditing(id: string) {
+    setEditingItemIds((current) => new Set(current).add(id));
+  }
+
+  function relockItemAfterEditing(id: string) {
+    setEditingItemIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
+  }
+
   function toggleDraftItem(id: string) {
     setDraft((current) =>
       current.map((item) =>
@@ -306,9 +326,18 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
                   <span>Untick anything you already have at home.</span>
                 </p>
               </div>
-              <button disabled={selectedCount === 0} onClick={() => void createList()} type="button">
-                Create shopping list
-              </button>
+              <div className={styles.reviewIntroActions}>
+                <button
+                  className={styles.metricToggle}
+                  onClick={() => setMetricView((current) => !current)}
+                  type="button"
+                >
+                  {metricView ? "Show original units" : "Convert to metric"}
+                </button>
+                <button disabled={selectedCount === 0} onClick={() => void createList()} type="button">
+                  Create shopping list
+                </button>
+              </div>
             </section>
 
             <div className={styles.recipeGroups}>
@@ -353,9 +382,9 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
                             {item.sectionTitle && (
                               <small>{item.sectionTitle}</small>
                             )}
-                            <strong>{item.scaledLine}</strong>
+                            <strong>{metricOrOriginal(item.scaledLine)}</strong>
                             {item.scaledLine !== item.originalLine && (
-                              <small>Recipe: {item.originalLine}</small>
+                              <small>Recipe: {metricOrOriginal(item.originalLine)}</small>
                             )}
                           </span>
                         </label>
@@ -391,6 +420,16 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
               <span>{checkedCount} bought</span>
             </div>
             <div>
+              <button
+                className={styles.metricToggle}
+                onClick={() => {
+                  setMetricView((current) => !current);
+                  setEditingItemIds(new Set());
+                }}
+                type="button"
+              >
+                {metricView ? "Show original units" : "Convert to metric"}
+              </button>
               <button disabled={checkedCount === 0} onClick={() =>
                 void removeCheckedShoppingItems(weekStart).catch((reason: unknown) =>
                   setError(reason instanceof Error ? reason.message : "Could not remove bought items."),
@@ -448,22 +487,38 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
                           </span>
                         </label>
                         <div>
-                          <input
-                            aria-label={`Edit ${item.text}`}
-                            defaultValue={item.text}
-                            onBlur={(event) =>
-                              void updateShoppingItem(weekStart, item.id, {
-                                text: event.target.value.trim() || item.text,
-                              }).catch((reason: unknown) =>
-                                setError(
-                                  reason instanceof Error
-                                    ? reason.message
-                                    : "Could not update the item.",
-                                ),
-                              )
-                            }
-                            type="text"
-                          />
+                          {metricView && !editingItemIds.has(item.id) ? (
+                            <div className={styles.metricReadonlyRow}>
+                              <span className={styles.metricReadonlyText}>
+                                {metricLine(item.text) || item.text}
+                              </span>
+                              <button
+                                className={styles.editItemLink}
+                                onClick={() => unlockItemForEditing(item.id)}
+                                type="button"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          ) : (
+                            <input
+                              aria-label={`Edit ${item.text}`}
+                              defaultValue={item.text}
+                              onBlur={(event) => {
+                                void updateShoppingItem(weekStart, item.id, {
+                                  text: event.target.value.trim() || item.text,
+                                }).catch((reason: unknown) =>
+                                  setError(
+                                    reason instanceof Error
+                                      ? reason.message
+                                      : "Could not update the item.",
+                                  ),
+                                );
+                                relockItemAfterEditing(item.id);
+                              }}
+                              type="text"
+                            />
+                          )}
                           <small>
                             {item.manual
                               ? "Added manually"
