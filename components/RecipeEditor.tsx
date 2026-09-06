@@ -396,7 +396,13 @@ export function RecipeEditor({
           </div>
           {parseMessage && <p className={styles.helperMessage}>{parseMessage}</p>}
           {!sourceCollapsed && (
-            <pre className={styles.sourceBody}>{recipe.rawSourceText || "No original text stored."}</pre>
+            <textarea
+              aria-label="Original pasted text"
+              className={styles.sourceBody}
+              onChange={(event) => patch("rawSourceText", event.target.value || null)}
+              placeholder="No original text stored."
+              value={recipe.rawSourceText || ""}
+            />
           )}
         </div>
 
