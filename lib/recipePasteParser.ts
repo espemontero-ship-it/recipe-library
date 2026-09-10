@@ -75,6 +75,12 @@ const CREDIT_LINE = /(?:\bcredit\b|\bphoto(?:graph)?\s*(?:by|:)|\bfood stylist\b
 const NYT_NAV_OR_META_LINE = /^(?:recipes?|occasions|articles|about|give|published\s+.+|updated\s+.+|media\s+\d+\s+of\s+\d+|read\s+\d[\d,.]*\s+comments?|\(?\d[\d,.]*\)?|total time|prep time|cook time)$/i;
 const URL_LINE = /^https?:\/\/\S+$/i;
 const SOCIAL_FOOTER_LINE = /^(?:link in bio|follow(?: me)? for more|full recipe(?: in| at)|recipe link(?: in| at)|save this recipe)\b/i;
+// Coach/creator lead-magnet captions ("Comment 'REPLAY' for my free masterclass")
+// often read as a single long sentence ending in punctuation, which is exactly
+// the shape isReliableMethodMarker's emoji-bullet fallback looks for — without
+// this guard an early promo line gets mistaken for the first method step,
+// which then cuts the ingredient scan off before it ever reaches the real list.
+const PROMO_CTA_LINE = /\bcomment\s+['"‘’“”]?\w+['"‘’“”]?\s+below\b|\bfree\s+(?:masterclass|guide|ebook|e-book|pdf|challenge|training)\b|\bDM\s+me\b|\bmessage\s+me\b|\bsend\s+you\s+the\s+link\b|\blink\s+in\s+(?:my\s+)?bio\b|\bswipe\s+up\b/i;
 const SOCIAL_NETWORK_TYPES = new Set(["facebook", "instagram", "tiktok"]);
 const SOCIAL_PROFILE_ACTION_LINE = /^(?:follow|following|seguir|siguiendo)$/i;
 const SOCIAL_SEPARATOR_LINE = /^(?:[·•|]\s*)+$/;
@@ -90,7 +96,7 @@ const MACRO_LINE = /^(?:(?:calories?|calor[ií]as|protein|prote[ií]na|carbs?|ca
 const COMPACT_UNIT_WORD =
   "g|gr|grams?|kg|kilograms?|ml|l|litres?|liters?|tsp|teaspoons?|tbsp|tablespoons?|cups?|oz|ounces?|lbs?|pounds?|cloves?|cans?|tins?|packets?|slices?|pieces?|sprigs?|pinch(?:es)?";
 const EMBEDDED_QUANTITY_BOUNDARY = new RegExp(
-  String.raw`(?<!\bx)(?<!\d)(?<!,)\s+(?=(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:${COMPACT_UNIT_WORD})\b)`,
+  String.raw`(?<!\bx)(?<!\d)(?<!,)(?<!\([^)]*)\s+(?=(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:${COMPACT_UNIT_WORD})\b)`,
   "gi",
 );
 const EMBEDDED_QUALITATIVE_BOUNDARY = /\s+(?=(?:juice\s+(?:and\s+zest\s+)?of\b|zest\s+(?:and\s+juice\s+)?of\b|(?:a\s+)?pinch\s+of\b))/gi;
@@ -531,6 +537,7 @@ function isReliableMethodMarker(value: string) {
   const marker = methodMarker(value);
   if (!marker) return false;
   if (/^\s*(?:step|paso)\s*\d+/i.test(value) || /^\s*[1-9](?:\uFE0F?\u20E3)/u.test(value)) return true;
+  if (marker.inlineBody && PROMO_CTA_LINE.test(marker.inlineBody)) return false;
   return Boolean(marker.inlineBody && looksLikeStepBody(marker.inlineBody));
 }
 
@@ -979,7 +986,7 @@ function extractTitle(lines: string[], sourceType = "", socialAuthor = "") {
   for (let index = 0; index < searchEnd; index += 1) {
     if (ignoredIndexes.has(index)) continue;
     const line = cleanTitle(lines[index]);
-    if (!line || URL_LINE.test(line) || isJunkLine(line)) continue;
+    if (!line || URL_LINE.test(line) || isJunkLine(line) || isDecorativeSeparator(line)) continue;
     if (socialAuthor && line === socialAuthor) continue;
     if (SECTION_HEADINGS.ingredients.test(line) || SECTION_HEADINGS.method.test(line)) continue;
     if (/^(?:by\b|recipe by\b|original recipe\b|yield\b|servings?\b|serves\b|total time\b|prep time\b|cook time\b|time\b|published\b|updated\b|rating\b)/i.test(line)) continue;
