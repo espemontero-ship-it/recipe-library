@@ -72,6 +72,8 @@ function PlanningPageContent() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [bulkTargetWeek, setBulkTargetWeek] = useState(() => getWeekStart());
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [dragOverWeek, setDragOverWeek] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -145,6 +147,16 @@ function PlanningPageContent() {
       grouped.set(item.plan.weekStart, existing);
     }
 
+    // Always show the next few weeks, even empty, so there's somewhere to
+    // drag a recipe into when planning ahead of what's already there. Only
+    // once something is planned at all — an all-empty board with nothing to
+    // drag isn't useful, and would bury the "nothing planned yet" message.
+    if (plannedRecipes.length) {
+      for (const { weekStart } of getPlanningWeekOptions(3)) {
+        if (!grouped.has(weekStart)) grouped.set(weekStart, []);
+      }
+    }
+
     return Array.from(grouped.entries())
       .sort(([first], [second]) => first.localeCompare(second))
       .map(([weekStart, items]) => ({
@@ -200,6 +212,36 @@ function PlanningPageContent() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not move the recipe.");
     }
+  }
+
+  function handleCardDragStart(itemId: string) {
+    setDraggingItemId(itemId);
+  }
+
+  function handleCardDragEnd() {
+    setDraggingItemId(null);
+    setDragOverWeek(null);
+  }
+
+  function handleWeekDragOver(event: React.DragEvent, weekStart: string) {
+    if (!draggingItemId) return;
+    event.preventDefault();
+    if (dragOverWeek !== weekStart) setDragOverWeek(weekStart);
+  }
+
+  function handleWeekDragLeave(weekStart: string) {
+    setDragOverWeek((current) => (current === weekStart ? null : current));
+  }
+
+  async function handleWeekDrop(event: React.DragEvent, weekStart: string) {
+    event.preventDefault();
+    const itemId = draggingItemId;
+    setDraggingItemId(null);
+    setDragOverWeek(null);
+    if (!itemId) return;
+    const target = plannedRecipes.find(({ plan }) => plan.id === itemId);
+    if (!target) return;
+    await moveItem(target.plan, weekStart);
   }
 
   function toggleSelectionMode() {
@@ -377,7 +419,15 @@ function PlanningPageContent() {
             ).length;
 
             return (
-              <section className={styles.weekSection} key={group.weekStart}>
+              <section
+                className={`${styles.weekSection} ${
+                  dragOverWeek === group.weekStart ? styles.weekSectionDragOver : ""
+                }`}
+                key={group.weekStart}
+                onDragLeave={() => handleWeekDragLeave(group.weekStart)}
+                onDragOver={(event) => handleWeekDragOver(event, group.weekStart)}
+                onDrop={(event) => void handleWeekDrop(event, group.weekStart)}
+              >
                 <header className={styles.weekHeader}>
                   <div>
                     <p>{formatWeekRange(group.weekStart)}</p>
@@ -387,17 +437,24 @@ function PlanningPageContent() {
                     <span>
                       {group.items.length} recipe{group.items.length === 1 ? "" : "s"}
                     </span>
-                    <button
-                      onClick={() => void confirmClearWeek(group)}
-                      type="button"
-                    >
-                      <Trash2 aria-hidden="true" size={15} />
-                      Clear week
-                    </button>
+                    {group.items.length > 0 && (
+                      <button
+                        onClick={() => void confirmClearWeek(group)}
+                        type="button"
+                      >
+                        <Trash2 aria-hidden="true" size={15} />
+                        Clear week
+                      </button>
+                    )}
                   </div>
                 </header>
 
                 <div className={styles.planList}>
+                  {group.items.length === 0 && (
+                    <p className={styles.planListEmpty}>
+                      Drag a recipe here to plan it for this week.
+                    </p>
+                  )}
                   {group.items.map(({ recipe, plan: item }, index) => {
                     const originalServings = getRecipeDefaultServings(recipe);
                     const hasDetectedServings = Boolean(
@@ -419,8 +476,11 @@ function PlanningPageContent() {
                       <article
                         className={`${styles.planCard} ${
                           selectionMode && selectedItemIds.has(item.id) ? styles.planCardSelected : ""
-                        }`}
+                        } ${draggingItemId === item.id ? styles.planCardDragging : ""}`}
+                        draggable={!selectionMode}
                         key={item.id}
+                        onDragEnd={handleCardDragEnd}
+                        onDragStart={() => handleCardDragStart(item.id)}
                       >
                         {selectionMode ? (
                           <label className={styles.selectCheckbox}>
