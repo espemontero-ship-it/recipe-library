@@ -13,6 +13,7 @@ type StoredPersonalState = {
   favorite?: boolean;
   tested?: boolean;
   thisWeekend?: boolean;
+  monthlyRotation?: boolean;
   rating?: number | null;
   privateNotes?: string | null;
 };
@@ -22,7 +23,7 @@ type PersonalStateMap = Record<string, StoredPersonalState>;
 type PersonalPatch = Partial<
   Pick<
     RecipePersonal,
-    "favorite" | "tested" | "thisWeekend" | "rating" | "privateNotes"
+    "favorite" | "tested" | "thisWeekend" | "monthlyRotation" | "rating" | "privateNotes"
   >
 >;
 
@@ -100,6 +101,9 @@ export async function savePersonalState(
   if (patch.tested !== undefined) publicPatch.tested = patch.tested;
   if (patch.thisWeekend !== undefined) {
     publicPatch.this_weekend = patch.thisWeekend;
+  }
+  if (patch.monthlyRotation !== undefined) {
+    publicPatch.monthly_rotation = patch.monthlyRotation;
   }
   if (patch.rating !== undefined) publicPatch.rating = patch.rating;
 

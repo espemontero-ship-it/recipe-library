@@ -68,6 +68,10 @@ function PlanningPageContent() {
   const [customMoveItemId, setCustomMoveItemId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [bulkMessage, setBulkMessage] = useState("");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [bulkTargetWeek, setBulkTargetWeek] = useState(() => getWeekStart());
 
   useEffect(() => {
     let active = true;
@@ -198,6 +202,61 @@ function PlanningPageContent() {
     }
   }
 
+  function toggleSelectionMode() {
+    setSelectionMode((current) => !current);
+    setSelectedItemIds(new Set());
+    setBulkMessage("");
+  }
+
+  function toggleItemSelection(itemId: string) {
+    setSelectedItemIds((current) => {
+      const next = new Set(current);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }
+
+  async function moveSelectedItems() {
+    const selected = plannedRecipes.filter(({ plan: item }) =>
+      selectedItemIds.has(item.id),
+    );
+    if (!selected.length) return;
+
+    setBulkMessage("");
+    const affectedWeeks = new Set<string>([bulkTargetWeek]);
+    let moved = 0;
+    let skipped = 0;
+
+    try {
+      for (const { plan: item } of selected) {
+        if (item.weekStart === bulkTargetWeek) {
+          skipped += 1;
+          continue;
+        }
+        const result = await movePlanningItem(item.id, bulkTargetWeek);
+        if (result.moved) {
+          moved += 1;
+          affectedWeeks.add(item.weekStart);
+        } else {
+          skipped += 1;
+        }
+      }
+
+      await Promise.all([...affectedWeeks].map((week) => regenerateWeek(week)));
+
+      setBulkMessage(
+        skipped > 0
+          ? `Moved ${moved} recipe${moved === 1 ? "" : "s"}, skipped ${skipped} already in that week.`
+          : `Moved ${moved} recipe${moved === 1 ? "" : "s"}.`,
+      );
+      setSelectedItemIds(new Set());
+      setSelectionMode(false);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not move the selected recipes.");
+    }
+  }
+
   function updateRecipeInList(updated: Recipe) {
     setRecipes((current) =>
       current.map((recipe) => (recipe.id === updated.id ? updated : recipe)),
@@ -261,11 +320,28 @@ function PlanningPageContent() {
           </p>
         </div>
 
-        <Link className={styles.browseLink} href="/browse?plan=1">
-          Add recipes
-          <ChevronRight aria-hidden="true" size={17} />
-        </Link>
+        <div className={styles.headerActions}>
+          {plannedRecipes.length > 0 && (
+            <button
+              className={styles.selectModeButton}
+              onClick={toggleSelectionMode}
+              type="button"
+            >
+              {selectionMode ? "Cancel" : "Select"}
+            </button>
+          )}
+          <Link className={styles.browseLink} href="/browse?plan=1">
+            Add recipes
+            <ChevronRight aria-hidden="true" size={17} />
+          </Link>
+        </div>
       </header>
+
+      {bulkMessage && (
+        <p className={styles.bulkMessage} role="status">
+          {bulkMessage}
+        </p>
+      )}
 
       {!loading && !error && plannedRecipes.length > 0 && (
         <section className={styles.summary} aria-label="Planning summary">
@@ -340,10 +416,31 @@ function PlanningPageContent() {
                         ];
 
                     return (
-                      <article className={styles.planCard} key={item.id}>
-                        <div className={styles.order} aria-hidden="true">
-                          {String(index + 1).padStart(2, "0")}
-                        </div>
+                      <article
+                        className={`${styles.planCard} ${
+                          selectionMode && selectedItemIds.has(item.id) ? styles.planCardSelected : ""
+                        }`}
+                        key={item.id}
+                      >
+                        {selectionMode ? (
+                          <label className={styles.selectCheckbox}>
+                            <input
+                              aria-label={`Select ${recipe.title} for bulk move`}
+                              checked={selectedItemIds.has(item.id)}
+                              onChange={() => toggleItemSelection(item.id)}
+                              type="checkbox"
+                            />
+                            <span className={styles.checkmark}>
+                              {selectedItemIds.has(item.id) && (
+                                <Check aria-hidden="true" size={15} />
+                              )}
+                            </span>
+                          </label>
+                        ) : (
+                          <div className={styles.order} aria-hidden="true">
+                            {String(index + 1).padStart(2, "0")}
+                          </div>
+                        )}
 
                         <Link
                           aria-label={`Open ${recipe.title}`}
@@ -557,6 +654,39 @@ function PlanningPageContent() {
           </p>
           <Link href="/browse?plan=1">Choose recipes</Link>
         </section>
+      )}
+
+      {selectionMode && (
+        <aside aria-live="polite" className={styles.bulkTray}>
+          <div>
+            <MoveRight aria-hidden="true" size={20} />
+            <p>
+              <strong>{selectedItemIds.size} selected</strong>
+              <span>Choose which week to move them to.</span>
+            </p>
+          </div>
+          <label className={styles.bulkTrayWeek}>
+            <span>Week</span>
+            <select
+              aria-label="Week to move selected recipes to"
+              onChange={(event) => setBulkTargetWeek(event.target.value)}
+              value={bulkTargetWeek}
+            >
+              {weekOptions.map((option) => (
+                <option key={option.weekStart} value={option.weekStart}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            disabled={!selectedItemIds.size}
+            onClick={() => void moveSelectedItems()}
+            type="button"
+          >
+            Move selected
+          </button>
+        </aside>
       )}
     </main>
   );

@@ -53,6 +53,151 @@
   font-weight: 700;
 }
 
+.headerActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.selectModeButton {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 0 16px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bulkMessage {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.selectCheckbox {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.selectCheckbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.selectCheckbox input:checked + .checkmark {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: white;
+}
+
+.planCardSelected {
+  background: var(--accent-soft);
+}
+
+.bulkTray {
+  position: sticky;
+  z-index: 20;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(720px, 100%);
+  margin: 32px auto 0;
+  border: 1px solid var(--ink);
+  padding: 15px 16px 15px 20px;
+  background: #ffffff;
+  box-shadow: 0 14px 40px rgba(23, 25, 21, 0.16);
+}
+
+.bulkTray > div {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--ink);
+}
+
+.bulkTray p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.bulkTray strong {
+  font-size: 14px;
+}
+
+.bulkTray span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.bulkTray button {
+  min-height: 42px;
+  border: 0;
+  padding: 0 17px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bulkTray button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.bulkTrayWeek {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bulkTrayWeek select {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  padding: 0 8px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (max-width: 720px) {
+  .bulkTray {
+    align-items: stretch;
+    flex-direction: column;
+    bottom: 10px;
+  }
+
+  .bulkTray button {
+    width: 100%;
+  }
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

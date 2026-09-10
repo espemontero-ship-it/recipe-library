@@ -18,6 +18,7 @@ import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   addRecipesToPlanning,
   getPlanning,
+  getPlanningWeekOptions,
   getWeekStart,
   removePlanningItem,
   subscribeToPlanning,
@@ -225,6 +226,8 @@ export default function BrowsePage() {
   const [sort, setSort] = useState<SortValue>("title-asc");
   const [view, setView] = useState<ViewValue>("list");
   const [planningMode, setPlanningMode] = useState(false);
+  const [planningQuickView, setPlanningQuickView] = useState(true);
+  const [planningTargetWeek, setPlanningTargetWeek] = useState(() => getWeekStart());
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
   const [planningItems, setPlanningItems] = useState<PlanningItem[]>([]);
   const [planningBusyRecipeIds, setPlanningBusyRecipeIds] = useState<string[]>([]);
@@ -437,6 +440,14 @@ export default function BrowsePage() {
         if (max !== null && value > max) return false;
       }
 
+      if (
+        planningMode &&
+        planningQuickView &&
+        !(recipe.personal.monthlyRotation || (recipe.personal.favorite && !recipe.personal.tested))
+      ) {
+        return false;
+      }
+
       if (personalFilters.includes("favorite") && !recipe.personal.favorite) {
         return false;
       }
@@ -473,7 +484,18 @@ export default function BrowsePage() {
 
       return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
     });
-  }, [filters, macroFilters, personalFilters, personalisedRecipes, plannedRecipeIds, query, ratingFilter, sort]);
+  }, [
+    filters,
+    macroFilters,
+    personalFilters,
+    personalisedRecipes,
+    plannedRecipeIds,
+    planningMode,
+    planningQuickView,
+    query,
+    ratingFilter,
+    sort,
+  ]);
 
   function toggleFacetValue(key: FacetKey, value: string) {
     setFilters((current) => ({
@@ -521,6 +543,8 @@ export default function BrowsePage() {
   function togglePlanningMode() {
     setPlanningMode((current) => !current);
     setSelectedRecipeIds([]);
+    setPlanningQuickView(true);
+    setPlanningTargetWeek(getWeekStart());
   }
 
   function toggleRecipeSelection(recipeId: string) {
@@ -536,8 +560,8 @@ export default function BrowsePage() {
       selectedRecipeIds.includes(recipe.id),
     );
     try {
-      await addRecipesToPlanning(selectedRecipes);
-      await regenerateShoppingWeekIfExists(personalisedRecipes, getWeekStart());
+      await addRecipesToPlanning(selectedRecipes, planningTargetWeek);
+      await regenerateShoppingWeekIfExists(personalisedRecipes, planningTargetWeek);
       setSelectedRecipeIds([]);
       setPlanningMode(false);
       window.location.href = "/planning";
@@ -602,6 +626,27 @@ export default function BrowsePage() {
           </button>
         )}
       </div>
+
+      {planningMode && (
+        <section className={styles.planningQuickBanner}>
+          {planningQuickView ? (
+            <p>
+              Showing <strong>monthly rotation</strong> and{" "}
+              <strong>favorites you haven&apos;t tried</strong>.{" "}
+              <button onClick={() => setPlanningQuickView(false)} type="button">
+                Show all {personalisedRecipes.length} recipes
+              </button>
+            </p>
+          ) : (
+            <p>
+              Showing all {personalisedRecipes.length} recipes.{" "}
+              <button onClick={() => setPlanningQuickView(true)} type="button">
+                Back to monthly rotation &amp; new favorites
+              </button>
+            </p>
+          )}
+        </section>
+      )}
 
       <div className={styles.searchRow}>
         <div className={styles.search}>
@@ -918,15 +963,29 @@ export default function BrowsePage() {
                 <CalendarPlus aria-hidden="true" size={20} />
                 <p>
                   <strong>{selectedRecipeIds.length} selected</strong>
-                  <span>They will be added to this week first.</span>
+                  <span>Choose which week to add them to.</span>
                 </p>
               </div>
+              <label className={styles.selectionTrayWeek}>
+                <span>Week</span>
+                <select
+                  aria-label="Week to add selected recipes to"
+                  onChange={(event) => setPlanningTargetWeek(event.target.value)}
+                  value={planningTargetWeek}
+                >
+                  {getPlanningWeekOptions(12).map((option) => (
+                    <option key={option.weekStart} value={option.weekStart}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 disabled={!selectedRecipeIds.length}
                 onClick={() => void addSelectionToPlanning()}
                 type="button"
               >
-                Add to this week
+                Add to week
               </button>
             </aside>
           )}

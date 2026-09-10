@@ -21,6 +21,7 @@ export type RecipeRow = {
   tested: boolean | null;
   favorite: boolean | null;
   this_weekend: boolean | null;
+  monthly_rotation?: boolean | null;
   rating: number | null;
   servings: number | null;
   servings_display: string | null;
@@ -458,6 +459,7 @@ export function mapRecipeRow(row: RecipeRow): Recipe {
       tested: Boolean(row.tested),
       favorite: Boolean(row.favorite),
       thisWeekend: Boolean(row.this_weekend),
+      monthlyRotation: Boolean(row.monthly_rotation),
       rating: row.rating,
       privateNotes: null,
     },
@@ -743,6 +745,7 @@ export async function createSupabaseRecipeFromRecipe(recipe: Recipe): Promise<Re
       tested: nextRecipe.personal.tested,
       favorite: nextRecipe.personal.favorite,
       this_weekend: nextRecipe.personal.thisWeekend,
+      monthly_rotation: nextRecipe.personal.monthlyRotation,
       rating: nextRecipe.personal.rating,
       raw_source_text: nextRecipe.rawSourceText,
       phase1_status: "complete",
@@ -873,6 +876,7 @@ export async function createSupabaseRecipe(input: RecipeInput): Promise<Recipe> 
       tested: false,
       favorite: false,
       thisWeekend: false,
+      monthlyRotation: false,
       rating: null,
       privateNotes: null,
     },
@@ -891,6 +895,7 @@ export async function createSupabaseRecipe(input: RecipeInput): Promise<Recipe> 
       tested: false,
       favorite: false,
       this_weekend: false,
+      monthly_rotation: false,
       rating: null,
       raw_source_text: rawSourceText,
       phase1_status: "complete",

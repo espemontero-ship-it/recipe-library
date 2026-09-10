@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarPlus, Check, CheckCircle2, Heart, ImageOff, Star } from "lucide-react";
+import { CalendarPlus, Check, CheckCircle2, Heart, ImageOff, Repeat, Star } from "lucide-react";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { formatRange, getRecipeIngredients, type Recipe } from "@/lib/recipeModel";
 import { ingredientDisplayLine } from "@/lib/ingredientParser";
@@ -152,6 +152,15 @@ export function BrowseRecipeCard({
                 <Heart
                   aria-label={recipe.personal.favorite ? "Favorite" : "Not favorite"}
                   fill={recipe.personal.favorite ? "currentColor" : "none"}
+                  size={19}
+                />
+                <Repeat
+                  aria-label={
+                    recipe.personal.monthlyRotation
+                      ? "Monthly rotation"
+                      : "Not in monthly rotation"
+                  }
+                  opacity={recipe.personal.monthlyRotation ? 1 : 0.5}
                   size={19}
                 />
                 <CheckCircle2

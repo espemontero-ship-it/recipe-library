@@ -116,6 +116,7 @@ export type RecipePersonal = {
   tested: boolean;
   favorite: boolean;
   thisWeekend: boolean;
+  monthlyRotation: boolean;
   rating: number | null;
   privateNotes: string | null;
 };
@@ -189,6 +190,7 @@ export type RecipeInput = {
   tested?: boolean;
   favorite?: boolean;
   thisWeekend?: boolean;
+  monthlyRotation?: boolean;
   rating?: number | null;
   rawSourceText?: string;
   image?: string;
@@ -356,6 +358,7 @@ export function createRecipeFromInput(input: RecipeInput): Recipe {
       tested: input.tested ?? false,
       favorite: input.favorite ?? false,
       thisWeekend: input.thisWeekend ?? false,
+      monthlyRotation: input.monthlyRotation ?? false,
       rating:
         input.rating === null || input.rating === undefined
           ? null

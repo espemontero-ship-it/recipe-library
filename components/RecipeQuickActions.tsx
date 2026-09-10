@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarCheck2, CalendarPlus, CheckCircle2, Heart, Star } from "lucide-react";
+import { CalendarCheck2, CalendarPlus, CheckCircle2, Heart, Repeat, Star } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { savePersonalState } from "@/lib/personalRecipeState";
@@ -34,7 +34,7 @@ export function RecipeQuickActions({
 
   async function updatePersonal(
     patch: Partial<
-      Pick<Recipe["personal"], "favorite" | "tested" | "rating">
+      Pick<Recipe["personal"], "favorite" | "tested" | "monthlyRotation" | "rating">
     >,
   ) {
     if (!editable || busy) return;
@@ -105,6 +105,27 @@ export function RecipeQuickActions({
           size={17}
         />
         {showFavoriteLabel && <span>Favorite</span>}
+      </button>
+
+      <button
+        aria-label={
+          recipe.personal.monthlyRotation
+            ? "Remove from monthly rotation"
+            : "Add to monthly rotation"
+        }
+        aria-pressed={recipe.personal.monthlyRotation}
+        className={`${styles.iconButton} ${
+          recipe.personal.monthlyRotation ? styles.active : ""
+        }`}
+        disabled={!editable || busy}
+        onClick={() =>
+          void updatePersonal({ monthlyRotation: !recipe.personal.monthlyRotation })
+        }
+        title={recipe.personal.monthlyRotation ? "Monthly rotation" : "Add to monthly rotation"}
+        type="button"
+      >
+        <Repeat aria-hidden="true" size={17} />
+        {showFavoriteLabel && <span>Monthly</span>}
       </button>
 
       <button
