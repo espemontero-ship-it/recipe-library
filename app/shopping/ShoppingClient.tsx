@@ -161,7 +161,9 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
         }
       }
     };
-    const unsubscribe = subscribeToPlanning(() => void refreshFromPlanning());
+    const unsubscribe = subscribeToPlanning(() => void refreshFromPlanning(), {
+      refreshOnFocus: false,
+    });
     return () => {
       active = false;
       unsubscribe();

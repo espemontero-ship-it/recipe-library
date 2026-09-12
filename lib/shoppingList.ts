@@ -551,7 +551,6 @@ export async function regenerateShoppingWeekIfExists(
   const plan = await getPlanning();
   const draft = buildShoppingDraft(recipes, plan, normalized);
   const automaticExisting = existing.items.filter((item) => !item.manual);
-  const manualItems = existing.items.filter((item) => item.manual);
 
   const existingSourceKeys = new Set(
     automaticExisting.flatMap((item) => item.sources.map(sourceKey)),
@@ -574,23 +573,111 @@ export async function regenerateShoppingWeekIfExists(
     })),
   );
 
-  const checkedSourceKeys = new Set(
-    automaticExisting
-      .filter((item) => item.checked)
-      .flatMap((item) => item.sources.map(sourceKey)),
-  );
-  const checkedIdentities = new Set(
-    automaticExisting.filter((item) => item.checked).map(itemIdentity),
-  );
+  // Match each freshly-computed ingredient against an existing row by ingredient
+  // identity, so unchanged rows are never rewritten. This is deliberate: only text
+  // and sources are ever updated here — "checked" is never part of the write, so a
+  // recipe/servings change can never unmark something already bought.
+  const existingByIdentity = new Map<string, ShoppingItem>();
+  for (const item of automaticExisting) {
+    existingByIdentity.set(itemIdentity(item), item);
+  }
 
-  const withPreservedChecks = regenerated.map((item) => ({
-    ...item,
-    checked:
-      item.sources.some((source) => checkedSourceKeys.has(sourceKey(source))) ||
-      checkedIdentities.has(itemIdentity(item)),
-  }));
+  const matchedIds = new Set<string>();
+  const toUpdate: Array<{ id: string; text: string; sources: ShoppingSource[] }> = [];
+  const toInsert: ShoppingItem[] = [];
 
-  return saveShoppingWeek(normalized, [...withPreservedChecks, ...manualItems]);
+  for (const item of regenerated) {
+    const match = existingByIdentity.get(itemIdentity(item));
+    if (match) {
+      matchedIds.add(match.id);
+      if (match.text !== item.text) {
+        toUpdate.push({ id: match.id, text: item.text, sources: item.sources });
+      }
+    } else {
+      toInsert.push(item);
+    }
+  }
+
+  const toDeleteIds = automaticExisting
+    .filter((item) => !matchedIds.has(item.id))
+    .map((item) => item.id);
+
+  if (!toUpdate.length && !toInsert.length && !toDeleteIds.length) {
+    return existing;
+  }
+
+  return applyShoppingDelta(normalized, { toInsert, toUpdate, toDeleteIds });
+}
+
+async function applyShoppingDelta(
+  weekStart: string,
+  changes: {
+    toInsert: ShoppingItem[];
+    toUpdate: Array<{ id: string; text: string; sources: ShoppingSource[] }>;
+    toDeleteIds: string[];
+  },
+) {
+  const { supabase, user } = await requireSupabaseUser();
+  const normalized = getWeekStart(weekStart);
+
+  if (changes.toDeleteIds.length) {
+    const { error } = await supabase
+      .from(TABLE)
+      .delete()
+      .eq("user_id", user.id)
+      .eq("week_start", normalized)
+      .in("id", changes.toDeleteIds);
+    if (error) throw error;
+  }
+
+  for (const update of changes.toUpdate) {
+    const { error } = await supabase
+      .from(TABLE)
+      .update({ text: update.text.trim(), sources: update.sources })
+      .eq("id", update.id)
+      .eq("user_id", user.id)
+      .eq("week_start", normalized);
+    if (error) throw error;
+  }
+
+  if (changes.toInsert.length) {
+    const rows = changes.toInsert.map((item) => ({
+      user_id: user.id,
+      week_start: normalized,
+      text: item.text.trim(),
+      checked: false,
+      manual: false,
+      sources: item.sources,
+      position: 0,
+    }));
+    const { error } = await supabase.from(TABLE).insert(rows);
+    if (error) throw error;
+  }
+
+  const refreshed = await getShoppingWeek(normalized);
+  if (refreshed) {
+    const automatic = refreshed.items.filter((item) => !item.manual);
+    const manual = refreshed.items.filter((item) => item.manual);
+    const sortedAutomatic = [...automatic].sort((a, b) =>
+      a.text.localeCompare(b.text, "en", { sensitivity: "base" }),
+    );
+    const ordered = [...sortedAutomatic, ...manual];
+    const results = await Promise.all(
+      ordered.map((item, index) =>
+        supabase
+          .from(TABLE)
+          .update({ position: index })
+          .eq("id", item.id)
+          .eq("user_id", user.id)
+          .eq("week_start", normalized),
+      ),
+    );
+    const failed = results.find((result) => result.error);
+    if (failed?.error) throw failed.error;
+  }
+
+  dispatchShoppingUpdate();
+  return getShoppingWeek(normalized);
 }
 
 

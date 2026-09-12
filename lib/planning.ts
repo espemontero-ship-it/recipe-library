@@ -342,8 +342,12 @@ export async function clearPlanningWeek(weekStart: string) {
   dispatchPlanningUpdate();
 }
 
-export function subscribeToPlanning(callback: () => void) {
+export function subscribeToPlanning(
+  callback: () => void,
+  options: { refreshOnFocus?: boolean } = {},
+) {
   if (typeof window === "undefined") return () => undefined;
+  const { refreshOnFocus = true } = options;
 
   let active = true;
   let channel: RealtimeChannel | null = null;
@@ -355,8 +359,10 @@ export function subscribeToPlanning(callback: () => void) {
   };
 
   window.addEventListener(PLANNING_EVENT, handleLocal);
-  window.addEventListener("focus", handleFocus);
-  document.addEventListener("visibilitychange", handleVisibility);
+  if (refreshOnFocus) {
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+  }
 
   if (supabase) {
     void supabase.auth.getUser().then(({ data }) => {
@@ -380,8 +386,10 @@ export function subscribeToPlanning(callback: () => void) {
   return () => {
     active = false;
     window.removeEventListener(PLANNING_EVENT, handleLocal);
-    window.removeEventListener("focus", handleFocus);
-    document.removeEventListener("visibilitychange", handleVisibility);
+    if (refreshOnFocus) {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    }
     if (channel && supabase) void supabase.removeChannel(channel);
   };
 }
