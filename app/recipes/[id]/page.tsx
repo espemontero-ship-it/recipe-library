@@ -7,7 +7,9 @@ import {
   CalendarPlus,
   Clock3,
   ExternalLink,
+  Minus,
   Pencil,
+  Plus,
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -22,11 +24,12 @@ import { getSupabaseRecipe, getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   addRecipesToPlanning,
   getPlanning,
+  getRecipeDefaultServings,
   getWeekStart,
   removePlanningItem,
   subscribeToPlanning,
 } from "@/lib/planning";
-import { regenerateShoppingWeekIfExists } from "@/lib/shoppingList";
+import { regenerateShoppingWeekIfExists, scaleIngredientLine } from "@/lib/shoppingList";
 import { ingredientDisplayLine } from "@/lib/ingredientParser";
 import { metricIngredientDisplayLine } from "@/lib/measurementConversion";
 import {
@@ -36,6 +39,10 @@ import {
   Recipe,
 } from "@/lib/recipeModel";
 import styles from "./recipe.module.css";
+
+function formatServings(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
 export default function RecipePage() {
   const params = useParams<{ id: string }>();
@@ -47,6 +54,7 @@ export default function RecipePage() {
   const [thisWeekItemId, setThisWeekItemId] = useState<string | null>(null);
   const [planningBusy, setPlanningBusy] = useState(false);
   const [metricView, setMetricView] = useState(false);
+  const [servings, setServings] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -64,6 +72,10 @@ export default function RecipePage() {
       active = false;
     };
   }, [params.id]);
+
+  useEffect(() => {
+    if (recipe) setServings(getRecipeDefaultServings(recipe));
+  }, [recipe?.id]);
 
   useEffect(() => {
     if (!recipe || !isAdmin) return;
@@ -196,6 +208,11 @@ export default function RecipePage() {
 
   const ingredients = getRecipeIngredients(recipe);
   const steps = getRecipeSteps(recipe);
+  const originalServings = getRecipeDefaultServings(recipe);
+  const hasDetectedServings = Boolean(
+    recipe.yield.servings || recipe.yield.servingsDisplay,
+  );
+  const servingsFactor = originalServings > 0 ? servings / originalServings : 1;
   const hasNutrition = [
     recipe.nutrition.calories.min,
     recipe.nutrition.proteinG.min,
@@ -342,23 +359,66 @@ export default function RecipePage() {
                   </button>
                 )}
               </div>
+
+              {ingredients.length > 0 && hasDetectedServings && (
+                <div className={styles.servingsRow}>
+                  <span>
+                    For{" "}
+                    <span className={styles.servingsControl}>
+                      <button
+                        aria-label="Reduce servings"
+                        disabled={servings <= 0.5}
+                        onClick={() =>
+                          setServings((current) => Math.max(0.5, current - 0.5))
+                        }
+                        type="button"
+                      >
+                        <Minus aria-hidden="true" size={14} />
+                      </button>
+                      <input
+                        aria-label="Servings"
+                        min="0.5"
+                        onChange={(event) => {
+                          const parsed = Number(event.target.value);
+                          if (Number.isFinite(parsed) && parsed > 0) setServings(parsed);
+                        }}
+                        step="0.5"
+                        type="number"
+                        value={servings}
+                      />
+                      <button
+                        aria-label="Increase servings"
+                        onClick={() => setServings((current) => current + 0.5)}
+                        type="button"
+                      >
+                        <Plus aria-hidden="true" size={14} />
+                      </button>
+                    </span>{" "}
+                    people
+                  </span>
+                  <small>Recipe originally serves {formatServings(originalServings)}</small>
+                </div>
+              )}
+
               {ingredients.length ? (
                 recipe.ingredientSections.map((section) => (
                   <section className={styles.ingredientSection} key={section.id}>
                     {section.title && <h3>{section.title}</h3>}
                     <ul>
-                      {section.items.map((item) => (
-                        <li key={item.id}>
-                          <label>
-                            <input type="checkbox" />
-                            <span>
-                              {(metricView && metricIngredientDisplayLine(item)) ||
-                                ingredientDisplayLine(item) ||
-                                item.originalLine}
-                            </span>
-                          </label>
-                        </li>
-                      ))}
+                      {section.items.map((item) => {
+                        const baseLine =
+                          (metricView && metricIngredientDisplayLine(item)) ||
+                          ingredientDisplayLine(item) ||
+                          item.originalLine;
+                        return (
+                          <li key={item.id}>
+                            <label>
+                              <input type="checkbox" />
+                              <span>{scaleIngredientLine(baseLine, servingsFactor)}</span>
+                            </label>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </section>
                 ))
