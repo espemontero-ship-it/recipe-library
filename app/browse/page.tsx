@@ -1009,7 +1009,7 @@ export default function BrowsePage() {
 
                 return (
                   <BrowseRecipeCard
-                    alreadyPlanned={planningMode ? inThisWeek : alreadyPlanned}
+                    alreadyPlanned={alreadyPlanned}
                     dragging={
                       draggingRecipeId === recipe.id ||
                       (Boolean(draggingRecipeId) &&
@@ -1022,9 +1022,7 @@ export default function BrowsePage() {
                     onCardDragEnd={handleCardDragEnd}
                     onCardDragStart={() => handleCardDragStart(recipe.id)}
                     onRecipeChange={updateRecipeInList}
-                    onToggleSelection={() => {
-                      if (!inThisWeek) toggleRecipeSelection(recipe.id);
-                    }}
+                    onToggleSelection={() => toggleRecipeSelection(recipe.id)}
                     onToggleThisWeek={() => toggleThisWeek(recipe)}
                     planningBusy={planningBusyRecipeIds.includes(recipe.id)}
                     planningMode={planningMode}

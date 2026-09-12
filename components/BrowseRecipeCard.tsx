@@ -77,7 +77,7 @@ export function BrowseRecipeCard({
       className={`${styles.shell} ${styles[view]} ${
         selected ? styles.selected : ""
       } ${dragging ? styles.dragging : ""}`}
-      draggable={planningMode && !alreadyPlanned}
+      draggable={planningMode}
       onDragEnd={onCardDragEnd}
       onDragStart={onCardDragStart}
     >
@@ -90,17 +90,14 @@ export function BrowseRecipeCard({
           className={`${styles.selectionButton} ${
             selected ? styles.selectionButtonActive : ""
           }`}
-          disabled={alreadyPlanned}
           onClick={onToggleSelection}
           type="button"
         >
-          {selected || alreadyPlanned ? (
-            <Check aria-hidden="true" size={17} />
-          ) : null}
+          {selected ? <Check aria-hidden="true" size={17} /> : null}
         </button>
       )}
 
-      {planningMode && !alreadyPlanned && (
+      {planningMode && (
         <div className={styles.gripBadge} title="Drag to add to a week">
           <GripVertical aria-hidden="true" size={16} />
         </div>
@@ -108,7 +105,7 @@ export function BrowseRecipeCard({
 
       <div className={styles.card}>
         <div className={styles.imageWrap}>
-          {alreadyPlanned && (
+          {alreadyPlanned && !planningMode && (
             <span className={styles.plannedBadge}>In planning</span>
           )}
 
@@ -118,7 +115,6 @@ export function BrowseRecipeCard({
               className={`${styles.imageButton} ${
                 recipe.media.heroImage ? "" : styles.imageEmpty
               }`}
-              disabled={alreadyPlanned}
               onClick={onToggleSelection}
               style={imageStyle}
               type="button"
@@ -197,7 +193,6 @@ export function BrowseRecipeCard({
           {planningMode ? (
             <button
               className={styles.titleButton}
-              disabled={alreadyPlanned}
               onClick={onToggleSelection}
               type="button"
             >
