@@ -15,6 +15,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
+import { WeekDropShelf } from "@/components/WeekDropShelf";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { formatRange, type Recipe } from "@/lib/recipeModel";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
@@ -177,6 +178,9 @@ function PlanningPageContent() {
     ({ plan: item }) => item.weekStart === getWeekStart(),
   ).length;
   const weekOptions = getPlanningWeekOptions(12);
+  const isGroupDrag = Boolean(
+    draggingItemId && selectionMode && selectedItemIds.has(draggingItemId) && selectedItemIds.size > 1,
+  );
 
   async function regenerateWeek(weekStart: string) {
     await regenerateShoppingWeekIfExists(recipes, weekStart);
@@ -241,6 +245,15 @@ function PlanningPageContent() {
     setDraggingItemId(null);
     setDragOverWeek(null);
     if (!itemId) return;
+
+    // Dragging a card that's part of an active multi-selection moves the
+    // whole selection together; dragging an unselected card (even while
+    // selection mode is on) moves just that one.
+    if (selectionMode && selectedItemIds.has(itemId) && selectedItemIds.size > 1) {
+      await moveItemsToWeek([...selectedItemIds], weekStart);
+      return;
+    }
+
     const target = plannedRecipes.find(({ plan }) => plan.id === itemId);
     if (!target) return;
     await moveItem(target.plan, weekStart);
@@ -265,24 +278,24 @@ function PlanningPageContent() {
     });
   }
 
-  async function moveSelectedItems() {
+  async function moveItemsToWeek(itemIds: string[], targetWeek: string) {
     const selected = plannedRecipes.filter(({ plan: item }) =>
-      selectedItemIds.has(item.id),
+      itemIds.includes(item.id),
     );
     if (!selected.length) return;
 
     setBulkMessage("");
-    const affectedWeeks = new Set<string>([bulkTargetWeek]);
+    const affectedWeeks = new Set<string>([targetWeek]);
     let moved = 0;
     let skipped = 0;
 
     try {
       for (const { plan: item } of selected) {
-        if (item.weekStart === bulkTargetWeek) {
+        if (item.weekStart === targetWeek) {
           skipped += 1;
           continue;
         }
-        const result = await movePlanningItem(item.id, bulkTargetWeek);
+        const result = await movePlanningItem(item.id, targetWeek);
         if (result.moved) {
           moved += 1;
           affectedWeeks.add(item.weekStart);
@@ -303,6 +316,10 @@ function PlanningPageContent() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not move the selected recipes.");
     }
+  }
+
+  async function moveSelectedItems() {
+    await moveItemsToWeek([...selectedItemIds], bulkTargetWeek);
   }
 
   function updateRecipeInList(updated: Recipe) {
@@ -386,35 +403,20 @@ function PlanningPageContent() {
       </header>
 
       {!loading && !error && groups.length > 0 && (
-        <div className={styles.weekShelf}>
-          <span className={styles.weekShelfLabel}>Weeks</span>
-          <div className={styles.weekShelfTargets}>
-            {groups.map((group) => {
-              const draggingWeekStart = draggingItemId
-                ? plannedRecipes.find(({ plan }) => plan.id === draggingItemId)?.plan.weekStart
-                : null;
-              const isCurrent = draggingWeekStart === group.weekStart;
-              return (
-                <button
-                  className={`${styles.weekShelfTarget} ${
-                    isCurrent ? styles.weekShelfTargetCurrent : ""
-                  } ${dragOverWeek === group.weekStart ? styles.weekShelfTargetHover : ""}`}
-                  disabled={isCurrent}
-                  key={group.weekStart}
-                  onDragLeave={() => handleWeekDragLeave(group.weekStart)}
-                  onDragOver={(event) => handleWeekDragOver(event, group.weekStart)}
-                  onDrop={(event) => void handleWeekDrop(event, group.weekStart)}
-                  type="button"
-                >
-                  {group.label}
-                </button>
-              );
-            })}
-            <button className={styles.weekShelfMore} onClick={showNextMonth} type="button">
-              + Show next month
-            </button>
-          </div>
-        </div>
+        <WeekDropShelf
+          currentWeekStart={
+            draggingItemId && !isGroupDrag
+              ? plannedRecipes.find(({ plan }) => plan.id === draggingItemId)?.plan.weekStart ?? null
+              : null
+          }
+          dragOverWeek={dragOverWeek}
+          label={isGroupDrag ? `Moving ${selectedItemIds.size}` : "Weeks"}
+          onDragLeaveWeek={handleWeekDragLeave}
+          onDragOverWeek={handleWeekDragOver}
+          onDropWeek={(event, weekStart) => void handleWeekDrop(event, weekStart)}
+          onShowMoreWeeks={showNextMonth}
+          weeks={groups.map((group) => ({ weekStart: group.weekStart, label: group.label }))}
+        />
       )}
 
       {bulkMessage && (
@@ -510,12 +512,16 @@ function PlanningPageContent() {
                           ...weekOptions,
                         ];
 
+                    const isDraggingThis =
+                      draggingItemId === item.id ||
+                      (isGroupDrag && selectedItemIds.has(item.id));
+
                     return (
                       <article
                         className={`${styles.planCard} ${
                           selectionMode && selectedItemIds.has(item.id) ? styles.planCardSelected : ""
-                        } ${draggingItemId === item.id ? styles.planCardDragging : ""}`}
-                        draggable={!selectionMode}
+                        } ${isDraggingThis ? styles.planCardDragging : ""}`}
+                        draggable
                         key={item.id}
                         onDragEnd={handleCardDragEnd}
                         onDragStart={() => handleCardDragStart(item.id)}

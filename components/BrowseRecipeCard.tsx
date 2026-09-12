@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarPlus, Check, CheckCircle2, Heart, ImageOff, Repeat, Star } from "lucide-react";
+import { CalendarPlus, Check, CheckCircle2, GripVertical, Heart, ImageOff, Repeat, Star } from "lucide-react";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { formatRange, getRecipeIngredients, type Recipe } from "@/lib/recipeModel";
 import { ingredientDisplayLine } from "@/lib/ingredientParser";
@@ -18,6 +18,9 @@ type Props = {
   onToggleThisWeek: () => void | Promise<void>;
   planningBusy: boolean;
   onRecipeChange: (recipe: Recipe) => void;
+  dragging?: boolean;
+  onCardDragStart?: () => void;
+  onCardDragEnd?: () => void;
 };
 
 export function BrowseRecipeCard({
@@ -31,6 +34,9 @@ export function BrowseRecipeCard({
   onToggleThisWeek,
   planningBusy,
   onRecipeChange,
+  dragging = false,
+  onCardDragStart,
+  onCardDragEnd,
 }: Props) {
   const ingredients = getRecipeIngredients(recipe);
   const visibleIngredientCount = view === "list" ? 9 : 6;
@@ -70,7 +76,10 @@ export function BrowseRecipeCard({
     <article
       className={`${styles.shell} ${styles[view]} ${
         selected ? styles.selected : ""
-      }`}
+      } ${dragging ? styles.dragging : ""}`}
+      draggable={planningMode && !alreadyPlanned}
+      onDragEnd={onCardDragEnd}
+      onDragStart={onCardDragStart}
     >
       {planningMode && (
         <button
@@ -89,6 +98,12 @@ export function BrowseRecipeCard({
             <Check aria-hidden="true" size={17} />
           ) : null}
         </button>
+      )}
+
+      {planningMode && !alreadyPlanned && (
+        <div className={styles.gripBadge} title="Drag to add to a week">
+          <GripVertical aria-hidden="true" size={16} />
+        </div>
       )}
 
       <div className={styles.card}>

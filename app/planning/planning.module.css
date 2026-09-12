@@ -14,73 +14,6 @@
   border-bottom: 1px solid var(--line);
 }
 
-/* Always-visible week shelf: a short, constant-distance drop target for the
-   drag-and-drop below, instead of the actual (possibly far-away) week
-   section — the throw is always "up to the top of the page", never further. */
-.weekShelf {
-  position: sticky;
-  z-index: 30;
-  top: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 -42px;
-  padding: 12px 42px;
-  background: var(--ink);
-  box-shadow: 0 8px 24px rgba(23, 25, 21, 0.2);
-}
-
-.weekShelfLabel {
-  flex: 0 0 auto;
-  color: #cfcac2;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.weekShelfTargets {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.weekShelfTarget {
-  border: 1.5px dashed #6b6a65;
-  background: #232420;
-  color: #fff;
-  padding: 8px 14px;
-  cursor: default;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.weekShelfTargetCurrent {
-  opacity: 0.4;
-}
-
-.weekShelfTargetHover {
-  border-color: var(--accent);
-  border-style: solid;
-  background: var(--accent);
-}
-
-.weekShelfMore {
-  border: 0;
-  background: transparent;
-  color: #cfcac2;
-  padding: 8px 4px;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: underline;
-  white-space: nowrap;
-}
-
 .eyebrow {
   margin: 0 0 8px;
   color: var(--accent);
@@ -775,11 +708,6 @@
 @media (max-width: 780px) {
   .page {
     padding: 0 20px 70px;
-  }
-
-  .weekShelf {
-    margin: 0 -20px;
-    padding: 10px 20px;
   }
 
   .header {

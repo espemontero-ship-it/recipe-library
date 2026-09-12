@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BrowseRecipeCard } from "@/components/BrowseRecipeCard";
+import { WeekDropShelf } from "@/components/WeekDropShelf";
 import { useAuth } from "@/lib/auth";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
@@ -234,6 +235,10 @@ export default function BrowsePage() {
   const [loading, setLoading] = useState(true);
   const [recipesError, setRecipesError] = useState("");
   const [planningError, setPlanningError] = useState("");
+  const [dragAddMessage, setDragAddMessage] = useState("");
+  const [draggingRecipeId, setDraggingRecipeId] = useState<string | null>(null);
+  const [dragOverWeek, setDragOverWeek] = useState<string | null>(null);
+  const [shelfExtraWeeksCount, setShelfExtraWeeksCount] = useState(5);
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -570,6 +575,62 @@ export default function BrowsePage() {
     }
   }
 
+  function handleCardDragStart(recipeId: string) {
+    setDraggingRecipeId(recipeId);
+  }
+
+  function handleCardDragEnd() {
+    setDraggingRecipeId(null);
+    setDragOverWeek(null);
+  }
+
+  function handleShelfDragOver(event: React.DragEvent, weekStart: string) {
+    if (!draggingRecipeId) return;
+    event.preventDefault();
+    if (dragOverWeek !== weekStart) setDragOverWeek(weekStart);
+  }
+
+  function handleShelfDragLeave(weekStart: string) {
+    setDragOverWeek((current) => (current === weekStart ? null : current));
+  }
+
+  async function handleShelfDrop(event: React.DragEvent, weekStart: string) {
+    event.preventDefault();
+    const recipeId = draggingRecipeId;
+    setDraggingRecipeId(null);
+    setDragOverWeek(null);
+    if (!recipeId) return;
+
+    setDragAddMessage("");
+    setPlanningError("");
+
+    // Dragging a card that's part of an active multi-selection adds the
+    // whole selection; dragging an unselected card (even mid-selection)
+    // adds just that one and leaves the browse list open to keep going.
+    const isGroupDrag = selectedRecipeIds.includes(recipeId) && selectedRecipeIds.length > 1;
+    const recipeIds = isGroupDrag ? selectedRecipeIds : [recipeId];
+    const recipesToAdd = personalisedRecipes.filter((recipe) => recipeIds.includes(recipe.id));
+    if (!recipesToAdd.length) return;
+
+    try {
+      await addRecipesToPlanning(recipesToAdd, weekStart);
+      await regenerateShoppingWeekIfExists(personalisedRecipes, weekStart);
+      if (isGroupDrag) {
+        setSelectedRecipeIds([]);
+        setPlanningMode(false);
+        window.location.href = "/planning";
+        return;
+      }
+      setDragAddMessage(`Added "${recipesToAdd[0].title}" to that week.`);
+    } catch (reason) {
+      setPlanningError(reason instanceof Error ? reason.message : "Could not update Planning.");
+    }
+  }
+
+  function showNextMonthInShelf() {
+    setShelfExtraWeeksCount((current) => current + 4);
+  }
+
   async function toggleThisWeek(recipe: Recipe) {
     if (planningBusyRecipeIds.includes(recipe.id)) return;
     setPlanningBusyRecipeIds((current) => [...current, recipe.id]);
@@ -626,6 +687,29 @@ export default function BrowsePage() {
           </button>
         )}
       </div>
+
+      {planningMode && (
+        <WeekDropShelf
+          currentWeekStart={null}
+          dragOverWeek={dragOverWeek}
+          label={
+            selectedRecipeIds.includes(draggingRecipeId ?? "") && selectedRecipeIds.length > 1
+              ? `Adding ${selectedRecipeIds.length}`
+              : "Add to week"
+          }
+          onDragLeaveWeek={handleShelfDragLeave}
+          onDragOverWeek={handleShelfDragOver}
+          onDropWeek={(event, weekStart) => void handleShelfDrop(event, weekStart)}
+          onShowMoreWeeks={showNextMonthInShelf}
+          weeks={getPlanningWeekOptions(shelfExtraWeeksCount)}
+        />
+      )}
+
+      {dragAddMessage && (
+        <p className={styles.dragAddMessage} role="status">
+          {dragAddMessage}
+        </p>
+      )}
 
       {planningMode && (
         <section className={styles.planningQuickBanner}>
@@ -921,8 +1005,17 @@ export default function BrowsePage() {
                 return (
                   <BrowseRecipeCard
                     alreadyPlanned={planningMode ? inThisWeek : alreadyPlanned}
+                    dragging={
+                      draggingRecipeId === recipe.id ||
+                      (Boolean(draggingRecipeId) &&
+                        selectedRecipeIds.includes(draggingRecipeId ?? "") &&
+                        selectedRecipeIds.length > 1 &&
+                        selectedRecipeIds.includes(recipe.id))
+                    }
                     inThisWeek={inThisWeek}
                     key={recipe.id}
+                    onCardDragEnd={handleCardDragEnd}
+                    onCardDragStart={() => handleCardDragStart(recipe.id)}
                     onRecipeChange={updateRecipeInList}
                     onToggleSelection={() => {
                       if (!inThisWeek) toggleRecipeSelection(recipe.id);

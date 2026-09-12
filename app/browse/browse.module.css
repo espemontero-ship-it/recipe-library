@@ -439,6 +439,14 @@
   background: var(--accent-soft);
 }
 
+.dragAddMessage {
+  margin: 10px 0 0;
+  padding: 8px 14px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 13px;
+}
+
 .planningQuickBanner p {
   margin: 0;
   color: var(--ink);
