@@ -672,6 +672,9 @@ export default function BrowsePage() {
   }
 
   const hasSearchOrFilters = Boolean(query.trim()) || activeFilterCount > 0;
+  // Planning mode always forces the compact grid (its toggle is hidden), but
+  // "Grid view" now means the same compact style everywhere, not just there.
+  const effectiveView: ViewValue = planningMode ? "grid" : view;
 
   return (
     <main className={styles.page}>
@@ -1005,11 +1008,9 @@ export default function BrowsePage() {
           ) : filtered.length ? (
             <section
               className={
-                planningMode
+                effectiveView === "grid"
                   ? `${styles.grid} ${styles.gridCompact}`
-                  : view === "grid"
-                    ? styles.grid
-                    : styles.list
+                  : styles.list
               }
             >
               {filtered.map((recipe) => {
@@ -1038,7 +1039,7 @@ export default function BrowsePage() {
                     planningMode={planningMode}
                     recipe={recipe}
                     selected={selected}
-                    view={planningMode ? "grid" : view}
+                    view={effectiveView}
                   />
                 );
               })}

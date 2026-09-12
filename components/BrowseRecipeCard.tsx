@@ -76,7 +76,7 @@ export function BrowseRecipeCard({
     <article
       className={`${styles.shell} ${styles[view]} ${
         selected ? styles.selected : ""
-      } ${dragging ? styles.dragging : ""} ${planningMode ? styles.compact : ""}`}
+      } ${dragging ? styles.dragging : ""} ${view === "grid" ? styles.compact : ""}`}
     >
       {planningMode && (
         <button
@@ -217,7 +217,7 @@ export function BrowseRecipeCard({
             </Link>
           )}
 
-          {!planningMode && (
+          {view !== "grid" && (
             <p className={styles.ingredientPreview}>
               {ingredientPreview || "No ingredients listed."}
               {remainingIngredients > 0 && (
