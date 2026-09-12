@@ -521,13 +521,20 @@ function PlanningPageContent() {
                         className={`${styles.planCard} ${
                           selectionMode && selectedItemIds.has(item.id) ? styles.planCardSelected : ""
                         } ${isDraggingThis ? styles.planCardDragging : ""}`}
-                        draggable
                         key={item.id}
-                        onDragEnd={handleCardDragEnd}
-                        onDragStart={() => handleCardDragStart(item.id)}
                       >
                         {selectionMode ? (
-                          <label className={styles.selectCheckbox}>
+                          // Only this handle is draggable, not the whole
+                          // card: a real mouse click almost never has zero
+                          // pixel movement, and a draggable ancestor
+                          // swallows that as a drag attempt instead of a
+                          // click, which broke the recipe title/image links.
+                          <label
+                            className={styles.selectCheckbox}
+                            draggable
+                            onDragEnd={handleCardDragEnd}
+                            onDragStart={() => handleCardDragStart(item.id)}
+                          >
                             <input
                               aria-label={`Select ${recipe.title} for bulk move`}
                               checked={selectedItemIds.has(item.id)}
@@ -541,7 +548,13 @@ function PlanningPageContent() {
                             </span>
                           </label>
                         ) : (
-                          <div className={styles.order} title="Drag to move">
+                          <div
+                            className={styles.order}
+                            draggable
+                            onDragEnd={handleCardDragEnd}
+                            onDragStart={() => handleCardDragStart(item.id)}
+                            title="Drag to move"
+                          >
                             <GripVertical aria-hidden="true" size={16} />
                           </div>
                         )}

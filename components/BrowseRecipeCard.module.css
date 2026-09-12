@@ -197,6 +197,13 @@
   text-transform: uppercase;
 }
 
+/* In planning mode the grip badge already occupies the top-right corner
+   (10px/32px circle) — stack the text badge underneath it instead of
+   overlapping, so a drop's confirmation stays visible right on the card. */
+.plannedBadgeStacked {
+  top: 50px;
+}
+
 .gripBadge {
   position: absolute;
   z-index: 4;

@@ -77,9 +77,6 @@ export function BrowseRecipeCard({
       className={`${styles.shell} ${styles[view]} ${
         selected ? styles.selected : ""
       } ${dragging ? styles.dragging : ""}`}
-      draggable={planningMode}
-      onDragEnd={onCardDragEnd}
-      onDragStart={onCardDragStart}
     >
       {planningMode && (
         <button
@@ -98,15 +95,31 @@ export function BrowseRecipeCard({
       )}
 
       {planningMode && (
-        <div className={styles.gripBadge} title="Drag to add to a week">
+        // Only this handle is draggable, not the whole card: a real mouse
+        // click almost never has zero pixel movement, and a draggable
+        // ancestor swallows that as a drag attempt instead of a click,
+        // which was breaking "select on click" for the image/title buttons.
+        <div
+          className={styles.gripBadge}
+          draggable
+          onDragEnd={onCardDragEnd}
+          onDragStart={onCardDragStart}
+          title="Drag to add to a week"
+        >
           <GripVertical aria-hidden="true" size={16} />
         </div>
       )}
 
       <div className={styles.card}>
         <div className={styles.imageWrap}>
-          {alreadyPlanned && !planningMode && (
-            <span className={styles.plannedBadge}>In planning</span>
+          {alreadyPlanned && (
+            <span
+              className={`${styles.plannedBadge} ${
+                planningMode ? styles.plannedBadgeStacked : ""
+              }`}
+            >
+              In planning
+            </span>
           )}
 
           {planningMode ? (
