@@ -18,6 +18,7 @@ import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   addRecipesToPlanning,
+  formatPlanningWeekLabel,
   getPlanning,
   getPlanningWeekOptions,
   getWeekStart,
@@ -612,6 +613,8 @@ export default function BrowsePage() {
     const recipesToAdd = personalisedRecipes.filter((recipe) => recipeIds.includes(recipe.id));
     if (!recipesToAdd.length) return;
 
+    const weekLabel = formatPlanningWeekLabel(weekStart);
+
     try {
       await addRecipesToPlanning(recipesToAdd, weekStart);
       await regenerateShoppingWeekIfExists(personalisedRecipes, weekStart);
@@ -621,7 +624,9 @@ export default function BrowsePage() {
         window.location.href = "/planning";
         return;
       }
-      setDragAddMessage(`Added "${recipesToAdd[0].title}" to that week.`);
+      setDragAddMessage(
+        `Added "${recipesToAdd[0].title}" to ${weekLabel.toLowerCase()}.`,
+      );
     } catch (reason) {
       setPlanningError(reason instanceof Error ? reason.message : "Could not update Planning.");
     }
