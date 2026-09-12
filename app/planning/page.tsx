@@ -5,7 +5,9 @@ import {
   CalendarDays,
   Check,
   ChevronRight,
+  Grid2X2,
   GripVertical,
+  List,
   Minus,
   MoveRight,
   Plus,
@@ -77,6 +79,7 @@ function PlanningPageContent() {
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [dragOverWeek, setDragOverWeek] = useState<string | null>(null);
   const [extraWeeksCount, setExtraWeeksCount] = useState(5);
+  const [view, setView] = useState<"list" | "grid">("list");
 
   useEffect(() => {
     let active = true;
@@ -387,6 +390,28 @@ function PlanningPageContent() {
 
         <div className={styles.headerActions}>
           {plannedRecipes.length > 0 && (
+            <div aria-label="Planning view" className={styles.viewToggle}>
+              <button
+                aria-label="List view"
+                aria-pressed={view === "list"}
+                className={view === "list" ? styles.viewActive : ""}
+                onClick={() => setView("list")}
+                type="button"
+              >
+                <List aria-hidden="true" size={17} />
+              </button>
+              <button
+                aria-label="Grid view"
+                aria-pressed={view === "grid"}
+                className={view === "grid" ? styles.viewActive : ""}
+                onClick={() => setView("grid")}
+                type="button"
+              >
+                <Grid2X2 aria-hidden="true" size={16} />
+              </button>
+            </div>
+          )}
+          {plannedRecipes.length > 0 && (
             <button
               className={styles.selectModeButton}
               onClick={toggleSelectionMode}
@@ -489,7 +514,7 @@ function PlanningPageContent() {
                   </div>
                 </header>
 
-                <div className={styles.planList}>
+                <div className={`${styles.planList} ${view === "grid" ? styles.planListGrid : ""}`}>
                   {group.items.length === 0 && (
                     <p className={styles.planListEmpty}>
                       Drag a recipe here to plan it for this week.
@@ -515,6 +540,91 @@ function PlanningPageContent() {
                     const isDraggingThis =
                       draggingItemId === item.id ||
                       (isGroupDrag && selectedItemIds.has(item.id));
+
+                    if (view === "grid") {
+                      const macros = [
+                        recipe.nutrition.calories.min !== null
+                          ? `${formatRange(recipe.nutrition.calories)} kcal`
+                          : null,
+                        recipe.nutrition.proteinG.min !== null
+                          ? `${formatRange(recipe.nutrition.proteinG, "g")} protein`
+                          : null,
+                        recipe.nutrition.carbohydratesG.min !== null
+                          ? `${formatRange(recipe.nutrition.carbohydratesG, "g")} carbs`
+                          : null,
+                        recipe.nutrition.fatG.min !== null
+                          ? `${formatRange(recipe.nutrition.fatG, "g")} fat`
+                          : null,
+                        recipe.nutrition.fiberG.min !== null
+                          ? `${formatRange(recipe.nutrition.fiberG, "g")} fiber`
+                          : null,
+                      ].filter(Boolean);
+
+                      return (
+                        <article
+                          className={`${styles.planCardCompact} ${
+                            selectionMode && selectedItemIds.has(item.id) ? styles.planCardSelected : ""
+                          } ${isDraggingThis ? styles.planCardDragging : ""}`}
+                          key={item.id}
+                        >
+                          {selectionMode ? (
+                            <label
+                              className={styles.selectCheckbox}
+                              draggable
+                              onDragEnd={handleCardDragEnd}
+                              onDragStart={() => handleCardDragStart(item.id)}
+                            >
+                              <input
+                                aria-label={`Select ${recipe.title} for bulk move`}
+                                checked={selectedItemIds.has(item.id)}
+                                onChange={() => toggleItemSelection(item.id)}
+                                type="checkbox"
+                              />
+                              <span className={styles.checkmark}>
+                                {selectedItemIds.has(item.id) && (
+                                  <Check aria-hidden="true" size={15} />
+                                )}
+                              </span>
+                            </label>
+                          ) : (
+                            <div
+                              className={styles.compactGrip}
+                              draggable
+                              onDragEnd={handleCardDragEnd}
+                              onDragStart={() => handleCardDragStart(item.id)}
+                              title="Drag to move"
+                            >
+                              <GripVertical aria-hidden="true" size={14} />
+                            </div>
+                          )}
+
+                          <Link
+                            aria-label={`Open ${recipe.title}`}
+                            className={`${styles.compactImage} ${
+                              recipe.media.heroImage ? "" : styles.recipeImageEmpty
+                            }`}
+                            href={`/recipes/${recipe.slug}`}
+                            style={
+                              recipe.media.heroImage
+                                ? { backgroundImage: `url("${recipe.media.heroImage}")` }
+                                : undefined
+                            }
+                          >
+                            {!recipe.media.heroImage && (
+                              <CalendarDays aria-hidden="true" size={24} />
+                            )}
+                          </Link>
+
+                          <Link className={styles.compactTitle} href={`/recipes/${recipe.slug}`}>
+                            {recipe.title}
+                          </Link>
+
+                          {macros.length > 0 && (
+                            <p className={styles.compactMacros}>{macros.join(" · ")}</p>
+                          )}
+                        </article>
+                      );
+                    }
 
                     return (
                       <article

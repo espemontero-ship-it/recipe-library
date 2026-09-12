@@ -321,6 +321,117 @@
   opacity: 0.4;
 }
 
+.planListGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  border-top: 0;
+}
+
+@media (max-width: 1120px) {
+  .planListGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .planListGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.planCardCompact {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.planCardCompact[draggable="true"] {
+  cursor: grab;
+}
+
+.compactGrip {
+  position: absolute;
+  z-index: 4;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+  background: rgba(23, 25, 21, 0.55);
+  color: white;
+  cursor: grab;
+}
+
+.planCardCompact .selectCheckbox {
+  position: absolute;
+  z-index: 4;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+  background: rgba(23, 25, 21, 0.55);
+  color: white;
+  cursor: pointer;
+}
+
+.planCardCompact .checkmark {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  color: white;
+}
+
+.compactImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0;
+  background-color: #f4f3ee;
+  background-position: center;
+  background-size: cover;
+  color: var(--muted);
+}
+
+.compactImage:empty,
+a.compactImage {
+  display: grid;
+  place-items: center;
+}
+
+.compactTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 8px 8px 0;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.compactMacros {
+  margin: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .planCard {
   position: relative;
   display: grid;
