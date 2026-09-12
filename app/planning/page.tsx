@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Check,
   ChevronRight,
+  GripVertical,
   Minus,
   MoveRight,
   Plus,
@@ -74,6 +75,7 @@ function PlanningPageContent() {
   const [bulkTargetWeek, setBulkTargetWeek] = useState(() => getWeekStart());
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [dragOverWeek, setDragOverWeek] = useState<string | null>(null);
+  const [extraWeeksCount, setExtraWeeksCount] = useState(5);
 
   useEffect(() => {
     let active = true;
@@ -147,12 +149,12 @@ function PlanningPageContent() {
       grouped.set(item.plan.weekStart, existing);
     }
 
-    // Always show the next few weeks, even empty, so there's somewhere to
+    // Always show the next several weeks, even empty, so there's somewhere to
     // drag a recipe into when planning ahead of what's already there. Only
     // once something is planned at all — an all-empty board with nothing to
     // drag isn't useful, and would bury the "nothing planned yet" message.
     if (plannedRecipes.length) {
-      for (const { weekStart } of getPlanningWeekOptions(3)) {
+      for (const { weekStart } of getPlanningWeekOptions(extraWeeksCount)) {
         if (!grouped.has(weekStart)) grouped.set(weekStart, []);
       }
     }
@@ -166,7 +168,7 @@ function PlanningPageContent() {
           a.plan.addedAt.localeCompare(b.plan.addedAt),
         ),
       }));
-  }, [plannedRecipes]);
+  }, [plannedRecipes, extraWeeksCount]);
 
   const shoppingCount = plannedRecipes.filter(
     ({ plan: item }) => item.includeInShopping,
@@ -242,6 +244,10 @@ function PlanningPageContent() {
     const target = plannedRecipes.find(({ plan }) => plan.id === itemId);
     if (!target) return;
     await moveItem(target.plan, weekStart);
+  }
+
+  function showNextMonth() {
+    setExtraWeeksCount((current) => current + 4);
   }
 
   function toggleSelectionMode() {
@@ -379,6 +385,38 @@ function PlanningPageContent() {
         </div>
       </header>
 
+      {!loading && !error && groups.length > 0 && (
+        <div className={styles.weekShelf}>
+          <span className={styles.weekShelfLabel}>Weeks</span>
+          <div className={styles.weekShelfTargets}>
+            {groups.map((group) => {
+              const draggingWeekStart = draggingItemId
+                ? plannedRecipes.find(({ plan }) => plan.id === draggingItemId)?.plan.weekStart
+                : null;
+              const isCurrent = draggingWeekStart === group.weekStart;
+              return (
+                <button
+                  className={`${styles.weekShelfTarget} ${
+                    isCurrent ? styles.weekShelfTargetCurrent : ""
+                  } ${dragOverWeek === group.weekStart ? styles.weekShelfTargetHover : ""}`}
+                  disabled={isCurrent}
+                  key={group.weekStart}
+                  onDragLeave={() => handleWeekDragLeave(group.weekStart)}
+                  onDragOver={(event) => handleWeekDragOver(event, group.weekStart)}
+                  onDrop={(event) => void handleWeekDrop(event, group.weekStart)}
+                  type="button"
+                >
+                  {group.label}
+                </button>
+              );
+            })}
+            <button className={styles.weekShelfMore} onClick={showNextMonth} type="button">
+              + Show next month
+            </button>
+          </div>
+        </div>
+      )}
+
       {bulkMessage && (
         <p className={styles.bulkMessage} role="status">
           {bulkMessage}
@@ -455,7 +493,7 @@ function PlanningPageContent() {
                       Drag a recipe here to plan it for this week.
                     </p>
                   )}
-                  {group.items.map(({ recipe, plan: item }, index) => {
+                  {group.items.map(({ recipe, plan: item }) => {
                     const originalServings = getRecipeDefaultServings(recipe);
                     const hasDetectedServings = Boolean(
                       recipe.yield.servings || recipe.yield.servingsDisplay,
@@ -497,8 +535,8 @@ function PlanningPageContent() {
                             </span>
                           </label>
                         ) : (
-                          <div className={styles.order} aria-hidden="true">
-                            {String(index + 1).padStart(2, "0")}
+                          <div className={styles.order} title="Drag to move">
+                            <GripVertical aria-hidden="true" size={16} />
                           </div>
                         )}
 
