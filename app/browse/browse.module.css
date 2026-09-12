@@ -314,6 +314,28 @@
   gap: var(--space-grid-gap);
 }
 
+/* Planning mode's dense work-screen: many more, much smaller cards so you
+   can scan and drag-select without endless scrolling. */
+/* Doubled-up selector (not just .gridCompact) so this reliably beats the
+   plain .grid responsive overrides further down the file regardless of
+   source order — both classes are always on the same element. */
+.grid.gridCompact {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 1050px) {
+  .grid.gridCompact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .grid.gridCompact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .list {
   display: grid;
   gap: 1px;

@@ -775,26 +775,28 @@ export default function BrowsePage() {
           )}
         </div>
 
-        <div aria-label="Recipe view" className={styles.viewToggle}>
-          <button
-            aria-label="Grid view"
-            aria-pressed={view === "grid"}
-            className={view === "grid" ? styles.viewActive : ""}
-            onClick={() => setView("grid")}
-            type="button"
-          >
-            <Grid2X2 aria-hidden="true" size={17} />
-          </button>
-          <button
-            aria-label="List view"
-            aria-pressed={view === "list"}
-            className={view === "list" ? styles.viewActive : ""}
-            onClick={() => setView("list")}
-            type="button"
-          >
-            <List aria-hidden="true" size={18} />
-          </button>
-        </div>
+        {!planningMode && (
+          <div aria-label="Recipe view" className={styles.viewToggle}>
+            <button
+              aria-label="Grid view"
+              aria-pressed={view === "grid"}
+              className={view === "grid" ? styles.viewActive : ""}
+              onClick={() => setView("grid")}
+              type="button"
+            >
+              <Grid2X2 aria-hidden="true" size={17} />
+            </button>
+            <button
+              aria-label="List view"
+              aria-pressed={view === "list"}
+              className={view === "list" ? styles.viewActive : ""}
+              onClick={() => setView("list")}
+              type="button"
+            >
+              <List aria-hidden="true" size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className={styles.layout}>
@@ -1001,7 +1003,15 @@ export default function BrowsePage() {
               <p>{recipesError}</p>
             </section>
           ) : filtered.length ? (
-            <section className={view === "grid" ? styles.grid : styles.list}>
+            <section
+              className={
+                planningMode
+                  ? `${styles.grid} ${styles.gridCompact}`
+                  : view === "grid"
+                    ? styles.grid
+                    : styles.list
+              }
+            >
               {filtered.map((recipe) => {
                 const selected = selectedRecipeIds.includes(recipe.id);
                 const alreadyPlanned = plannedRecipeIds.includes(recipe.id);
@@ -1028,7 +1038,7 @@ export default function BrowsePage() {
                     planningMode={planningMode}
                     recipe={recipe}
                     selected={selected}
-                    view={view}
+                    view={planningMode ? "grid" : view}
                   />
                 );
               })}

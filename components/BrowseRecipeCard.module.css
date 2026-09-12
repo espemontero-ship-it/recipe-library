@@ -110,6 +110,26 @@
   padding: 12px 2px 0;
 }
 
+/* Planning mode's denser work-screen grid: drop the ingredient preview
+   (already hidden in the markup) and shrink title/macros so more recipes
+   fit on screen at once — density over detail, since you're picking
+   something you already know, not deciding whether to cook it right now. */
+.compact .body {
+  padding: 8px 2px 4px;
+}
+
+.compact .title h2,
+.compact .titleButton h2 {
+  font-size: 12.5px;
+  -webkit-line-clamp: 2;
+}
+
+.compact .macros {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .title,
 .titleButton {
   display: block;

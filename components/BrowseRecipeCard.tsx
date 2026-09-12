@@ -76,7 +76,7 @@ export function BrowseRecipeCard({
     <article
       className={`${styles.shell} ${styles[view]} ${
         selected ? styles.selected : ""
-      } ${dragging ? styles.dragging : ""}`}
+      } ${dragging ? styles.dragging : ""} ${planningMode ? styles.compact : ""}`}
     >
       {planningMode && (
         <button
@@ -217,14 +217,16 @@ export function BrowseRecipeCard({
             </Link>
           )}
 
-          <p className={styles.ingredientPreview}>
-            {ingredientPreview || "No ingredients listed."}
-            {remainingIngredients > 0 && (
-              <span className={styles.more}>
-                {ingredientPreview ? ", " : ""}+{remainingIngredients} more
-              </span>
-            )}
-          </p>
+          {!planningMode && (
+            <p className={styles.ingredientPreview}>
+              {ingredientPreview || "No ingredients listed."}
+              {remainingIngredients > 0 && (
+                <span className={styles.more}>
+                  {ingredientPreview ? ", " : ""}+{remainingIngredients} more
+                </span>
+              )}
+            </p>
+          )}
 
           {macros.length > 0 && (
             <p className={styles.macros}>{macros.join(" · ")}</p>
