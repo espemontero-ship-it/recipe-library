@@ -360,7 +360,7 @@ export default function RecipePage() {
                 )}
               </div>
 
-              {ingredients.length > 0 && hasDetectedServings && (
+              {ingredients.length > 0 && (
                 <div className={styles.servingsRow}>
                   <span>
                     For{" "}
@@ -396,7 +396,11 @@ export default function RecipePage() {
                     </span>{" "}
                     people
                   </span>
-                  <small>Recipe originally serves {formatServings(originalServings)}</small>
+                  <small>
+                    {hasDetectedServings
+                      ? `Recipe originally serves ${formatServings(originalServings)}`
+                      : "Not stated in the recipe · defaulted to 1"}
+                  </small>
                 </div>
               )}
 
