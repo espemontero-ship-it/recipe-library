@@ -24,10 +24,12 @@ import { getSupabaseRecipe, getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
   addRecipesToPlanning,
   getPlanning,
+  getPlanningWeekOptions,
   getRecipeDefaultServings,
   getWeekStart,
   removePlanningItem,
   subscribeToPlanning,
+  type PlanningItem,
 } from "@/lib/planning";
 import { regenerateShoppingWeekIfExists, scaleIngredientLine } from "@/lib/shoppingList";
 import { ingredientDisplayLine } from "@/lib/ingredientParser";
@@ -51,7 +53,8 @@ export default function RecipePage() {
   const [privateNotesDraft, setPrivateNotesDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [thisWeekItemId, setThisWeekItemId] = useState<string | null>(null);
+  const [recipePlanItems, setRecipePlanItems] = useState<PlanningItem[]>([]);
+  const [planningWeek, setPlanningWeek] = useState(getWeekStart());
   const [planningBusy, setPlanningBusy] = useState(false);
   const [metricView, setMetricView] = useState(false);
   const [servings, setServings] = useState(1);
@@ -105,7 +108,7 @@ export default function RecipePage() {
 
   useEffect(() => {
     if (!user) {
-      setThisWeekItemId(null);
+      setRecipePlanItems([]);
       return;
     }
 
@@ -113,13 +116,11 @@ export default function RecipePage() {
     const refreshPlan = async () => {
       try {
         const items = await getPlanning();
-        const thisWeekItem = items.find(
-          (item) =>
-            item.recipeId === recipe?.id && item.weekStart === getWeekStart(),
-        );
-        if (active) setThisWeekItemId(thisWeekItem?.id ?? null);
+        if (active) {
+          setRecipePlanItems(items.filter((item) => item.recipeId === recipe?.id));
+        }
       } catch {
-        if (active) setThisWeekItemId(null);
+        if (active) setRecipePlanItems([]);
       }
     };
     void refreshPlan();
@@ -171,21 +172,24 @@ export default function RecipePage() {
     }
   }
 
-  async function toggleThisWeek() {
+  async function togglePlanning() {
     if (!recipe || planningBusy) return;
+    const existingItem = recipePlanItems.find(
+      (item) => item.weekStart === planningWeek,
+    );
     setPlanningBusy(true);
     setSaveError("");
     try {
-      if (thisWeekItemId) {
-        await removePlanningItem(thisWeekItemId);
+      if (existingItem) {
+        await removePlanningItem(existingItem.id);
       } else {
-        await addRecipesToPlanning([recipe], getWeekStart());
+        await addRecipesToPlanning([recipe], planningWeek);
       }
       const recipes = await getSupabaseRecipes();
-      await regenerateShoppingWeekIfExists(recipes, getWeekStart());
+      await regenerateShoppingWeekIfExists(recipes, planningWeek);
     } catch (reason) {
       setSaveError(
-        reason instanceof Error ? reason.message : "Could not update this week.",
+        reason instanceof Error ? reason.message : "Could not update planning.",
       );
     } finally {
       setPlanningBusy(false);
@@ -213,6 +217,10 @@ export default function RecipePage() {
     recipe.yield.servings || recipe.yield.servingsDisplay,
   );
   const servingsFactor = originalServings > 0 ? servings / originalServings : 1;
+  const weekOptions = getPlanningWeekOptions();
+  const isPlannedForSelectedWeek = recipePlanItems.some(
+    (item) => item.weekStart === planningWeek,
+  );
   const hasNutrition = [
     recipe.nutrition.calories.min,
     recipe.nutrition.proteinG.min,
@@ -322,16 +330,29 @@ export default function RecipePage() {
           )}
 
           {user && (
-            <button
-              aria-pressed={Boolean(thisWeekItemId)}
-              className={styles.addWeekButton}
-              disabled={planningBusy}
-              onClick={() => void toggleThisWeek()}
-              type="button"
-            >
-              <CalendarPlus aria-hidden="true" size={15} />
-              {thisWeekItemId ? "Remove from this week" : "Add to this week"}
-            </button>
+            <div className={styles.planningControl}>
+              <button
+                aria-pressed={isPlannedForSelectedWeek}
+                className={styles.addWeekButton}
+                disabled={planningBusy}
+                onClick={() => void togglePlanning()}
+                type="button"
+              >
+                <CalendarPlus aria-hidden="true" size={15} />
+                {isPlannedForSelectedWeek ? "Remove from planning" : "Add to planning"}
+              </button>
+              <select
+                aria-label="Week to plan"
+                onChange={(event) => setPlanningWeek(event.target.value)}
+                value={planningWeek}
+              >
+                {weekOptions.map((option) => (
+                  <option key={option.weekStart} value={option.weekStart}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           {isAdmin && (
