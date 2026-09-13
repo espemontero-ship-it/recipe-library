@@ -275,7 +275,14 @@ export default function RecipePage() {
 
             {(recipe.source.author || recipe.source.publication || recipe.source.type) && (
               <p className={styles.byline}>
-                {recipe.source.author && <span>{recipe.source.author}</span>}
+                {recipe.source.author && (
+                  <Link
+                    className={styles.authorLink}
+                    href={`/browse?q=${encodeURIComponent(recipe.source.author)}`}
+                  >
+                    {recipe.source.author}
+                  </Link>
+                )}
                 {recipe.source.author && (recipe.source.publication || recipe.source.type) && <span aria-hidden="true">·</span>}
                 {(recipe.source.publication || recipe.source.type) && (
                   <span>{recipe.source.publication || recipe.source.type}</span>

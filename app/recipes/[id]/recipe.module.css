@@ -75,6 +75,21 @@
   font-size: 13px;
 }
 
+.authorLink {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.authorLink:hover {
+  color: var(--accent);
+}
+
+.authorLink:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
 .description {
   max-width: 610px;
   margin: 12px 0 0;
