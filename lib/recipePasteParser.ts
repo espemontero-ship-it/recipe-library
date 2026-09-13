@@ -63,7 +63,7 @@ const TRACKING_PARAMETERS = new Set([
 ]);
 
 const SECTION_HEADINGS = {
-  ingredients: /^(?:ingredients?|ingredientes?)(?:\s*[,–—-]?\s*(?!are\b).{1,90})?\s*:?$/i,
+  ingredients: /^(?:(?:ingredients?|ingredientes?)|what\s+you(?:'ll)?\s+need|lo\s+que\s+necesitas)(?:\s*[,–—-]?\s*(?!are\b).{1,90})?\s*:?$/i,
   method: /^(?:preparation|method|directions?|instructions?|steps?|how\s+to\s+make(?:\s+it)?|here(?:'s| is)\s+how\s+(?:i\s+)?(?:made|make)\s+it|preparaci[oó]n|m[eé]todo|elaboraci[oó]n|instrucciones?)(?:\s*\([^)]*\)|\s*[-–—:].*)?\s*:?$/i,
   nutrition: /^(?:approximate\s+)?(?:nutrition(?:al\s+information)?|nutrici[oó]n|informaci[oó]n\s+nutricional|macros?)(?:\s*\([^)]*\)|\s*[-–—:].*)?\s*:?$/i,
   serving: /^(?:serving suggestion|to serve|sugerencia de servicio)\s*:?$/i,
@@ -100,6 +100,30 @@ const EMBEDDED_QUANTITY_BOUNDARY = new RegExp(
   "gi",
 );
 const EMBEDDED_QUALITATIVE_BOUNDARY = /\s+(?=(?:juice\s+(?:and\s+zest\s+)?of\b|zest\s+(?:and\s+juice\s+)?of\b|(?:a\s+)?pinch\s+of\b))/gi;
+
+// Instagram/TikTok recipe cards often lay out a whole section as one line —
+// a heading followed by every ingredient — separated by "•" bullets rather
+// than newlines (e.g. "Shrimp • 1.25 lbs shrimp • 1 tsp chili powder • ...").
+// Left untouched, that line is far longer than any ingredient-line length
+// check allows, so it gets silently dropped whole. A single leading bullet
+// (an ordinary list marker) is left alone; only lines with 2+ bullets —
+// meaning the line itself packs a list — get split into one piece each.
+function expandBulletSeparatedLines(lines: string[]) {
+  const expanded: string[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // A single bullet right at the start is an ordinary list marker (handled
+    // elsewhere); a bullet anywhere else means the line packs "Heading •
+    // item" or "item • item • item" onto one row and needs splitting.
+    const hasMidLineBullet = trimmed.slice(1).includes("•");
+    if (!hasMidLineBullet) {
+      expanded.push(line);
+      continue;
+    }
+    expanded.push(...trimmed.split("•").map((part) => part.trim()).filter(Boolean));
+  }
+  return expanded;
+}
 
 function splitEmbeddedIngredients(line: string) {
   const expanded = line
@@ -255,7 +279,7 @@ export function cleanLine(value: string) {
   return stripMarkdown(
     value
       .replace(/^\s*[-*•]\s*/, "")
-      .replace(/^\s*\d+\s*[.)]\s*/, "")
+      .replace(/^\s*\d+\s*[.)](?!\d)\s*/, "")
       .trim(),
   )
     .replace(/\s*(?:See less|Ver menos)\s*$/i, "")
@@ -652,7 +676,7 @@ function parseImplicitIngredients(lines: string[], recipeTitle: string, recipeAu
       .find((candidate) => candidate && !isMacroLine(candidate) && !isServingsLine(candidate));
     const wordCount = line.split(/\s+/).filter(Boolean).length;
     const shortHeadingBeforeIngredient = line.length <= 60 && !/[.!?]$/.test(line) &&
-      (/:\s*$/.test(rawLine.trim()) || looksLikeIngredientSubheading(line) || wordCount >= 2) &&
+      (/:\s*$/.test(rawLine.trim()) || looksLikeIngredientSubheading(line) || wordCount >= 2 || looksTitleCased(line)) &&
       Boolean(nextUseful && isIngredientLikeLine(nextUseful));
 
     if ((started && looksLikeIngredientSubheading(line)) || shortHeadingBeforeIngredient) {
@@ -987,6 +1011,10 @@ function extractTitle(lines: string[], sourceType = "", socialAuthor = "") {
     if (ignoredIndexes.has(index)) continue;
     const line = cleanTitle(lines[index]);
     if (!line || URL_LINE.test(line) || isJunkLine(line) || isDecorativeSeparator(line)) continue;
+    // "Handle · Original audio" / "Author · Following" style lines are social
+    // chrome wherever they appear, not just on recognised social URLs — a
+    // paste with no URL at all (a bare copied caption) still opens with one.
+    if (SOCIAL_AUDIO_LINE.test(line)) continue;
     if (socialAuthor && line === socialAuthor) continue;
     if (SECTION_HEADINGS.ingredients.test(line) || SECTION_HEADINGS.method.test(line)) continue;
     if (/^(?:by\b|recipe by\b|original recipe\b|yield\b|servings?\b|serves\b|total time\b|prep time\b|cook time\b|time\b|published\b|updated\b|rating\b)/i.test(line)) continue;
@@ -1175,7 +1203,7 @@ export function parseRecipe(raw: string, context: PasteContext = {}): ParsedReci
   const sourceUrl = normalizeSourceUrl(context.sourceUrl || extractSourceUrl(initiallyNormalized));
   const sourceType = sourceTypeFromUrl(sourceUrl);
   const normalized = expandCompactSocialPaste(initiallyNormalized, sourceType, sourceUrl);
-  const lines = normalized.split("\n");
+  const lines = expandBulletSeparatedLines(normalized.split("\n"));
   const macroBoundary = (() => {
     const start = findIngredientsSectionStart(lines);
     return start >= 0 ? start : Math.min(lines.length, 40);
