@@ -65,7 +65,7 @@ const TRACKING_PARAMETERS = new Set([
 const SECTION_HEADINGS = {
   ingredients: /^(?:(?:ingredients?|ingredientes?)|what\s+you(?:'ll)?\s+need|lo\s+que\s+necesitas)(?:\s*[,–—-]?\s*(?!are\b).{1,90})?\s*:?$/i,
   method: /^(?:preparation|method|directions?|instructions?|steps?|how\s+to\s+make(?:\s+it)?|here(?:'s| is)\s+how\s+(?:i\s+)?(?:made|make)\s+it|preparaci[oó]n|m[eé]todo|elaboraci[oó]n|instrucciones?)(?:\s*\([^)]*\)|\s*[-–—:].*)?\s*:?$/i,
-  nutrition: /^(?:approximate\s+)?(?:nutrition(?:al\s+information)?|nutrici[oó]n|informaci[oó]n\s+nutricional|macros?)(?:\s*\([^)]*\)|\s*[-–—:].*)?\s*:?$/i,
+  nutrition: /^(?:approximate\s+)?(?:nutrition(?:al\s+information)?|nutrici[oó]n|informaci[oó]n\s+nutricional|macros?(?:\s+per\s+(?:serve|serving|portion|bowl))?)(?:\s*\([^)]*\)|\s*[-–—:].*)?\s*:?$/i,
   serving: /^(?:serving suggestion|to serve|sugerencia de servicio)\s*:?$/i,
 };
 
@@ -562,6 +562,12 @@ function isReliableMethodMarker(value: string) {
   if (!marker) return false;
   if (/^\s*(?:step|paso)\s*\d+/i.test(value) || /^\s*[1-9](?:\uFE0F?\u20E3)/u.test(value)) return true;
   if (marker.inlineBody && PROMO_CTA_LINE.test(marker.inlineBody)) return false;
+  // An unnumbered emoji/bullet lead-in only counts as a step when it opens
+  // with a cooking verb; a long descriptive sentence ("🔥The kind of fakeaway
+  // you'll want on repeat…") is an intro blurb, not the first step.
+  if (marker.number === null && marker.inlineBody && !ACTION_START.test(marker.inlineBody)) {
+    return false;
+  }
   return Boolean(marker.inlineBody && looksLikeStepBody(marker.inlineBody));
 }
 
@@ -649,15 +655,37 @@ function parseImplicitIngredients(lines: string[], recipeTitle: string, recipeAu
   const methodHeading = findSectionStart(lines, SECTION_HEADINGS.method);
   const implicitMethod = findImplicitMethodStart(lines, -1);
   const nutritionStart = findSectionStart(lines, SECTION_HEADINGS.nutrition);
-  const boundaries = [methodHeading, implicitMethod, nutritionStart].filter((value) => value >= 0);
+  // A macros block printed *before* the ingredients (common in social captions)
+  // must not end the scan before it begins; it is skipped in the loop below.
+  const isMacroish = (candidate: string) =>
+    !candidate ||
+    isMacroLine(candidate) ||
+    /^\d+(?:[.,]\d+)?\s*(?:k?cal\w*|g)?\s*(?:P|C|F|protein|carbs?|fat|fib\w*)?\b\s*(?:\(.*\))?$/i.test(candidate);
+  const afterMacros =
+    nutritionStart >= 0
+      ? lines.slice(nutritionStart + 1).map(cleanContentLine).find((candidate) => !isMacroish(candidate))
+      : undefined;
+  const nutritionIsLeading =
+    nutritionStart >= 0 &&
+    Boolean(afterMacros && (looksLikeIngredientSubheading(afterMacros) || isIngredientLikeLine(afterMacros)));
+  const boundaries = [methodHeading, implicitMethod, nutritionIsLeading ? -1 : nutritionStart].filter((value) => value >= 0);
   const end = boundaries.length ? Math.min(...boundaries) : lines.length;
   const ingredients: string[] = [];
   let started = false;
+  let skippingMacros = false;
 
   for (let index = 0; index < end; index += 1) {
     const rawLine = lines[index];
     const rawTrimmed = rawLine.trim();
     const line = cleanContentLine(rawLine);
+    if (nutritionIsLeading && index === nutritionStart) {
+      skippingMacros = true;
+      continue;
+    }
+    if (skippingMacros) {
+      if (isMacroish(line)) continue;
+      skippingMacros = false;
+    }
     if (!line || URL_LINE.test(line) || isJunkLine(line) || isMacroLine(line)) continue;
     if (recipeTitle && cleanTitle(rawLine) === recipeTitle) continue;
     if (recipeAuthor && cleanContentLine(rawLine).replace(/^@/, "") === recipeAuthor.replace(/^@/, "")) continue;
