@@ -25,6 +25,35 @@
   text-decoration: underline;
 }
 
+.weekNav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.weekNav a {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.weekNav a:hover {
+  border-color: var(--ink);
+}
+
+.weekNav a:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
+.weekNav .eyebrow {
+  margin: 0 6px;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--accent);

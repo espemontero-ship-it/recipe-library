@@ -4,6 +4,8 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clipboard,
   PencilLine,
   Plus,
@@ -13,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
+  addWeeks,
   formatPlanningWeekLabel,
   getPlanning,
   getWeekStart,
@@ -93,6 +96,8 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError("");
     Promise.all([getSupabaseRecipes(), getPlanning(), getShoppingWeek(weekStart)])
       .then(([loadedRecipes, plan, saved]) => {
         if (!active) return;
@@ -297,7 +302,21 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
             <ArrowLeft aria-hidden="true" size={16} />
             Planning
           </Link>
-          <p className={styles.eyebrow}>{formatWeekRange(weekStart)}</p>
+          <div className={styles.weekNav}>
+            <Link
+              aria-label="Previous week"
+              href={`/shopping?week=${addWeeks(weekStart, -1)}`}
+            >
+              <ChevronLeft aria-hidden="true" size={18} />
+            </Link>
+            <p className={styles.eyebrow}>{formatWeekRange(weekStart)}</p>
+            <Link
+              aria-label="Next week"
+              href={`/shopping?week=${addWeeks(weekStart, 1)}`}
+            >
+              <ChevronRight aria-hidden="true" size={18} />
+            </Link>
+          </div>
           <h1>Shopping list</h1>
           <p className={styles.intro}>{formatPlanningWeekLabel(weekStart)}</p>
         </div>
