@@ -861,6 +861,17 @@ export async function updateShoppingItem(
   dispatchShoppingUpdate();
 }
 
+export async function setAllShoppingItemsChecked(weekStart: string, checked: boolean) {
+  const { supabase, user } = await requireSupabaseUser();
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ checked })
+    .eq("user_id", user.id)
+    .eq("week_start", getWeekStart(weekStart));
+  if (error) throw error;
+  dispatchShoppingUpdate();
+}
+
 export async function addManualShoppingItem(weekStart: string, text: string) {
   const clean = text.trim();
   if (!clean) return;

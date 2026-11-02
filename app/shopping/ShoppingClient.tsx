@@ -31,6 +31,7 @@ import {
   removeCheckedShoppingItems,
   removeShoppingItem,
   saveShoppingWeek,
+  setAllShoppingItemsChecked,
   shoppingListText,
   subscribeToShopping,
   updateShoppingItem,
@@ -418,6 +419,28 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
         <>
           <section className={styles.listToolbar}>
             <div>
+              <label className={styles.markAll} title="Mark all as bought">
+                <input
+                  aria-label="Mark all as bought"
+                  checked={checkedCount === savedItems.length}
+                  onChange={(event) =>
+                    void setAllShoppingItemsChecked(weekStart, event.target.checked).catch(
+                      (reason: unknown) =>
+                        setError(
+                          reason instanceof Error
+                            ? reason.message
+                            : "Could not update the items.",
+                        ),
+                    )
+                  }
+                  type="checkbox"
+                />
+                <span className={styles.checkmark}>
+                  {checkedCount === savedItems.length && (
+                    <Check aria-hidden="true" size={15} />
+                  )}
+                </span>
+              </label>
               <strong>{savedItems.length - checkedCount} left</strong>
               <span>{checkedCount} bought</span>
             </div>

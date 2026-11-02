@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BrowseRecipeCard } from "@/components/BrowseRecipeCard";
 import { WeekDropShelf } from "@/components/WeekDropShelf";
+import { useDragPreference } from "@/lib/useDragPreference";
 import { useAuth } from "@/lib/auth";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
@@ -217,6 +218,7 @@ function sortByName(entries: [string, number][]) {
 
 export default function BrowsePage() {
   const { user } = useAuth();
+  const { isTouch, dragEnabled, dragOn, setDragOn } = useDragPreference();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [personalVersion, setPersonalVersion] = useState(0);
   const [query, setQuery] = useState("");
@@ -682,21 +684,33 @@ export default function BrowsePage() {
         <h1>Browse recipes</h1>
 
         {user && (
-          <button
-            aria-pressed={planningMode}
-            className={`${styles.planModeButton} ${
-              planningMode ? styles.planModeButtonActive : ""
-            }`}
-            onClick={togglePlanningMode}
-            type="button"
-          >
-            <CalendarPlus aria-hidden="true" size={16} />
-            {planningMode ? "Cancel selection" : "Plan recipes"}
-          </button>
+          <div className={styles.pageHeaderActions}>
+            {planningMode && isTouch && (
+              <button
+                aria-pressed={dragOn}
+                className={styles.planModeButton}
+                onClick={() => setDragOn((current) => !current)}
+                type="button"
+              >
+                {dragOn ? "Drag: on" : "Drag: off"}
+              </button>
+            )}
+            <button
+              aria-pressed={planningMode}
+              className={`${styles.planModeButton} ${
+                planningMode ? styles.planModeButtonActive : ""
+              }`}
+              onClick={togglePlanningMode}
+              type="button"
+            >
+              <CalendarPlus aria-hidden="true" size={16} />
+              {planningMode ? "Cancel selection" : "Plan recipes"}
+            </button>
+          </div>
         )}
       </div>
 
-      {planningMode && (
+      {planningMode && dragEnabled && (
         <WeekDropShelf
           currentWeekStart={null}
           dragOverWeek={dragOverWeek}
@@ -1021,6 +1035,7 @@ export default function BrowsePage() {
                 return (
                   <BrowseRecipeCard
                     alreadyPlanned={alreadyPlanned}
+                    dragEnabled={dragEnabled}
                     dragging={
                       draggingRecipeId === recipe.id ||
                       (Boolean(draggingRecipeId) &&

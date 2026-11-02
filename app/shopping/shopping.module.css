@@ -223,6 +223,24 @@
   border-bottom: 0;
 }
 
+.markAll {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.markAll input:checked + .checkmark {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: white;
+}
+
+.markAll input:focus-visible + .checkmark {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
+.markAll input,
 .ingredientRow input,
 .finalItem label input {
   position: absolute;

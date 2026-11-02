@@ -19,6 +19,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { RecipeQuickActions } from "@/components/RecipeQuickActions";
 import { WeekDropShelf } from "@/components/WeekDropShelf";
 import { subscribeToPersonalState } from "@/lib/personalRecipeState";
+import { useDragPreference } from "@/lib/useDragPreference";
 import { formatRange, type Recipe } from "@/lib/recipeModel";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import {
@@ -80,6 +81,7 @@ function PlanningPageContent() {
   const [dragOverWeek, setDragOverWeek] = useState<string | null>(null);
   const [extraWeeksCount, setExtraWeeksCount] = useState(5);
   const [view, setView] = useState<"list" | "grid">("list");
+  const { isTouch, dragEnabled, dragOn, setDragOn } = useDragPreference();
 
   useEffect(() => {
     let active = true;
@@ -281,6 +283,21 @@ function PlanningPageContent() {
     });
   }
 
+  function toggleWeekSelection(group: { items: { plan: PlanningItem }[] }) {
+    const ids = group.items.map(({ plan: item }) => item.id);
+    const allSelected = ids.length > 0 && ids.every((id) => selectedItemIds.has(id));
+    setBulkMessage("");
+    setSelectionMode(true);
+    setSelectedItemIds((current) => {
+      const next = new Set(current);
+      for (const id of ids) {
+        if (allSelected) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
+  }
+
   async function moveItemsToWeek(itemIds: string[], targetWeek: string) {
     const selected = plannedRecipes.filter(({ plan: item }) =>
       itemIds.includes(item.id),
@@ -411,6 +428,16 @@ function PlanningPageContent() {
               </button>
             </div>
           )}
+          {isTouch && plannedRecipes.length > 0 && (
+            <button
+              aria-pressed={dragOn}
+              className={styles.selectModeButton}
+              onClick={() => setDragOn((current) => !current)}
+              type="button"
+            >
+              {dragOn ? "Drag: on" : "Drag: off"}
+            </button>
+          )}
           {plannedRecipes.length > 0 && (
             <button
               className={styles.selectModeButton}
@@ -427,7 +454,7 @@ function PlanningPageContent() {
         </div>
       </header>
 
-      {!loading && !error && groups.length > 0 && (
+      {!loading && !error && groups.length > 0 && dragEnabled && (
         <WeekDropShelf
           currentWeekStart={
             draggingItemId && !isGroupDrag
@@ -499,6 +526,21 @@ function PlanningPageContent() {
                     <h2>{group.label}</h2>
                   </div>
                   <div className={styles.weekActions}>
+                    {group.items.length > 0 && (
+                      <label className={styles.weekSelectAll} title="Select all in this week">
+                        <input
+                          aria-label={`Select all recipes in ${group.label}`}
+                          checked={group.items.every(({ plan: item }) => selectedItemIds.has(item.id))}
+                          onChange={() => toggleWeekSelection(group)}
+                          type="checkbox"
+                        />
+                        <span className={styles.checkmark}>
+                          {group.items.every(({ plan: item }) => selectedItemIds.has(item.id)) && (
+                            <Check aria-hidden="true" size={15} />
+                          )}
+                        </span>
+                      </label>
+                    )}
                     <span>
                       {group.items.length} recipe{group.items.length === 1 ? "" : "s"}
                     </span>
@@ -517,7 +559,9 @@ function PlanningPageContent() {
                 <div className={`${styles.planList} ${view === "grid" ? styles.planListGrid : ""}`}>
                   {group.items.length === 0 && (
                     <p className={styles.planListEmpty}>
-                      Drag a recipe here to plan it for this week.
+                      {dragEnabled
+                        ? "Drag a recipe here to plan it for this week."
+                        : "No recipes planned for this week."}
                     </p>
                   )}
                   {group.items.map(({ recipe, plan: item }) => {
@@ -570,7 +614,7 @@ function PlanningPageContent() {
                           {selectionMode ? (
                             <label
                               className={styles.selectCheckbox}
-                              draggable
+                              draggable={dragEnabled}
                               onDragEnd={handleCardDragEnd}
                               onDragStart={() => handleCardDragStart(item.id)}
                             >
@@ -586,7 +630,7 @@ function PlanningPageContent() {
                                 )}
                               </span>
                             </label>
-                          ) : (
+                          ) : !dragEnabled ? null : (
                             <div
                               className={styles.compactGrip}
                               draggable
@@ -641,7 +685,7 @@ function PlanningPageContent() {
                           // click, which broke the recipe title/image links.
                           <label
                             className={styles.selectCheckbox}
-                            draggable
+                            draggable={dragEnabled}
                             onDragEnd={handleCardDragEnd}
                             onDragStart={() => handleCardDragStart(item.id)}
                           >
@@ -660,12 +704,12 @@ function PlanningPageContent() {
                         ) : (
                           <div
                             className={styles.order}
-                            draggable
+                            draggable={dragEnabled}
                             onDragEnd={handleCardDragEnd}
                             onDragStart={() => handleCardDragStart(item.id)}
-                            title="Drag to move"
+                            title={dragEnabled ? "Drag to move" : undefined}
                           >
-                            <GripVertical aria-hidden="true" size={16} />
+                            {dragEnabled && <GripVertical aria-hidden="true" size={16} />}
                           </div>
                         )}
 

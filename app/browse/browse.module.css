@@ -22,6 +22,11 @@
   color: var(--ink);
 }
 
+.pageHeaderActions {
+  display: flex;
+  gap: 10px;
+}
+
 .planModeButton {
   display: inline-flex;
   min-height: 44px;
@@ -534,8 +539,12 @@
     gap: 12px;
   }
 
-  .planModeButton {
+  .pageHeaderActions {
     width: 100%;
+  }
+
+  .planModeButton {
+    flex: 1;
     justify-content: center;
   }
 

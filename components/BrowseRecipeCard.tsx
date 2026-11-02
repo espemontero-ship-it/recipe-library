@@ -18,6 +18,7 @@ type Props = {
   onToggleThisWeek: () => void | Promise<void>;
   planningBusy: boolean;
   onRecipeChange: (recipe: Recipe) => void;
+  dragEnabled?: boolean;
   dragging?: boolean;
   onCardDragStart?: () => void;
   onCardDragEnd?: () => void;
@@ -34,6 +35,7 @@ export function BrowseRecipeCard({
   onToggleThisWeek,
   planningBusy,
   onRecipeChange,
+  dragEnabled = true,
   dragging = false,
   onCardDragStart,
   onCardDragEnd,
@@ -94,7 +96,7 @@ export function BrowseRecipeCard({
         </button>
       )}
 
-      {planningMode && (
+      {planningMode && dragEnabled && (
         // Only this handle is draggable, not the whole card: a real mouse
         // click almost never has zero pixel movement, and a draggable
         // ancestor swallows that as a drag attempt instead of a click,
@@ -115,7 +117,7 @@ export function BrowseRecipeCard({
           {alreadyPlanned && (
             <span
               className={`${styles.plannedBadge} ${
-                planningMode ? styles.plannedBadgeStacked : ""
+                planningMode && dragEnabled ? styles.plannedBadgeStacked : ""
               }`}
             >
               In planning
