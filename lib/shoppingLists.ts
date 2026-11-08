@@ -1,6 +1,6 @@
 "use client";
 
-import { formatPlanningWeekLabel, getWeekStart } from "@/lib/planning";
+import { getWeekStart } from "@/lib/planning";
 import { getSupabaseClient } from "@/lib/supabase";
 
 const LISTS_TABLE = "shopping_lists";
@@ -59,19 +59,50 @@ function dispatchListsUpdate() {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(LISTS_EVENT));
 }
 
-// A list is named after the recipes it includes plus the week it is for.
+// Recipe titles are often pasted with emojis, arrows and ALL CAPS; strip that
+// so a list name stays readable.
+function tidyRecipeTitle(title: string) {
+  let cleaned = title
+    .replace(/[\p{Extended_Pictographic}️‍]/gu, "")
+    .replace(/[^\p{L}\p{N}\s'’&,.\-–()]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[\s,.\-–]+|[\s,.\-–]+$/g, "");
+  if (cleaned && cleaned === cleaned.toUpperCase() && cleaned !== cleaned.toLowerCase()) {
+    cleaned = cleaned
+      .toLowerCase()
+      .replace(/(^|\s)(\p{L})/gu, (_, space: string, letter: string) => `${space}${letter.toUpperCase()}`);
+  }
+  return cleaned;
+}
+
+// Fixed date range (not "This week") so a saved list's name never changes meaning.
+function formatListWeek(weekStart: string) {
+  const [year, month, day] = getWeekStart(weekStart).split("-").map(Number);
+  const start = new Date(year, month - 1, day, 12);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const monthName = (date: Date) =>
+    new Intl.DateTimeFormat("en-GB", { month: "short" }).format(date);
+  const range =
+    start.getMonth() === end.getMonth()
+      ? `${start.getDate()} – ${end.getDate()} ${monthName(end)}`
+      : `${start.getDate()} ${monthName(start)} – ${end.getDate()} ${monthName(end)}`;
+  return end.getFullYear() === new Date().getFullYear() ? range : `${range} ${end.getFullYear()}`;
+}
+
+// A list is named after every recipe it includes plus the dates of its week.
 export function shoppingListName(list: Pick<ShoppingListSummary, "weekStart" | "items">) {
   const titles: string[] = [];
   for (const item of list.items) {
-    for (const title of item.recipeTitles) {
-      if (!titles.includes(title)) titles.push(title);
+    for (const raw of item.recipeTitles) {
+      const title = tidyRecipeTitle(raw);
+      if (title && !titles.includes(title)) titles.push(title);
     }
   }
-  const week = formatPlanningWeekLabel(list.weekStart);
+  const week = formatListWeek(list.weekStart);
   if (!titles.length) return `Own items · ${week}`;
-  const shown = titles.slice(0, 2).join(", ");
-  const extra = titles.length > 2 ? ` +${titles.length - 2} more` : "";
-  return `${shown}${extra} · ${week}`;
+  return `${titles.join(", ")} · ${week}`;
 }
 
 export async function getShoppingLists(): Promise<ShoppingListSummary[]> {
