@@ -1,0 +1,136 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 42px 96px;
+  color: var(--ink);
+}
+
+.header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 32px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: var(--text-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 0;
+  font-family: var(--editorial);
+  font-size: var(--text-section);
+  font-weight: 400;
+}
+
+.primaryButton {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 0 16px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lists {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lists li {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line);
+}
+
+.lists a {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+  padding: 18px 4px;
+  color: var(--ink);
+}
+
+.lists a:hover strong {
+  color: var(--accent);
+}
+
+.lists strong {
+  font-size: 16px;
+}
+
+.lists a span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.lists li > button {
+  display: grid;
+  width: 44px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.lists li > button:hover {
+  color: var(--accent);
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  margin-top: 32px;
+  border: 1px solid var(--line);
+  padding: 44px 20px;
+  text-align: center;
+}
+
+.empty > svg {
+  color: var(--accent);
+}
+
+.empty h2 {
+  margin: 0;
+  font-family: var(--editorial);
+  font-size: var(--text-subsection);
+  font-weight: 400;
+}
+
+.empty p {
+  max-width: 440px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.primaryButton:focus-visible,
+.lists a:focus-visible,
+.lists li > button:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 0 16px 72px;
+  }
+}

@@ -1,0 +1,155 @@
+.picker {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  color: var(--muted);
+}
+
+.search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  padding: 13px 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  outline: 0;
+}
+
+.results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.results button {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+.results button:hover {
+  background: var(--accent-soft);
+}
+
+.chosen {
+  padding: 14px;
+}
+
+.chosen header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chosen header button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.servings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.stepper {
+  display: inline-grid;
+  grid-template-columns: 30px 48px 30px;
+  align-items: stretch;
+  border: 1px solid var(--line);
+}
+
+.stepper button {
+  display: grid;
+  min-height: 30px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.stepper > span {
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  font-weight: 700;
+}
+
+.stepper button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.lines {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lines li + li {
+  border-top: 1px solid var(--line);
+}
+
+.lines label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.addButton {
+  min-height: 40px;
+  margin-top: 12px;
+  border: 0;
+  padding: 0 16px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.addButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.search input:focus-visible,
+.results button:focus-visible,
+.stepper button:focus-visible,
+.addButton:focus-visible,
+.chosen header button:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: -3px;
+}

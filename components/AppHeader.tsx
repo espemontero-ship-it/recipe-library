@@ -11,6 +11,7 @@ const links = [
   { href: "/browse", label: "Browse" },
   { href: "/planning", label: "Planning" },
   { href: "/shopping", label: "Shopping" },
+  { href: "/lists", label: "Lists" },
 ];
 
 export function AppHeader() {

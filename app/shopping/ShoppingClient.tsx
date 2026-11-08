@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
   ChevronLeft,
   ChevronRight,
   Clipboard,
+  ListPlus,
   PencilLine,
   Plus,
   RotateCcw,
@@ -42,6 +44,7 @@ import {
   type ShoppingDraftItem,
   type ShoppingItem,
 } from "@/lib/shoppingList";
+import { createShoppingList } from "@/lib/shoppingLists";
 import { getSupabaseRecipes } from "@/lib/supabaseRecipes";
 import styles from "./shopping.module.css";
 
@@ -93,6 +96,7 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
   const [copied, setCopied] = useState(false);
   const [metricView, setMetricView] = useState(false);
   const [editingItemIds, setEditingItemIds] = useState<Set<string>>(new Set());
+  const router = useRouter();
 
   useEffect(() => {
     let active = true;
@@ -281,6 +285,22 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
     await copyText(text);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
+  }
+
+  async function saveToList() {
+    try {
+      const id = await createShoppingList(
+        weekStart,
+        savedItems.map((item) => ({
+          text: item.text,
+          checked: item.checked,
+          recipeTitles: Array.from(new Set(item.sources.map((source) => source.recipeTitle))),
+        })),
+      );
+      router.push(`/lists/${id}`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save the list.");
+    }
   }
 
   async function clearList() {
@@ -480,6 +500,10 @@ export function ShoppingClient({ weekStart: requestedWeek }: { weekStart: string
                 )
               } type="button">
                 Remove bought
+              </button>
+              <button onClick={() => void saveToList()} type="button">
+                <ListPlus aria-hidden="true" size={15} />
+                Save to list
               </button>
               <button onClick={() => void copyList()} type="button">
                 <Clipboard aria-hidden="true" size={15} />
